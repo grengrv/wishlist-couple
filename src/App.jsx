@@ -90,7 +90,7 @@ function App() {
 
       <div className="header">
         <h1>Wishlist của chúng mình <span className="heart">♥</span></h1>
-        <p>Những điều mơ ước cùng nhau</p>
+        <p>Những điều mơ ước cùng nhauu</p>
       </div>
 
       <div className="stats">
