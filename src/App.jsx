@@ -20,6 +20,7 @@ function App() {
   const [previewAnh, setPreviewAnh] = useState(null);
   const [dangTai, setDangTai] = useState(false);
   const [keoVao, setKeoVao] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
 
   useEffect(() => {
     async function layDanhSach() {
@@ -39,6 +40,22 @@ function App() {
     window.addEventListener("paste", handlePaste);
     return () => window.removeEventListener("paste", handlePaste);
   }, []);
+
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === "Escape") setSelectedItem(null);
+    };
+    if (selectedItem) {
+      document.body.style.overflow = "hidden";
+      window.addEventListener("keydown", handleKey);
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKey);
+    };
+  }, [selectedItem]);
 
   function chonAnh(file) {
     if (!file || !file.type.startsWith("image/")) return;
@@ -83,14 +100,40 @@ function App() {
   async function xoaMon(id) {
     await deleteDoc(doc(db, "wishlist", id));
     setItems(prev => prev.filter(item => item.id !== id));
+    if (selectedItem?.id === id) setSelectedItem(null);
   }
 
   return (
     <div className="app">
 
+      {/* MODAL XEM CHI TIẾT */}
+      {selectedItem && (
+        <div className="modal-overlay" onClick={() => setSelectedItem(null)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setSelectedItem(null)}>×</button>
+            {selectedItem.anhUrl && (
+              <img src={selectedItem.anhUrl} alt={selectedItem.ten} className="modal-img" />
+            )}
+            <div className="modal-body">
+              <h2 className="modal-ten">{selectedItem.ten}</h2>
+              {selectedItem.ghiChu && (
+                <p className="modal-ghichu">{selectedItem.ghiChu}</p>
+              )}
+              <p className="modal-date">Thêm ngày {formatNgay(selectedItem.taoLuc)}</p>
+              <button
+                className="modal-btn-xoa"
+                onClick={() => xoaMon(selectedItem.id)}
+              >
+                Xóa khỏi danh sách
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="header">
         <h1>Wishlist của chúng mình <span className="heart">♥</span></h1>
-        <p>Những điều mơ ước cùng nhauu</p>
+        <p>Những điều mơ ước cùng nhau</p>
       </div>
 
       <div className="stats">
@@ -99,15 +142,11 @@ function App() {
           <div className="stat-label">Tổng điều ước</div>
         </div>
         <div className="stat">
-          <div className="stat-num">
-            {items.filter(i => i.anhUrl).length}
-          </div>
+          <div className="stat-num">{items.filter(i => i.anhUrl).length}</div>
           <div className="stat-label">Có hình ảnh</div>
         </div>
         <div className="stat">
-          <div className="stat-num">
-            {items.filter(i => i.ghiChu).length}
-          </div>
+          <div className="stat-num">{items.filter(i => i.ghiChu).length}</div>
           <div className="stat-label">Có ghi chú</div>
         </div>
       </div>
@@ -181,7 +220,7 @@ function App() {
           <p className="empty">Chưa có điều ước nào.<br />Hãy thêm điều đầu tiên nhé ♥</p>
         )}
         {items.map(item => (
-          <div className="card" key={item.id}>
+          <div className="card" key={item.id} onClick={() => setSelectedItem(item)}>
             {item.anhUrl && (
               <img src={item.anhUrl} alt={item.ten} className="card-img" />
             )}
@@ -190,7 +229,7 @@ function App() {
               {item.ghiChu && <p className="card-ghichu">{item.ghiChu}</p>}
               <p className="card-date">{formatNgay(item.taoLuc)}</p>
             </div>
-            <button className="btn-xoa" onClick={() => xoaMon(item.id)}>×</button>
+            <div className="card-arrow">›</div>
           </div>
         ))}
       </div>
