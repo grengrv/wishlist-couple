@@ -7,12 +7,14 @@ import {
 
 /**
  * Custom hook quản lý toàn bộ logic dữ liệu wishlist:
- * - Lấy danh sách từ Firestore
+ * - Lấy danh sách từ Firestore (chỉ khi đã đăng nhập)
  * - Thêm / Xóa item
  * - Quản lý state form (tên, ghi chú, ảnh)
  * - Xử lý drag-drop & paste ảnh
+ *
+ * @param {Object|null} user - Firebase Auth user object (null = chưa đăng nhập)
  */
-export function useWishlist() {
+export function useWishlist(user) {
   const [items, setItems] = useState([]);
   const [tenMon, setTenMon] = useState("");
   const [ghiChu, setGhiChu] = useState("");
@@ -21,8 +23,10 @@ export function useWishlist() {
   const [dangTai, setDangTai] = useState(false);
   const [keoVao, setKeoVao] = useState(false);
 
-  // Lấy danh sách & đăng ký paste listener khi mount
+  // Lấy danh sách & đăng ký paste listener khi user đăng nhập
   useEffect(() => {
+    if (!user) return;
+
     async function layDanhSach() {
       const q = query(collection(db, "wishlist"), orderBy("taoLuc"));
       const snapshot = await getDocs(q);
@@ -39,7 +43,7 @@ export function useWishlist() {
     };
     window.addEventListener("paste", handlePaste);
     return () => window.removeEventListener("paste", handlePaste);
-  }, []);
+  }, [user]);
 
   /** Đọc file ảnh và lưu dưới dạng base64 */
   function chonAnh(file) {
@@ -58,7 +62,7 @@ export function useWishlist() {
     setPreviewAnh(null);
   }
 
-  /** Thêm item mới vào Firestore */
+  /** Thêm item mới vào Firestore, lưu email người thêm */
   async function themMon() {
     if (tenMon.trim() === "") return;
     setDangTai(true);
@@ -68,11 +72,19 @@ export function useWishlist() {
       ghiChu: ghiChu,
       anhUrl: anhBase64 || null,
       taoLuc: new Date(),
+      themBoi: user?.email || null,
     });
 
     setItems(prev => [
       ...prev,
-      { id: docRef.id, ten: tenMon, ghiChu, anhUrl: anhBase64, taoLuc: new Date() },
+      {
+        id: docRef.id,
+        ten: tenMon,
+        ghiChu,
+        anhUrl: anhBase64,
+        taoLuc: new Date(),
+        themBoi: user?.email || null,
+      },
     ]);
 
     setTenMon("");

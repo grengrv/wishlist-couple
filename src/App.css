@@ -468,3 +468,114 @@ body {
 .card {
   cursor: pointer;
 }
+
+/* ═══════════════════════════════
+   AUTH - Màn hình đăng nhập
+═══════════════════════════════ */
+.auth-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: #fdf6f9;
+}
+
+.auth-box {
+  background: white;
+  border-radius: 20px;
+  border: 1px solid #f5dde8;
+  padding: 2rem;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 4px 24px rgba(194, 24, 91, 0.06);
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.auth-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #b5235a;
+}
+
+.auth-header p {
+  font-size: 13px;
+  color: #b0889a;
+  margin-top: 4px;
+}
+
+.auth-tabs {
+  display: flex;
+  border: 1px solid #f5dde8;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  color: #b0889a;
+  transition: all 0.15s;
+}
+
+.auth-tab.active {
+  background: #fdeef4;
+  color: #c2185b;
+  font-weight: 600;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auth-error {
+  font-size: 13px;
+  color: #c2185b;
+  background: #fdeef4;
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+/* ═══════════════════════════════
+   ADMIN BAR - Thanh trạng thái
+═══════════════════════════════ */
+.admin-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding: 10px 14px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #f5dde8;
+}
+
+.btn-logout {
+  padding: 7px 14px;
+  border: 1.5px solid #f0a8c0;
+  border-radius: 8px;
+  background: white;
+  color: #c2185b;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-logout:hover {
+  background: #fdeef4;
+  border-color: #c2185b;
+}
