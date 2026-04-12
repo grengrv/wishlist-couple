@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebase";
 import {
-  collection, addDoc, getDocs,
+  collection, addDoc, getDocs, onSnapshot,
   deleteDoc, doc, orderBy, query
 } from "firebase/firestore";
 import { ADMIN_EMAIL } from "../constants";
@@ -28,13 +28,11 @@ export function useWishlist(user, userProfile) {
   useEffect(() => {
     if (!user) return;
 
-    async function layDanhSach() {
-      const q = query(collection(db, "wishlist"), orderBy("taoLuc"));
-      const snapshot = await getDocs(q);
+    const q = query(collection(db, "wishlist"), orderBy("taoLuc"));
+    const unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       setItems(data);
-    }
-    layDanhSach();
+    });
 
     const handlePaste = (e) => {
       const file = [...e.clipboardData.items]
@@ -43,7 +41,11 @@ export function useWishlist(user, userProfile) {
       if (file) chonAnh(file);
     };
     window.addEventListener("paste", handlePaste);
-    return () => window.removeEventListener("paste", handlePaste);
+    
+    return () => {
+      unsubscribeSnapshot();
+      window.removeEventListener("paste", handlePaste);
+    };
   }, [user]);
 
   /** Đọc file ảnh và lưu dưới dạng base64 */
@@ -77,16 +79,7 @@ export function useWishlist(user, userProfile) {
       themBoi: userProfile?.username || user.email || "Khách ẩn danh",
       avatarNguoiThem: userProfile?.avatar || null
     });
-    setItems(prev => [...prev, {
-      id: docRef.id,
-      ten: tenMon,
-      ghiChu,
-      anhUrl: anhBase64,
-      taoLuc: new Date(),
-      uid: user.uid,
-      themBoi: userProfile?.username || user.email || "Khách ẩn danh",
-      avatarNguoiThem: userProfile?.avatar || null
-    }]);
+    
     setTenMon("");
     setGhiChu("");
     xoaAnh();
@@ -104,7 +97,6 @@ export function useWishlist(user, userProfile) {
     }
 
     await deleteDoc(doc(db, "wishlist", id));
-    setItems(prev => prev.filter(i => i.id !== id));
   }
 
   return {
