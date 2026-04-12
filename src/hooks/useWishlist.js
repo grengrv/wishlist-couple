@@ -15,7 +15,7 @@ import { ADMIN_EMAIL } from "../constants";
  *
  * @param {Object|null} user - Firebase Auth user object (null = chưa đăng nhập)
  */
-export function useWishlist(user) {
+export function useWishlist(user, userProfile) {
   const [items, setItems] = useState([]);
   const [tenMon, setTenMon] = useState("");
   const [ghiChu, setGhiChu] = useState("");
@@ -73,23 +73,20 @@ export function useWishlist(user) {
       ghiChu: ghiChu,
       anhUrl: anhBase64 || null,
       taoLuc: new Date(),
-      themBoi: user?.email || null,
-      uid: user.uid
+      uid: user.uid,
+      themBoi: userProfile?.username || user.email || "Khách ẩn danh",
+      avatarNguoiThem: userProfile?.avatar || null
     });
-
-    setItems(prev => [
-      ...prev,
-      {
-        id: docRef.id,
-        ten: tenMon,
-        ghiChu,
-        anhUrl: anhBase64,
-        taoLuc: new Date(),
-        themBoi: user?.email || null,
-        uid: user.uid
-      },
-    ]);
-
+    setItems(prev => [...prev, {
+      id: docRef.id,
+      ten: tenMon,
+      ghiChu,
+      anhUrl: anhBase64,
+      taoLuc: new Date(),
+      uid: user.uid,
+      themBoi: userProfile?.username || user.email || "Khách ẩn danh",
+      avatarNguoiThem: userProfile?.avatar || null
+    }]);
     setTenMon("");
     setGhiChu("");
     xoaAnh();

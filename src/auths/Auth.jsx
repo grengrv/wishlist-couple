@@ -1,14 +1,18 @@
 import { useState } from "react";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
 import {
     signInWithEmailAndPassword,
-    createUserWithEmailAndPassword
+    createUserWithEmailAndPassword,
+    signInAnonymously,
+    updateProfile
 } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 
 export default function Auth() {
     const [mode, setMode] = useState("login");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [username, setUsername] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
@@ -19,7 +23,23 @@ export default function Auth() {
             if (mode === "login") {
                 await signInWithEmailAndPassword(auth, email, password);
             } else {
-                await createUserWithEmailAndPassword(auth, email, password);
+                if (username.trim() === "") {
+                    setError("Vui lòng nhập username");
+                    setLoading(false);
+                    return;
+                }
+                const result = await createUserWithEmailAndPassword(auth, email, password);
+
+                // Lưu displayName vào Firebase Auth
+                await updateProfile(result.user, { displayName: username });
+
+                // Lưu thông tin user vào Firestore
+                await setDoc(doc(db, "users", result.user.uid), {
+                    username: username,
+                    email: email,
+                    avatar: null,
+                    taoLuc: new Date()
+                });
             }
         } catch (err) {
             if (err.code === "auth/invalid-credential") setError("Email hoặc mật khẩu không đúng");
@@ -27,6 +47,17 @@ export default function Auth() {
             else if (err.code === "auth/weak-password") setError("Mật khẩu phải ít nhất 6 ký tự");
             else if (err.code === "auth/invalid-email") setError("Email không hợp lệ");
             else setError("Có lỗi xảy ra, thử lại nhé");
+        }
+        setLoading(false);
+    }
+
+    async function handleAnonymous() {
+        setError("");
+        setLoading(true);
+        try {
+            await signInAnonymously(auth);
+        } catch (err) {
+            setError("Không thể đăng nhập ẩn danh, thử lại nhé");
         }
         setLoading(false);
     }
@@ -55,6 +86,15 @@ export default function Auth() {
                 </div>
 
                 <div className="auth-form">
+                    {mode === "register" && (
+                        <input
+                            className="inp"
+                            type="text"
+                            placeholder="Username"
+                            value={username}
+                            onChange={e => setUsername(e.target.value)}
+                        />
+                    )}
                     <input
                         className="inp"
                         type="email"
@@ -74,6 +114,12 @@ export default function Auth() {
                     {error && <p className="auth-error">{error}</p>}
                     <button className="btn-them" onClick={handleSubmit} disabled={loading}>
                         {loading ? "Đang xử lý..." : mode === "login" ? "Đăng nhập" : "Đăng ký"}
+                    </button>
+
+                    <div className="auth-divider"><span>hoặc</span></div>
+
+                    <button className="btn-anonymous" onClick={handleAnonymous} disabled={loading}>
+                        Dùng thử không cần đăng ký
                     </button>
                 </div>
             </div>

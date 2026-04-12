@@ -14,12 +14,18 @@ export default function WishCard({ item, onClick }) {
       <div className="card-body">
         <h3 className="card-ten">{item.ten}</h3>
         {item.ghiChu && <p className="card-ghichu">{item.ghiChu}</p>}
-        <p className="card-date">{formatNgay(item.taoLuc)}</p>
-        {item.themBoi && (
-          <p className="card-date" style={{ marginTop: 2 }}>
-            Bởi: {item.themBoi}
-          </p>
-        )}
+        {/* Avatar + username người thêm */}
+        <div className="card-author">
+          {item.avatarNguoiThem ? (
+            <img src={item.avatarNguoiThem} alt="avatar" className="card-author-avatar" />
+          ) : (
+            <div className="card-author-initials">
+              {(item.themBoi?.[0] || "?").toUpperCase()}
+            </div>
+          )}
+          <span className="card-author-name">{item.themBoi || "Ẩn danh"}</span>
+          <span className="card-date" style={{ marginLeft: "auto" }}>{formatNgay(item.taoLuc)}</span>
+        </div>
       </div>
       <div className="card-arrow">›</div>
     </div>

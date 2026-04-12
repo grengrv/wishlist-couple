@@ -1,8 +1,13 @@
 import { useState, useEffect } from "react";
 import "./App.css";
 
-import { auth } from "./firebase";
+import { auth, db } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
+import {
+  collection, addDoc, getDocs,
+  deleteDoc, doc, orderBy, query, getDoc
+} from "firebase/firestore";
+import Profile from "./Profile";
 
 import { useWishlist } from "./hooks/useWishlist";
 import Header from "./components/Header";
@@ -17,15 +22,28 @@ import AboutSection from "./components/AboutSection";
 import Footer from "./components/Footer";
 
 function App() {
+  const [userProfile, setUserProfile] = useState(null);
+  const [showProfile, setShowProfile] = useState(false);
   const [user, setUser] = useState(null);
   const [checking, setChecking] = useState(true);
   const [selectedItem, setSelectedItem] = useState(null);
 
   // Lắng nghe trạng thái đăng nhập Firebase
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
+    const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       setChecking(false);
+
+      if (u && !u.isAnonymous) {
+        // Load profile từ Firestore
+        const profileDoc = await getDoc(doc(db, "users", u.uid));
+        if (profileDoc.exists()) {
+          setUserProfile(profileDoc.data());
+        } else {
+          // User cũ chưa có profile, tạo mặc định
+          setUserProfile({ username: u.displayName || u.email, avatar: null });
+        }
+      }
     });
     return unsub;
   }, []);
@@ -41,7 +59,7 @@ function App() {
     xoaAnh,
     themMon,
     xoaMon,
-  } = useWishlist(user);
+  } = useWishlist(user, userProfile);
 
   /** Xóa item và đóng modal nếu đang mở item đó */
   async function handleXoa(id) {
@@ -71,11 +89,45 @@ function App() {
 
       {/* Thanh trạng thái đăng nhập */}
       <div className="admin-bar">
-        <span style={{ fontSize: "13px", color: "#b0889a" }}>{user.email}</span>
+        {/* Avatar + Username */}
+        <div
+          className="user-info"
+          onClick={() => !user.isAnonymous && setShowProfile(true)}
+          style={{ cursor: user.isAnonymous ? "default" : "pointer" }}
+        >
+          {userProfile?.avatar ? (
+            <img src={userProfile.avatar} alt="avatar" className="avatar-small" />
+          ) : (
+            <div className="avatar-initials">
+              {user.isAnonymous
+                ? "?"
+                : (userProfile?.username?.[0] || user.email?.[0] || "?").toUpperCase()}
+            </div>
+          )}
+          <div>
+            <p className="user-name">
+              {user.isAnonymous ? "Khách ẩn danh" : (userProfile?.username || user.email)}
+            </p>
+            {!user.isAnonymous && (
+              <p className="user-edit">Chỉnh sửa hồ sơ</p>
+            )}
+          </div>
+        </div>
+
+        {/* Nút đăng xuất */}
         <button className="btn-logout" onClick={() => signOut(auth)}>
-          Đăng xuất
+          {user.isAnonymous ? "Thoát" : "Đăng xuất"}
         </button>
       </div>
+
+      {/* Modal Profile */}
+      {showProfile && (
+        <Profile
+          userProfile={userProfile}
+          onClose={() => setShowProfile(false)}
+          onUpdate={(updated) => setUserProfile(prev => ({ ...prev, ...updated }))}
+        />
+      )}
 
       <AboutSection />
 

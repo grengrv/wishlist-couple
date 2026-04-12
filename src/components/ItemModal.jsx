@@ -42,11 +42,16 @@ export default function ItemModal({ item, onClose, onDelete, user, adminEmail })
             <p className="modal-ghichu">{item.ghiChu}</p>
           )}
           <p className="modal-date">Thêm ngày {formatNgay(item.taoLuc)}</p>
-          {item.themBoi && (
-            <p className="modal-date" style={{ marginTop: 4, marginBottom: 8 }}>
-              Bởi: {item.themBoi}
-            </p>
-          )}
+          <div className="card-author" style={{ marginTop: "4px", marginBottom: "16px" }}>
+            {item.avatarNguoiThem ? (
+              <img src={item.avatarNguoiThem} alt="avatar" className="card-author-avatar" />
+            ) : (
+              <div className="card-author-initials">
+                {(item.themBoi?.[0] || "?").toUpperCase()}
+              </div>
+            )}
+            <span className="card-author-name">{item.themBoi || "Ẩn danh"}</span>
+          </div>
           {/* Chỉ hiện nút xóa nếu là chủ hoặc admin */}
           {(!item.uid || item.uid === user?.uid || user?.email === adminEmail) && (
             <button
