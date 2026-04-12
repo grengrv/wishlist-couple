@@ -1,26 +1,21 @@
 import { useState, useEffect } from "react";
-
+import { Routes, Route } from "react-router-dom";
 import { auth, db } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import {
-  collection, addDoc, getDocs,
-  deleteDoc, doc, orderBy, query, getDoc
-} from "firebase/firestore";
-import Profile from "./Profile";
+import { doc, getDoc } from "firebase/firestore";
 
-import { useWishlist } from "./hooks/useWishlist";
+import Profile from "./Profile";
 import Header from "./components/Header";
-import Stats from "./components/Stats";
-import AddForm from "./components/AddForm";
-import WishList from "./components/WishList";
-import ItemModal from "./components/ItemModal";
+import Footer from "./components/Footer";
 import Auth from "./auths/Auth";
 import Admin from "./Admin/Admin";
 import { ADMIN_EMAIL } from "./constants";
-import AboutSection from "./components/AboutSection";
-import Footer from "./components/Footer";
-import Avatar from "./components/ui/Avatar";
-import Button from "./components/ui/Button";
+
+// Pages
+import HomePage from "./pages/HomePage";
+import GroupsPage from "./pages/GroupsPage";
+import GroupDetailPage from "./pages/GroupDetailPage";
+import InvitePage from "./pages/InvitePage";
 
 function App() {
   const [userProfile, setUserProfile] = useState(null);
@@ -49,24 +44,7 @@ function App() {
     return unsub;
   }, []);
 
-  const {
-    items,
-    tenMon, setTenMon,
-    ghiChu, setGhiChu,
-    previewAnh,
-    dangTai,
-    keoVao, setKeoVao,
-    chonAnh,
-    xoaAnh,
-    themMon,
-    xoaMon,
-  } = useWishlist(user, userProfile);
-
-  /** Xóa item và đóng modal nếu đang mở item đó */
-  async function handleXoa(id) {
-    await xoaMon(id);
-    if (selectedItem?.id === id) setSelectedItem(null);
-  }
+  // Đã bỏ logic useWishlist ở App.jsx. Data fetching do các trang (HomePage, GroupDetailPage) tự xử lý.
 
   // ── Đang kiểm tra auth ──
   if (checking) {
@@ -87,21 +65,14 @@ function App() {
         onLogout={() => signOut(auth)} 
       />
 
-      <main className="flex-1 w-full max-w-[680px] mx-auto px-5 flex flex-col">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-5 flex flex-col">
         {!user ? (
           <Auth />
         ) : user.email === ADMIN_EMAIL ? (
           <Admin />
         ) : (
-          <div className="py-10">
-            <div className="text-center mb-10">
-              <h2 className="text-[28px] font-bold text-deep-red tracking-[-0.5px]">
-                Không gian của chúng mình
-              </h2>
-              <p className="mt-1.5 text-sm text-pink-soft">Mảnh đất nuôi dưỡng những phép màu bé nhỏ</p>
-            </div>
-
-            {/* Modal Profile */}
+          <div className="flex-1 w-full flex flex-col">
+            {/* Modal Profile dùng chung toàn app */}
             {showProfile && (
               <Profile
                 userProfile={userProfile}
@@ -110,30 +81,12 @@ function App() {
               />
             )}
 
-            <AboutSection />
-
-            <Stats items={items} />
-
-            <AddForm
-              tenMon={tenMon} setTenMon={setTenMon}
-              ghiChu={ghiChu} setGhiChu={setGhiChu}
-              previewAnh={previewAnh}
-              dangTai={dangTai}
-              keoVao={keoVao} setKeoVao={setKeoVao}
-              chonAnh={chonAnh}
-              xoaAnh={xoaAnh}
-              themMon={themMon}
-            />
-
-            <WishList items={items} onSelectItem={setSelectedItem} />
-
-            <ItemModal
-              item={selectedItem}
-              onClose={() => setSelectedItem(null)}
-              onDelete={handleXoa}
-              user={user}
-              adminEmail={ADMIN_EMAIL}
-            />
+            <Routes>
+              <Route path="/" element={<HomePage user={user} userProfile={userProfile} />} />
+              <Route path="/groups" element={<GroupsPage user={user} />} />
+              <Route path="/groups/:id" element={<GroupDetailPage user={user} userProfile={userProfile} />} />
+              <Route path="/invite/:id" element={<InvitePage user={user} />} />
+            </Routes>
           </div>
         )}
       </main>

@@ -14,8 +14,10 @@ import { ADMIN_EMAIL } from "../constants";
  * - Xử lý drag-drop & paste ảnh
  *
  * @param {Object|null} user - Firebase Auth user object (null = chưa đăng nhập)
+ * @param {Object|null} userProfile - Profile user
+ * @param {string|null} groupId - ID nhóm để lấy/lưu wish. Bỏ qua nếu là Public
  */
-export function useWishlist(user, userProfile) {
+export function useWishlist(user, userProfile, groupId = null) {
   const [items, setItems] = useState([]);
   const [tenMon, setTenMon] = useState("");
   const [ghiChu, setGhiChu] = useState("");
@@ -28,9 +30,18 @@ export function useWishlist(user, userProfile) {
   useEffect(() => {
     if (!user) return;
 
-    const q = query(collection(db, "wishlist"), orderBy("taoLuc"));
+    const q = query(collection(db, "wishlist"), orderBy("taoLuc", "desc"));
     const unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      let data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // Phân tách Wish theo Nhóm hoặc Cá nhân
+      if (groupId) {
+        data = data.filter(i => i.groupId === groupId);
+      } else {
+        // Không gian cá nhân -> Chỉ lấy wish của chính user này tạo ra và không thuộc nhóm nào
+        data = data.filter(i => !i.groupId && i.uid === user.uid);
+      }
+
       setItems(data);
     });
 
@@ -77,7 +88,8 @@ export function useWishlist(user, userProfile) {
       taoLuc: new Date(),
       uid: user.uid,
       themBoi: userProfile?.username || user.email || "Khách ẩn danh",
-      avatarNguoiThem: userProfile?.avatar || null
+      avatarNguoiThem: userProfile?.avatar || null,
+      groupId: groupId || null
     });
     
     setTenMon("");

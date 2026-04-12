@@ -3,7 +3,7 @@
 /* ═══════════════════════════════════════════
    DESIGN TOKENS — Custom colors, fonts
    Dùng var(--color-*) hoặc class text-pink-brand v.v.
-═══════════════════════════════════════════ */
+ ═══════════════════════════════════════════ */
 @theme {
   /* Brand colors */
   --color-pink-brand:   #c2185b;
@@ -31,7 +31,7 @@
 
 /* ═══════════════════════════════════════════
    GLOBAL BASE
-═══════════════════════════════════════════ */
+ ═══════════════════════════════════════════ */
 body {
   font-family: var(--font-sans);
   background-color: var(--color-body-bg);
@@ -71,9 +71,14 @@ body {
   .animate-slide-up { animation: slideUp 0.25s ease; }
 
   /* Gradients (không thể dùng Tailwind thuần) */
-  .bg-gradient-brand  { background: linear-gradient(135deg, #e91e8c, #c2185b); }
+  .bg-gradient-brand  { background: linear-gradient(135deg, #f06292, #c2185b); }
   .bg-gradient-avatar { background: linear-gradient(135deg, #f48fb1, #c2185b); }
-  .bg-gradient-about  { background: linear-gradient(to right, #fdeef4, #fff9fb); }
+  .bg-gradient-about  { background: linear-gradient(to right, #fdf2f7, #fafafa); }
+
+  /* Smooth Focus Ring */
+  .focus-ring {
+    @apply outline-none ring-2 ring-pink-hot/10 ring-offset-2 border-pink-hot;
+  }
 
   /* Auth divider pseudo-elements */
   .auth-divider-line::before,
