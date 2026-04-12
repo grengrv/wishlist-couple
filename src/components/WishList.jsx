@@ -11,9 +11,9 @@ export default function WishList({ items, onSelectItem }) {
       {items.length > 0 && (
         <p className="text-[13px] font-semibold text-pink-brand uppercase tracking-[0.8px] mb-4">Danh sách ({items.length})</p>
       )}
-      <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {items.length === 0 && (
-          <p className="text-center text-pink-muted text-sm py-12 px-4 bg-white rounded-2xl border border-dashed border-pink-border">
+          <p className="col-span-full text-center text-pink-muted text-sm py-12 px-4 bg-white rounded-2xl border border-dashed border-pink-border">
             Chưa có điều ước nào.<br />Hãy thêm điều đầu tiên nhé ♥
           </p>
         )}

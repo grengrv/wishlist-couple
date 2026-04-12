@@ -25,6 +25,9 @@ export function useWishlist(user, userProfile, groupId = null) {
   const [previewAnh, setPreviewAnh] = useState(null);
   const [dangTai, setDangTai] = useState(false);
   const [keoVao, setKeoVao] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [isImageTooLarge, setIsImageTooLarge] = useState(false);
+  const [pendingFile, setPendingFile] = useState(null);
 
   // Lấy danh sách & đăng ký paste listener khi user đăng nhập
   useEffect(() => {
@@ -61,7 +64,26 @@ export function useWishlist(user, userProfile, groupId = null) {
 
   /** Đọc file ảnh và lưu dưới dạng base64 */
   function chonAnh(file) {
-    if (!file || !file.type.startsWith("image/")) return;
+    if (!file) return;
+    setFormError("");
+    setIsImageTooLarge(false);
+    setPendingFile(null);
+
+    // 1. Kiểm tra định dạng
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!allowedTypes.includes(file.type)) {
+      setFormError("Chỉ chấp nhận ảnh định dạng JPG, PNG, WEBP hoặc GIF.");
+      return;
+    }
+
+    // 2. Kiểm tra kích thước (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setIsImageTooLarge(true);
+      setPendingFile(file);
+      setFormError("Ảnh quá lớn (trên 5MB) không thể lưu trữ.");
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
       setAnhBase64(e.target.result);
@@ -70,15 +92,74 @@ export function useWishlist(user, userProfile, groupId = null) {
     reader.readAsDataURL(file);
   }
 
-  /** Xóa ảnh đang chọn */
+  /** Xử lý nén ảnh bằng Canvas */
+  async function nenAnh() {
+    if (!pendingFile) return;
+    setDangTai(true);
+    setFormError("Đang nén ảnh...");
+
+    try {
+      const dataUrl = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(pendingFile);
+        reader.onload = (e) => {
+          const img = new Image();
+          img.src = e.target.result;
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            let width = img.width;
+            let height = img.height;
+            const MAX_WIDTH = 1280; // Resize to max 1280px width
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL("image/jpeg", 0.7)); // Compress to 70% quality
+          };
+        };
+      });
+
+      setAnhBase64(dataUrl);
+      setPreviewAnh(dataUrl);
+      setIsImageTooLarge(false);
+      setPendingFile(null);
+      setFormError("");
+    } catch (err) {
+      setFormError("Lỗi khi nén ảnh. Thử chọn ảnh khác nhé.");
+    } finally {
+      setDangTai(false);
+    }
+  }
+
+  /** Xóa ảnh đang chọn và reset trạng thái lỗi ảnh */
   function xoaAnh() {
     setAnhBase64(null);
     setPreviewAnh(null);
+    setIsImageTooLarge(false);
+    setPendingFile(null);
+    if (formError.includes("Ảnh")) setFormError("");
   }
 
   /** Thêm item mới vào Firestore, lưu email người thêm */
   async function themMon() {
-    if (tenMon.trim() === "") return;
+    setFormError("");
+    if (tenMon.trim().length < 2) {
+      setFormError("Tên món phải có ít nhất 2 ký tự.");
+      return;
+    }
+    if (tenMon.length > 40) {
+      setFormError("Tên món không được quá 40 ký tự.");
+      return;
+    }
+    if (ghiChu.length > 100) {
+      setFormError("Ghi chú tối đa 100 ký tự.");
+      return;
+    }
+
     setDangTai(true);
 
     const docRef = await addDoc(collection(db, "wishlist"), {
@@ -96,6 +177,7 @@ export function useWishlist(user, userProfile, groupId = null) {
     setGhiChu("");
     xoaAnh();
     setDangTai(false);
+    return true;
   }
 
   /** Xóa item khỏi Firestore (chỉ chủ hoặc admin) */
@@ -120,10 +202,14 @@ export function useWishlist(user, userProfile, groupId = null) {
     previewAnh,
     dangTai,
     keoVao, setKeoVao,
+    formError,
+    isImageTooLarge,
+    setFormError,
     // Actions
     chonAnh,
     xoaAnh,
     themMon,
     xoaMon,
+    nenAnh,
   };
 }

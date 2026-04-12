@@ -5,7 +5,7 @@
 export default function Footer() {
   return (
     <footer className="bg-white border-t border-pink-border py-10 mt-12">
-      <div className="max-w-[680px] mx-auto px-5 w-full flex flex-col md:flex-row justify-between gap-8">
+      <div className="max-w-[1600px] mx-auto px-[5%] md:px-[10%] w-full flex flex-col md:flex-row justify-between gap-8 transition-all duration-500">
         
         {/* Brand */}
         <div className="flex-1">
@@ -36,7 +36,7 @@ export default function Footer() {
       </div>
 
       {/* Copyright & Social */}
-      <div className="max-w-[680px] mx-auto px-5 w-full mt-8 pt-6 border-t border-dashed border-pink-border flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="max-w-[1600px] mx-auto px-[5%] md:px-[10%] w-full mt-8 pt-6 border-t border-dashed border-pink-border flex flex-col sm:flex-row items-center justify-between gap-4 transition-all duration-500">
         <p className="text-xs text-text-footer">
           &copy; {new Date().getFullYear()} Wishlist Couple. Made with ♥
         </p>

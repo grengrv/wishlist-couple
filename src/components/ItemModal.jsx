@@ -39,9 +39,9 @@ export default function ItemModal({ item, onClose, onDelete, user, adminEmail })
           <img src={item.anhUrl} alt={item.ten} className="w-full h-auto max-h-[500px] object-contain block bg-[#f9f0f4]" />
         )}
         <div className="p-6 flex flex-col gap-2.5">
-          <h2 className="text-[22px] font-bold text-text-base">{item.ten}</h2>
+          <h2 className="text-[22px] font-bold text-text-base break-words leading-tight">{item.ten}</h2>
           {item.ghiChu && (
-            <p className="text-[15px] text-text-sub leading-[1.7]">{item.ghiChu}</p>
+            <p className="text-[15px] text-text-sub leading-[1.7] break-all whitespace-pre-wrap">{item.ghiChu}</p>
           )}
           <p className="text-xs text-pink-muted">Thêm ngày {formatNgay(item.taoLuc)}</p>
           

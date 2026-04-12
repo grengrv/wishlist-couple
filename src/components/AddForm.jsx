@@ -2,8 +2,10 @@
  * AddForm component - Form thêm điều ước mới
  * Bao gồm: drop zone ảnh, input tên, textarea ghi chú, nút thêm
  */
+import { useState } from "react";
 import Button from "./ui/Button";
 import Input from "./ui/Input";
+
 export default function AddForm({
   tenMon, setTenMon,
   ghiChu, setGhiChu,
@@ -13,9 +15,19 @@ export default function AddForm({
   chonAnh,
   xoaAnh,
   themMon,
+  formError,
+  isImageTooLarge,
+  nenAnh,
+  setFormError
 }) {
+  const [focusField, setFocusField] = useState(null); // 'ten' | 'note' | null
+
+  const handleCloseError = () => {
+    setFormError("");
+  };
+
   return (
-    <div className="bg-white rounded-[20px] p-7 mb-8 border border-pink-border flex flex-col gap-4">
+    <div className="bg-white rounded-[20px] p-7 mb-8 border border-pink-border flex flex-col gap-4 max-w-3xl mx-auto w-full transition-all duration-500 shadow-sm hover:shadow-md">
       <p className="text-[13px] font-semibold text-pink-brand uppercase tracking-[0.8px]">
         Thêm điều ước mới
       </p>
@@ -67,27 +79,110 @@ export default function AddForm({
           type="file"
           accept="image/*"
           className="hidden"
-          onChange={e => chonAnh(e.target.files[0])}
+          onChange={e => {
+            if (e.target.files?.[0]) {
+              chonAnh(e.target.files[0]);
+              e.target.value = ""; // Quan trọng: Reset value để có thể chọn lại cùng 1 file
+            }
+          }}
         />
       </div>
 
       {/* INPUTS */}
-      <div className="flex flex-col gap-2.5">
-        <Input
-          value={tenMon}
-          onChange={e => setTenMon(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && themMon()}
-          placeholder="Tên món đồ hoặc mục tiêu..."
-        />
-        <Input
-          as="textarea"
-          value={ghiChu}
-          onChange={e => setGhiChu(e.target.value)}
-          placeholder="Ghi chú, mô tả, link sản phẩm..."
-          rows={3}
-        />
-        <Button onClick={themMon} disabled={dangTai}>
-          {dangTai ? "Đang lưu..." : "✦ Thêm vào danh sách"}
+      <div className="flex flex-col gap-3">
+        {/* Tên món */}
+        <div className="relative group/input">
+          <Input
+            value={tenMon}
+            onChange={e => setTenMon(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && themMon()}
+            onFocus={() => setFocusField("ten")}
+            onBlur={() => setFocusField(null)}
+            maxLength={40}
+            placeholder="Tên món đồ... (2-40 ký tự)"
+            className={formError && tenMon.length < 2 ? "border-red-300 focus:border-red-400" : ""}
+          />
+          {focusField === "ten" && (
+            <span className="absolute right-3.5 bottom-2.5 text-[10px] font-bold text-pink-muted/60 pointer-events-none animate-fade-in">
+              {40 - tenMon.length}
+            </span>
+          )}
+        </div>
+
+        {/* Ghi chú */}
+        <div className="relative group/input">
+          <Input
+            as="textarea"
+            value={ghiChu}
+            onChange={e => setGhiChu(e.target.value)}
+            onFocus={() => setFocusField("note")}
+            onBlur={() => setFocusField(null)}
+            maxLength={100}
+            placeholder="Ghi chú ngắn gọn... (Tối đa 100 ký tự)"
+            rows={3}
+          />
+          {focusField === "note" && (
+            <span className="absolute right-3.5 bottom-3 text-[10px] font-bold text-pink-muted/60 pointer-events-none animate-fade-in">
+              {100 - ghiChu.length}
+            </span>
+          )}
+        </div>
+
+        {/* Popup Thông báo lỗi & Gợi ý nén ảnh */}
+        {formError && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center z-[10000] p-6 animate-fade-in" onClick={handleCloseError}>
+            <div 
+              className="bg-white rounded-[24px] w-full max-w-[400px] p-8 shadow-2xl animate-slide-up relative flex flex-col items-center text-center gap-5"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="w-16 h-16 rounded-full bg-pink-faint flex items-center justify-center text-pink-brand mb-1">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+              </div>
+              
+              <div className="flex flex-col gap-2">
+                <h3 className="text-xl font-bold text-text-base">Thông báo</h3>
+                <p className="text-[14px] text-text-sub leading-relaxed">
+                  {formError}
+                </p>
+              </div>
+
+              {isImageTooLarge ? (
+                <div className="flex flex-col gap-3 w-full mt-2">
+                  <button 
+                    onClick={() => { nenAnh(); }}
+                    className="w-full py-3.5 bg-gradient-brand text-white font-bold rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-pink-brand/20"
+                  >
+                    Đồng ý nén ảnh
+                  </button>
+                  <button 
+                    onClick={() => { 
+                      xoaAnh(); 
+                      handleCloseError(); 
+                      setTimeout(() => document.getElementById("file-input").click(), 0);
+                    }}
+                    className="w-full py-3 text-pink-brand font-bold rounded-2xl border border-pink-border hover:bg-pink-brand hover:text-white hover:border-transparent transition-all"
+                  >
+                    Chọn ảnh khác
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={handleCloseError}
+                  className="w-full mt-2 py-3.5 bg-pink-faint text-pink-brand font-bold rounded-2xl hover:bg-pink-light/20 transition-all"
+                >
+                  Đã hiểu
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        <Button onClick={themMon} disabled={dangTai || (isImageTooLarge && !previewAnh)}>
+          {dangTai ? "Đang xử lý..." : "✦ Thêm vào danh sách"}
         </Button>
       </div>
     </div>

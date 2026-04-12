@@ -24,7 +24,7 @@ export default function GroupDetailPage({ user, userProfile }) {
   const [editDesc, setEditDesc] = useState("");
   
   const {
-    items, tenMon, setTenMon, ghiChu, setGhiChu, previewAnh, dangTai, keoVao, setKeoVao, chonAnh, xoaAnh, themMon, xoaMon
+    items, xoaMon,
   } = useWishlist(user, userProfile, id); // pass groupId parameter!
 
   useEffect(() => {
@@ -91,7 +91,7 @@ export default function GroupDetailPage({ user, userProfile }) {
   if (!group) return <p className="py-10 text-center text-pink-brand animate-pulse">Đang tải phòng...</p>;
 
   return (
-    <div className="py-10 max-w-[680px] mx-auto w-full">
+    <div className="py-10 mx-auto w-full transition-all duration-500">
        <button onClick={() => navigate("/groups")} className="text-sm font-semibold text-pink-muted hover:text-pink-brand mb-4 flex items-center gap-1 transition-colors">
          <span className="text-lg leading-none">←</span> Quay lại danh sách
        </button>
@@ -114,23 +114,23 @@ export default function GroupDetailPage({ user, userProfile }) {
                </div>
             ) : (
                <>
-                 <div className="flex items-center gap-3">
-                   <h2 className="text-[26px] sm:text-[30px] font-bold text-deep-red tracking-tight leading-tight truncate">
+                 <div className="flex items-end gap-3 mb-1">
+                   <h2 className="text-[28px] sm:text-[32px] font-bold text-pink-brand tracking-tight leading-tight break-words">
                      {group.name}
                    </h2>
                    {isOwner && (
-                     <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                       <button onClick={() => setIsEditing(true)} className="p-2 text-pink-brand hover:bg-pink-50 rounded-md transition-colors" title="Sửa tên nhóm">
-                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                     <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity pb-0.5">
+                       <button onClick={() => setIsEditing(true)} className="p-1.5 text-pink-brand hover:bg-pink-50 rounded-lg transition-colors" title="Sửa tên nhóm">
+                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                        </button>
-                       <button onClick={handleXoaGroup} className="p-2 text-pink-brand hover:text-red-500 hover:bg-red-50 rounded-md transition-colors" title="Giải tán nhóm này">
-                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                       <button onClick={handleXoaGroup} className="p-1.5 text-pink-brand hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Giải tán nhóm này">
+                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                        </button>
                      </div>
                    )}
                  </div>
                  {group.description && (
-                   <p className="mt-2 text-sm text-text-sub line-clamp-2 leading-relaxed">
+                   <p className="mt-2 text-sm text-text-sub leading-relaxed break-words whitespace-pre-wrap">
                      {group.description}
                    </p>
                  )}
@@ -161,27 +161,31 @@ export default function GroupDetailPage({ user, userProfile }) {
             </div>
           </div>
 
-          <Button 
-            onClick={handleInvite} 
-            className="shrink-0 w-full sm:w-auto h-[48px] sm:min-w-[200px] text-[15px] font-semibold shadow-[0_4px_14px_rgba(194,24,91,0.2)] hover:-translate-y-1 hover:shadow-[0_6px_20px_rgba(194,24,91,0.3)] transition-all duration-300 flex items-center justify-center"
-          >
-            <span className="flex items-center justify-center gap-2.5">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-              Mời tham gia
-            </span>
-          </Button>
+          <div className="flex items-center gap-3 shrink-0">
+            <button 
+              onClick={() => navigate(`/add/${id}`)} 
+              title="Thêm wish"
+              className="w-12 h-12 rounded-2xl bg-gradient-brand text-white flex items-center justify-center shadow-lg shadow-pink-brand/20 hover:scale-[1.05] active:scale-[0.95] transition-all font-bold"
+            >
+              <span className="text-xl">✦</span>
+            </button>
+            <button 
+              onClick={handleInvite} 
+              title="Mời tham gia"
+              className="w-12 h-12 rounded-2xl bg-white border border-pink-border text-pink-brand flex items-center justify-center shadow-sm hover:bg-pink-faint transition-all shrink-0"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="18" cy="5" r="3"></circle>
+                <circle cx="6" cy="12" r="3"></circle>
+                <circle cx="18" cy="19" r="3"></circle>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+              </svg>
+            </button>
+          </div>
        </div>
 
        <Stats items={items} />
-
-       <AddForm
-         tenMon={tenMon} setTenMon={setTenMon}
-         ghiChu={ghiChu} setGhiChu={setGhiChu}
-         previewAnh={previewAnh} dangTai={dangTai}
-         keoVao={keoVao} setKeoVao={setKeoVao}
-         chonAnh={chonAnh} xoaAnh={xoaAnh}
-         themMon={themMon}
-       />
 
        <WishList items={items} onSelectItem={setSelectedItem} />
 

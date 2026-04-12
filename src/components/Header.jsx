@@ -19,7 +19,8 @@ export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
         {/* Desktop Nav - Centered Absolutely */}
         {user && (
           <nav className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2 h-full">
-             <Link to="/" className={`text-sm h-full flex items-center transition-colors border-b-2 ${pathname === '/' ? 'text-pink-brand font-semibold border-pink-brand' : 'text-text-sub font-medium border-transparent hover:text-pink-brand'}`}>Cá nhân</Link>
+             <Link to="/" className={`text-sm h-full flex items-center transition-colors border-b-2 ${pathname === '/' ? 'text-pink-brand font-semibold border-pink-brand' : 'text-text-sub font-medium border-transparent hover:text-pink-brand'}`}>Trang chủ</Link>
+             <Link to="/personal" className={`text-sm h-full flex items-center transition-colors border-b-2 ${pathname === '/personal' ? 'text-pink-brand font-semibold border-pink-brand' : 'text-text-sub font-medium border-transparent hover:text-pink-brand'}`}>Cá nhân</Link>
              <Link to="/groups" className={`text-sm h-full flex items-center transition-colors border-b-2 ${pathname.startsWith('/groups') ? 'text-pink-brand font-semibold border-pink-brand' : 'text-text-sub font-medium border-transparent hover:text-pink-brand'}`}>Nhóm</Link>
           </nav>
         )}
@@ -69,7 +70,8 @@ export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
         <div className="md:hidden bg-white border-b border-pink-border px-5 py-4 flex flex-col gap-4 animate-fade-in absolute w-full shadow-lg">
            {user && (
              <>
-               <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className={`font-medium ${pathname === '/' ? 'text-pink-brand font-semibold' : 'text-text-sub'}`}>Cá nhân</Link>
+               <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className={`font-medium ${pathname === '/' ? 'text-pink-brand font-semibold' : 'text-text-sub'}`}>Trang chủ</Link>
+               <Link to="/personal" onClick={() => setIsMobileMenuOpen(false)} className={`font-medium ${pathname === '/personal' ? 'text-pink-brand font-semibold' : 'text-text-sub'}`}>Cá nhân</Link>
                <Link to="/groups" onClick={() => setIsMobileMenuOpen(false)} className={`font-medium ${pathname.startsWith('/groups') ? 'text-pink-brand font-semibold' : 'text-text-sub'}`}>Nhóm</Link>
                <hr className="border-pink-border border-dashed" />
              </>

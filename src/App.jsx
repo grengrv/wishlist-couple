@@ -16,6 +16,8 @@ import HomePage from "./pages/HomePage";
 import GroupsPage from "./pages/GroupsPage";
 import GroupDetailPage from "./pages/GroupDetailPage";
 import InvitePage from "./pages/InvitePage";
+import AddWishPage from "./pages/AddWishPage";
+import PersonalPage from "./pages/PersonalPage";
 
 function App() {
   const [userProfile, setUserProfile] = useState(null);
@@ -65,7 +67,7 @@ function App() {
         onLogout={() => signOut(auth)} 
       />
 
-      <main className="flex-1 w-full max-w-7xl mx-auto px-5 flex flex-col">
+      <main className="flex-1 w-full max-w-[1600px] mx-auto px-[5%] md:px-[10%] flex flex-col transition-all duration-500">
         {!user ? (
           <Auth />
         ) : user.email === ADMIN_EMAIL ? (
@@ -83,9 +85,12 @@ function App() {
 
             <Routes>
               <Route path="/" element={<HomePage user={user} userProfile={userProfile} />} />
+              <Route path="/personal" element={<PersonalPage user={user} userProfile={userProfile} />} />
               <Route path="/groups" element={<GroupsPage user={user} />} />
               <Route path="/groups/:id" element={<GroupDetailPage user={user} userProfile={userProfile} />} />
               <Route path="/invite/:id" element={<InvitePage user={user} />} />
+              <Route path="/add" element={<AddWishPage user={user} userProfile={userProfile} />} />
+              <Route path="/add/:groupId" element={<AddWishPage user={user} userProfile={userProfile} />} />
             </Routes>
           </div>
         )}

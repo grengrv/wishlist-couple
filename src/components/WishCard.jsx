@@ -13,8 +13,8 @@ export default function WishCard({ item, onClick }) {
         <img src={item.anhUrl} alt={item.ten} className="w-[120px] object-cover shrink-0" />
       )}
       <div className="px-4 py-3.5 pr-10 flex-1 flex flex-col justify-center gap-1.5">
-        <h3 className="text-base font-semibold text-text-base leading-[1.4]">{item.ten}</h3>
-        {item.ghiChu && <p className="text-[13px] text-text-light leading-[1.6]">{item.ghiChu}</p>}
+        <h3 className="text-base font-semibold text-text-base leading-[1.4] break-words">{item.ten}</h3>
+        {item.ghiChu && <p className="text-[13px] text-text-light leading-[1.6] break-words whitespace-pre-wrap">{item.ghiChu}</p>}
         {/* Avatar + username người thêm */}
         <div className="flex items-center gap-1.5 mt-2">
           <Avatar src={item.avatarNguoiThem} name={item.themBoi} size="sm" />
