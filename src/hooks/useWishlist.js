@@ -4,6 +4,7 @@ import {
   collection, addDoc, getDocs,
   deleteDoc, doc, orderBy, query
 } from "firebase/firestore";
+import { ADMIN_EMAIL } from "../constants";
 
 /**
  * Custom hook quản lý toàn bộ logic dữ liệu wishlist:
@@ -73,6 +74,7 @@ export function useWishlist(user) {
       anhUrl: anhBase64 || null,
       taoLuc: new Date(),
       themBoi: user?.email || null,
+      uid: user.uid
     });
 
     setItems(prev => [
@@ -84,6 +86,7 @@ export function useWishlist(user) {
         anhUrl: anhBase64,
         taoLuc: new Date(),
         themBoi: user?.email || null,
+        uid: user.uid
       },
     ]);
 
@@ -93,10 +96,18 @@ export function useWishlist(user) {
     setDangTai(false);
   }
 
-  /** Xóa item khỏi Firestore */
+  /** Xóa item khỏi Firestore (chỉ chủ hoặc admin) */
   async function xoaMon(id) {
+    const item = items.find(i => i.id === id);
+
+    // Chặn nếu không phải chủ và không phải admin
+    if (item?.uid && item.uid !== user.uid && user.email !== ADMIN_EMAIL) {
+      alert("Bạn không thể xóa wishlist của người khác!");
+      return;
+    }
+
     await deleteDoc(doc(db, "wishlist", id));
-    setItems(prev => prev.filter(item => item.id !== id));
+    setItems(prev => prev.filter(i => i.id !== id));
   }
 
   return {

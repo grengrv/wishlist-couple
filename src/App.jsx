@@ -12,9 +12,9 @@ import WishList from "./components/WishList";
 import ItemModal from "./components/ItemModal";
 import Auth from "./auths/Auth";
 import Admin from "./Admin/Admin";
-
-// ← Đổi thành email của bạn để có quyền admin
-const ADMIN_EMAIL = "admin@wishlist.com";
+import { ADMIN_EMAIL } from "./constants";
+import AboutSection from "./components/AboutSection";
+import Footer from "./components/Footer";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -77,6 +77,8 @@ function App() {
         </button>
       </div>
 
+      <AboutSection />
+
       <Stats items={items} />
 
       <AddForm
@@ -96,7 +98,11 @@ function App() {
         item={selectedItem}
         onClose={() => setSelectedItem(null)}
         onDelete={handleXoa}
+        user={user}
+        adminEmail={ADMIN_EMAIL}
       />
+
+      <Footer />
     </div>
   );
 }

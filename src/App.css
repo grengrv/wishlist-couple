@@ -579,3 +579,89 @@ body {
   background: #fdeef4;
   border-color: #c2185b;
 }
+
+/* ═══════════════════════════════
+   NEW SECTIONS (Hero, About, Footer)
+═══════════════════════════════ */
+
+.hero-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 3rem;
+  padding: 2rem;
+  background: white;
+  border-radius: 20px;
+  border: 1px solid #f5dde8;
+  box-shadow: 0 10px 25px rgba(194, 24, 91, 0.05);
+}
+
+.hero-content h2 {
+  font-size: 26px;
+  font-weight: 700;
+  color: #b5235a;
+  margin-bottom: 12px;
+}
+
+.hero-body-copy {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #777;
+  margin-bottom: 24px;
+}
+
+.hero-image-wrapper {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  border: 4px solid #fff;
+}
+
+.hero-image {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.about-section {
+  margin-bottom: 3rem;
+  padding: 1.5rem;
+  background: linear-gradient(to right, #fdeef4, #fff9fb);
+  border-radius: 16px;
+  border-left: 4px solid #f0a8c0;
+}
+
+.about-subheader {
+  font-size: 18px;
+  font-weight: 600;
+  color: #c2185b;
+  margin-bottom: 8px;
+}
+
+.about-body-copy {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #555;
+}
+
+.footer {
+  text-align: center;
+  padding: 3rem 1rem 1rem;
+  margin-top: 2rem;
+  border-top: 1px dashed #f5dde8;
+}
+
+.footer-heart {
+  font-size: 14px;
+  font-weight: 600;
+  color: #d4a0b5;
+  margin-bottom: 4px;
+}
+
+.footer-subtext {
+  font-size: 12px;
+  color: #bbb;
+}

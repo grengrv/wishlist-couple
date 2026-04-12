@@ -15,6 +15,11 @@ export default function WishCard({ item, onClick }) {
         <h3 className="card-ten">{item.ten}</h3>
         {item.ghiChu && <p className="card-ghichu">{item.ghiChu}</p>}
         <p className="card-date">{formatNgay(item.taoLuc)}</p>
+        {item.themBoi && (
+          <p className="card-date" style={{ marginTop: 2 }}>
+            Bởi: {item.themBoi}
+          </p>
+        )}
       </div>
       <div className="card-arrow">›</div>
     </div>
