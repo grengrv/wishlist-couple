@@ -7,6 +7,8 @@ import {
     updateProfile
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
+import Button from "../components/ui/Button";
+import Input from "../components/ui/Input";
 
 export default function Auth() {
     const [mode, setMode] = useState("login");
@@ -63,64 +65,62 @@ export default function Auth() {
     }
 
     return (
-        <div className="auth-wrap">
-            <div className="auth-box">
-                <div className="auth-header">
-                    <h1>Wishlist của chúng mình <span className="heart">♥</span></h1>
-                    <p>Những điều mơ ước cùng nhau</p>
+        <div className="flex items-center justify-center p-6 py-10">
+            <div className="bg-white rounded-[20px] border border-pink-border p-8 w-full max-w-[400px] shadow-[0_4px_24px_rgba(194,24,91,0.06)]">
+                <div className="text-center mb-6">
+                    <h1 className="text-2xl font-bold text-deep-red">Wishlist của chúng mình <span className="inline-block text-pink-hot animate-beat">♥</span></h1>
+                    <p className="text-[13px] text-pink-soft mt-1">Những điều mơ ước cùng nhau</p>
                 </div>
 
-                <div className="auth-tabs">
+                <div className="flex border border-pink-border rounded-xl overflow-hidden mb-5">
                     <button
-                        className={`auth-tab ${mode === "login" ? "active" : ""}`}
+                        className={`flex-1 p-2.5 border-none bg-white text-sm cursor-pointer transition-all duration-150 ${mode === "login" ? "bg-pink-pale text-pink-brand font-semibold" : "text-pink-soft font-medium"}`}
                         onClick={() => { setMode("login"); setError(""); }}
                     >
                         Đăng nhập
                     </button>
                     <button
-                        className={`auth-tab ${mode === "register" ? "active" : ""}`}
+                        className={`flex-1 p-2.5 border-none bg-white text-sm cursor-pointer transition-all duration-150 ${mode === "register" ? "bg-pink-pale text-pink-brand font-semibold" : "text-pink-soft font-medium"}`}
                         onClick={() => { setMode("register"); setError(""); }}
                     >
                         Đăng ký
                     </button>
                 </div>
 
-                <div className="auth-form">
+                <div className="flex flex-col gap-2.5">
                     {mode === "register" && (
-                        <input
-                            className="inp"
+                        <Input
                             type="text"
                             placeholder="Username"
                             value={username}
                             onChange={e => setUsername(e.target.value)}
                         />
                     )}
-                    <input
-                        className="inp"
+                    <Input
                         type="email"
                         placeholder="Email"
                         value={email}
                         onChange={e => setEmail(e.target.value)}
                         onKeyDown={e => e.key === "Enter" && handleSubmit()}
                     />
-                    <input
-                        className="inp"
+                    <Input
                         type="password"
                         placeholder="Mật khẩu"
                         value={password}
                         onChange={e => setPassword(e.target.value)}
                         onKeyDown={e => e.key === "Enter" && handleSubmit()}
                     />
-                    {error && <p className="auth-error">{error}</p>}
-                    <button className="btn-them" onClick={handleSubmit} disabled={loading}>
+                    {error && <p className="text-[13px] text-pink-brand bg-pink-pale px-3 py-2 rounded-lg text-center">{error}</p>}
+                    
+                    <Button onClick={handleSubmit} disabled={loading}>
                         {loading ? "Đang xử lý..." : mode === "login" ? "Đăng nhập" : "Đăng ký"}
-                    </button>
+                    </Button>
 
-                    <div className="auth-divider"><span>hoặc</span></div>
+                    <div className="flex items-center gap-2.5 text-pink-muted text-[13px] auth-divider-line py-1"><span>hoặc</span></div>
 
-                    <button className="btn-anonymous" onClick={handleAnonymous} disabled={loading}>
+                    <Button variant="ghost" onClick={handleAnonymous} disabled={loading}>
                         Dùng thử không cần đăng ký
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

@@ -1,3 +1,86 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════
+   DESIGN TOKENS — Custom colors, fonts
+   Dùng var(--color-*) hoặc class text-pink-brand v.v.
+═══════════════════════════════════════════ */
+@theme {
+  /* Brand colors */
+  --color-pink-brand:   #c2185b;
+  --color-pink-deep:    #b5235a;
+  --color-pink-hot:     #e91e8c;
+  --color-pink-light:   #f0a8c0;
+  --color-pink-pale:    #fdeef4;
+  --color-pink-faint:   #fff9fb;
+  --color-pink-border:  #f5dde8;
+  --color-pink-muted:   #d4a0b5;
+  --color-pink-soft:    #b0889a;
+
+  /* Text */
+  --color-text-base:    #2d2d2d;
+  --color-text-sub:     #777;
+  --color-text-light:   #999;
+  --color-text-footer:  #bbb;
+
+  /* Background */
+  --color-body-bg:      #fdf6f9;
+
+  /* Font */
+  --font-sans: 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ═══════════════════════════════════════════
+   GLOBAL BASE
+═══════════════════════════════════════════ */
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-body-bg);
+  color: var(--color-text-base);
+  min-height: 100vh;
+}
+
 #root {
   width: 100%;
+}
+
+/* ═══════════════════════════════════════════
+   ANIMATIONS — Không có sẵn trong Tailwind
+═══════════════════════════════════════════ */
+@keyframes beat {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.25); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════
+   UTILITY CLASSES — Gradients & Animations
+═══════════════════════════════════════════ */
+@layer utilities {
+  /* Animations */
+  .animate-beat     { animation: beat 1.2s ease infinite; }
+  .animate-fade-in  { animation: fadeIn 0.2s ease; }
+  .animate-slide-up { animation: slideUp 0.25s ease; }
+
+  /* Gradients (không thể dùng Tailwind thuần) */
+  .bg-gradient-brand  { background: linear-gradient(135deg, #e91e8c, #c2185b); }
+  .bg-gradient-avatar { background: linear-gradient(135deg, #f48fb1, #c2185b); }
+  .bg-gradient-about  { background: linear-gradient(to right, #fdeef4, #fff9fb); }
+
+  /* Auth divider pseudo-elements */
+  .auth-divider-line::before,
+  .auth-divider-line::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--color-pink-border);
+  }
 }

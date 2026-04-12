@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import { formatNgay } from "../utils/formatDate";
+import Avatar from "./ui/Avatar";
+import Button from "./ui/Button";
 
 /**
  * ItemModal component - Modal xem chi tiết và xóa item
@@ -30,36 +32,33 @@ export default function ItemModal({ item, onClose, onDelete, user, adminEmail })
   if (!item) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose}>×</button>
+    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-[9999] p-6 animate-fade-in" onClick={onClose}>
+      <div className="bg-white rounded-[20px] w-full max-w-[500px] max-h-[90vh] overflow-y-auto relative animate-slide-up" onClick={e => e.stopPropagation()}>
+        <button className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/30 border-none text-white text-xl cursor-pointer flex items-center justify-center leading-none z-10" onClick={onClose}>×</button>
         {item.anhUrl && (
-          <img src={item.anhUrl} alt={item.ten} className="modal-img" />
+          <img src={item.anhUrl} alt={item.ten} className="w-full h-auto max-h-[500px] object-contain block bg-[#f9f0f4]" />
         )}
-        <div className="modal-body">
-          <h2 className="modal-ten">{item.ten}</h2>
+        <div className="p-6 flex flex-col gap-2.5">
+          <h2 className="text-[22px] font-bold text-text-base">{item.ten}</h2>
           {item.ghiChu && (
-            <p className="modal-ghichu">{item.ghiChu}</p>
+            <p className="text-[15px] text-text-sub leading-[1.7]">{item.ghiChu}</p>
           )}
-          <p className="modal-date">Thêm ngày {formatNgay(item.taoLuc)}</p>
-          <div className="card-author" style={{ marginTop: "4px", marginBottom: "16px" }}>
-            {item.avatarNguoiThem ? (
-              <img src={item.avatarNguoiThem} alt="avatar" className="card-author-avatar" />
-            ) : (
-              <div className="card-author-initials">
-                {(item.themBoi?.[0] || "?").toUpperCase()}
-              </div>
-            )}
-            <span className="card-author-name">{item.themBoi || "Ẩn danh"}</span>
+          <p className="text-xs text-pink-muted">Thêm ngày {formatNgay(item.taoLuc)}</p>
+          
+          <div className="flex items-center gap-2 mt-1 mb-4">
+            <Avatar src={item.avatarNguoiThem} name={item.themBoi} size="sm" />
+            <span className="text-xs font-semibold text-pink-brand">{item.themBoi || "Ẩn danh"}</span>
           </div>
+
           {/* Chỉ hiện nút xóa nếu là chủ hoặc admin */}
           {(!item.uid || item.uid === user?.uid || user?.email === adminEmail) && (
-            <button
-              className="modal-btn-xoa"
+            <Button
+              variant="danger"
+              className="mt-1.5"
               onClick={() => onDelete(item.id)}
             >
               Xóa khỏi danh sách
-            </button>
+            </Button>
           )}
         </div>
       </div>

@@ -1,11 +1,88 @@
 /**
  * Header component - Tiêu đề trang
  */
-export default function Header() {
+import { useState } from "react";
+import Button from "./ui/Button";
+import Avatar from "./ui/Avatar";
+
+export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   return (
-    <div className="header">
-      <h1>Wishlist của chúng mình <span className="heart">♥</span></h1>
-      <p>Những điều mơ ước cùng nhau</p>
-    </div>
+    <header className="bg-white/80 backdrop-blur-md border-b border-pink-border sticky top-0 z-50">
+      <div className="w-full px-5 md:px-8 lg:px-14 xl:px-16 mx-auto h-16 flex items-center justify-between">
+        {/* Logo */}
+        <div className="flex items-center gap-2 cursor-pointer">
+           <h1 className="text-[20px] font-bold text-deep-red tracking-tight">Wishlist <span className="text-pink-hot inline-block animate-beat">♥</span></h1>
+        </div>
+
+        {/* Desktop Nav */}
+        <nav className="hidden md:flex items-center gap-8">
+           <a href="#" className="text-sm font-semibold text-pink-brand border-b-2 border-pink-brand py-[21px]">Trang chủ</a>
+           <a href="#" className="text-sm font-medium text-text-sub hover:text-pink-brand transition-colors">Khám phá</a>
+        </nav>
+
+        {/* Desktop User / Auth */}
+        <div className="hidden md:flex items-center gap-4">
+           {!user ? (
+             <Button variant="outline" size="sm" onClick={() => window.scrollTo(0,0)}>Đăng nhập</Button>
+           ) : (
+             <div className="flex items-center gap-4">
+               <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" onClick={onOpenProfile}>
+                 <Avatar src={userProfile?.avatar} name={userProfile?.username || user.email} size="sm" />
+                 <span className="text-sm font-semibold text-text-base">
+                   {user.isAnonymous ? "Khách ẩn danh" : (userProfile?.username || user.email?.split("@")[0])}
+                 </span>
+               </div>
+               <div className="w-[1px] h-4 bg-pink-border"></div>
+               <button onClick={onLogout} className="text-[13px] font-semibold text-pink-muted hover:text-pink-brand transition-colors">Đăng xuất</button>
+             </div>
+           )}
+        </div>
+
+        {/* Mobile Toggle */}
+        <button 
+          className="md:hidden text-text-base p-1"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            {isMobileMenuOpen ? (
+              <>
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </>
+            ) : (
+              <>
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+              </>
+            )}
+          </svg>
+        </button>
+      </div>
+
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden bg-white border-b border-pink-border px-5 py-4 flex flex-col gap-4 animate-fade-in absolute w-full shadow-lg">
+           <a href="#" className="font-semibold text-pink-brand">Trang chủ</a>
+           <a href="#" className="font-medium text-text-sub">Khám phá</a>
+           <hr className="border-pink-border border-dashed" />
+           {!user ? (
+             <Button variant="outline" className="w-full justify-center" onClick={() => setIsMobileMenuOpen(false)}>Đăng nhập / Đăng ký</Button>
+           ) : (
+             <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3" onClick={() => { onOpenProfile(); setIsMobileMenuOpen(false); }}>
+                  <Avatar src={userProfile?.avatar} name={userProfile?.username || user.email} size="sm" />
+                  <span className="text-sm font-semibold text-text-base">
+                    {user.isAnonymous ? "Khách ẩn danh" : (userProfile?.username || user.email?.split("@")[0])}
+                  </span>
+                </div>
+                <button onClick={() => { onLogout(); setIsMobileMenuOpen(false); }} className="text-sm font-semibold text-pink-brand px-3 py-1.5 border border-pink-light rounded-lg">Thoát</button>
+             </div>
+           )}
+        </div>
+      )}
+    </header>
   );
 }

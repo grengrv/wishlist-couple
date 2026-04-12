@@ -2,6 +2,8 @@ import { useState } from "react";
 import { auth, db } from "./firebase";
 import { updateProfile } from "firebase/auth";
 import { doc, setDoc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
+import Button from "./components/ui/Button";
+import Input from "./components/ui/Input";
 
 export default function Profile({ userProfile, onClose, onUpdate }) {
     const [username, setUsername] = useState(userProfile?.username || "");
@@ -81,20 +83,19 @@ export default function Profile({ userProfile, onClose, onUpdate }) {
     }
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal" onClick={e => e.stopPropagation()}
-                style={{ maxWidth: "420px" }}>
-                <button className="modal-close" onClick={onClose}>×</button>
+        <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-[9999] p-6 animate-fade-in" onClick={onClose}>
+            <div className="bg-white rounded-[20px] w-full max-w-[420px] max-h-[90vh] overflow-y-auto relative animate-slide-up" onClick={e => e.stopPropagation()}>
+                <button className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/30 hover:bg-black/40 border-none text-white text-xl cursor-pointer flex items-center justify-center leading-none z-10 transition-colors" onClick={onClose}>×</button>
 
-                <div className="modal-body">
-                    <h2 className="modal-ten" style={{ marginBottom: "1.5rem" }}>
+                <div className="p-6 flex flex-col gap-2.5">
+                    <h2 className="text-[22px] font-bold text-text-base mb-6">
                         Cập nhật thông tin
                     </h2>
 
                     {/* Avatar */}
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "1.5rem" }}>
+                    <div className="flex flex-col items-center mb-6">
                         <div
-                            className={`avatar-upload ${keoVao ? "drag-over" : ""}`}
+                            className={`relative w-[110px] h-[110px] rounded-full cursor-pointer overflow-hidden border-[3px] border-pink-light transition-colors duration-200 group flex items-center justify-center shrink-0 ${keoVao ? "border-pink-brand" : "hover:border-pink-brand"}`}
                             onDragOver={e => { e.preventDefault(); setKeoVao(true); }}
                             onDragLeave={() => setKeoVao(false)}
                             onDrop={e => {
@@ -105,13 +106,13 @@ export default function Profile({ userProfile, onClose, onUpdate }) {
                             onClick={() => document.getElementById("avatar-input").click()}
                         >
                             {avatarPreview ? (
-                                <img src={avatarPreview} alt="avatar" className="avatar-img-large" />
+                                <img src={avatarPreview} alt="avatar" className="w-full h-full object-cover block" />
                             ) : (
-                                <div className="avatar-placeholder-large">
+                                <div className="w-full h-full bg-gradient-avatar text-white text-[42px] font-bold flex items-center justify-center">
                                     {userProfile?.username?.[0]?.toUpperCase() || "?"}
                                 </div>
                             )}
-                            <div className="avatar-overlay">
+                            <div className="absolute inset-0 bg-black/35 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                                     <circle cx="12" cy="13" r="4" />
@@ -121,41 +122,38 @@ export default function Profile({ userProfile, onClose, onUpdate }) {
                                 id="avatar-input"
                                 type="file"
                                 accept="image/*"
-                                style={{ display: "none" }}
+                                className="hidden"
                                 onChange={e => chonAvatar(e.target.files[0])}
                             />
                         </div>
-                        <p style={{ fontSize: "12px", color: "#b0889a", marginTop: "8px" }}>
+                        <p className="text-xs text-pink-soft mt-2">
                             Nhấn hoặc kéo thả ảnh để thay đổi
                         </p>
                     </div>
 
                     {/* Username */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                        <input
-                            className="inp"
+                    <div className="flex flex-col gap-2.5">
+                        <Input
                             type="text"
                             placeholder="Username"
                             value={username}
                             onChange={e => setUsername(e.target.value)}
                         />
-                        <input
-                            className="inp"
+                        <Input
                             type="email"
                             value={auth.currentUser?.email || "Khách ẩn danh"}
                             disabled
-                            style={{ opacity: 0.5, cursor: "not-allowed" }}
+                            className="!opacity-50 !cursor-not-allowed"
                         />
                     </div>
 
-                    <button
-                        className="btn-them"
+                    <Button
                         onClick={luuThongTin}
                         disabled={loading}
-                        style={{ marginTop: "1rem" }}
+                        className="mt-4"
                     >
                         {success ? "Đã lưu!" : loading ? "Đang lưu..." : "Lưu thông tin"}
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

@@ -9,11 +9,11 @@ export default function WishList({ items, onSelectItem }) {
   return (
     <>
       {items.length > 0 && (
-        <p className="list-title">Danh sách ({items.length})</p>
+        <p className="text-[13px] font-semibold text-pink-brand uppercase tracking-[0.8px] mb-4">Danh sách ({items.length})</p>
       )}
-      <div className="list">
+      <div className="flex flex-col gap-3">
         {items.length === 0 && (
-          <p className="empty">
+          <p className="text-center text-pink-muted text-sm py-12 px-4 bg-white rounded-2xl border border-dashed border-pink-border">
             Chưa có điều ước nào.<br />Hãy thêm điều đầu tiên nhé ♥
           </p>
         )}

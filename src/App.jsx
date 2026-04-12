@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import "./App.css";
 
 import { auth, db } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -20,6 +19,8 @@ import Admin from "./Admin/Admin";
 import { ADMIN_EMAIL } from "./constants";
 import AboutSection from "./components/AboutSection";
 import Footer from "./components/Footer";
+import Avatar from "./components/ui/Avatar";
+import Button from "./components/ui/Button";
 
 function App() {
   const [userProfile, setUserProfile] = useState(null);
@@ -76,83 +77,66 @@ function App() {
     );
   }
 
-  // ── Chưa đăng nhập → hiện màn hình Auth ──
-  if (!user) return <Auth />;
-
-  // ── Là admin → hiện trang Admin ──
-  if (user.email === ADMIN_EMAIL) return <Admin />;
-
-  // ── Người dùng thường → hiện wishlist ──
+  // ── Cấu trúc Web Component ──
   return (
-    <div className="app">
-      <Header />
+    <div className="min-h-screen flex flex-col bg-body-bg relative">
+      <Header 
+        user={user} 
+        userProfile={userProfile} 
+        onOpenProfile={() => setShowProfile(true)} 
+        onLogout={() => signOut(auth)} 
+      />
 
-      {/* Thanh trạng thái đăng nhập */}
-      <div className="admin-bar">
-        {/* Avatar + Username */}
-        <div
-          className="user-info"
-          onClick={() => !user.isAnonymous && setShowProfile(true)}
-          style={{ cursor: user.isAnonymous ? "default" : "pointer" }}
-        >
-          {userProfile?.avatar ? (
-            <img src={userProfile.avatar} alt="avatar" className="avatar-small" />
-          ) : (
-            <div className="avatar-initials">
-              {user.isAnonymous
-                ? "?"
-                : (userProfile?.username?.[0] || user.email?.[0] || "?").toUpperCase()}
+      <main className="flex-1 w-full max-w-[680px] mx-auto px-5 flex flex-col">
+        {!user ? (
+          <Auth />
+        ) : user.email === ADMIN_EMAIL ? (
+          <Admin />
+        ) : (
+          <div className="py-10">
+            <div className="text-center mb-10">
+              <h2 className="text-[28px] font-bold text-deep-red tracking-[-0.5px]">
+                Không gian của chúng mình
+              </h2>
+              <p className="mt-1.5 text-sm text-pink-soft">Mảnh đất nuôi dưỡng những phép màu bé nhỏ</p>
             </div>
-          )}
-          <div>
-            <p className="user-name">
-              {user.isAnonymous ? "Khách ẩn danh" : (userProfile?.username || user.email)}
-            </p>
-            {!user.isAnonymous && (
-              <p className="user-edit">Chỉnh sửa hồ sơ</p>
+
+            {/* Modal Profile */}
+            {showProfile && (
+              <Profile
+                userProfile={userProfile}
+                onClose={() => setShowProfile(false)}
+                onUpdate={(updated) => setUserProfile(prev => ({ ...prev, ...updated }))}
+              />
             )}
+
+            <AboutSection />
+
+            <Stats items={items} />
+
+            <AddForm
+              tenMon={tenMon} setTenMon={setTenMon}
+              ghiChu={ghiChu} setGhiChu={setGhiChu}
+              previewAnh={previewAnh}
+              dangTai={dangTai}
+              keoVao={keoVao} setKeoVao={setKeoVao}
+              chonAnh={chonAnh}
+              xoaAnh={xoaAnh}
+              themMon={themMon}
+            />
+
+            <WishList items={items} onSelectItem={setSelectedItem} />
+
+            <ItemModal
+              item={selectedItem}
+              onClose={() => setSelectedItem(null)}
+              onDelete={handleXoa}
+              user={user}
+              adminEmail={ADMIN_EMAIL}
+            />
           </div>
-        </div>
-
-        {/* Nút đăng xuất */}
-        <button className="btn-logout" onClick={() => signOut(auth)}>
-          {user.isAnonymous ? "Thoát" : "Đăng xuất"}
-        </button>
-      </div>
-
-      {/* Modal Profile */}
-      {showProfile && (
-        <Profile
-          userProfile={userProfile}
-          onClose={() => setShowProfile(false)}
-          onUpdate={(updated) => setUserProfile(prev => ({ ...prev, ...updated }))}
-        />
-      )}
-
-      <AboutSection />
-
-      <Stats items={items} />
-
-      <AddForm
-        tenMon={tenMon} setTenMon={setTenMon}
-        ghiChu={ghiChu} setGhiChu={setGhiChu}
-        previewAnh={previewAnh}
-        dangTai={dangTai}
-        keoVao={keoVao} setKeoVao={setKeoVao}
-        chonAnh={chonAnh}
-        xoaAnh={xoaAnh}
-        themMon={themMon}
-      />
-
-      <WishList items={items} onSelectItem={setSelectedItem} />
-
-      <ItemModal
-        item={selectedItem}
-        onClose={() => setSelectedItem(null)}
-        onDelete={handleXoa}
-        user={user}
-        adminEmail={ADMIN_EMAIL}
-      />
+        )}
+      </main>
 
       <Footer />
     </div>
