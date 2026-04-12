@@ -21,10 +21,12 @@ export function useGroups(user) {
   }, [user]);
 
   async function taoNhom(name, description) {
-    if (!name.trim()) return null;
+    if (!name.trim() || name.length < 2) return null;
+    if (name.length > 40 || (description && description.length > 100)) return null;
+    
     const docRef = await addDoc(collection(db, "groups"), {
       name,
-      description,
+      description: description || "",
       ownerUid: user.uid,
       members: [user.uid],
       createdAt: new Date()
@@ -40,6 +42,9 @@ export function useGroups(user) {
   }
 
   async function suaNhom(groupId, updateData) {
+    if (updateData.name && (updateData.name.length < 2 || updateData.name.length > 40)) return;
+    if (updateData.description && updateData.description.length > 100) return;
+    
     const groupRef = doc(db, "groups", groupId);
     await updateDoc(groupRef, updateData);
   }

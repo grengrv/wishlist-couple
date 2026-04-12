@@ -103,8 +103,18 @@ export default function GroupDetailPage({ user, userProfile }) {
           <div className="flex-1 min-w-0 ml-1.5">
             {isEditing ? (
                <div className="flex flex-col gap-3 mb-4 pr-0 sm:pr-8 animate-fade-in opacity-100">
-                 <Input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Tên không gian nhóm" />
-                 <Input as="textarea" rows={2} value={editDesc} onChange={e => setEditDesc(e.target.value)} placeholder="Viết vài dòng giới thiệu..." />
+                 <div className="relative">
+                   <Input value={editName} onChange={e => setEditName(e.target.value)} maxLength={40} placeholder="Tên không gian nhóm" />
+                   <span className="absolute right-3 bottom-2 text-[10px] font-bold text-pink-muted/40 pointer-events-none">
+                     {40 - editName.length}
+                   </span>
+                 </div>
+                 <div className="relative">
+                   <Input as="textarea" rows={2} value={editDesc} onChange={e => setEditDesc(e.target.value)} maxLength={100} placeholder="Viết vài dòng giới thiệu..." />
+                   <span className="absolute right-3 bottom-2 text-[10px] font-bold text-pink-muted/40 pointer-events-none">
+                     {100 - editDesc.length}
+                   </span>
+                 </div>
                  <div className="flex items-center gap-2 mt-1">
                     <Button size="sm" onClick={handleLuuGroup}>Lưu thiết lập</Button>
                     <Button size="sm" variant="ghost" onClick={() => {

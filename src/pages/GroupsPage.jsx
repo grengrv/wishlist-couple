@@ -106,10 +106,30 @@ export default function GroupsPage({ user }) {
           </div>
           <div className="flex flex-col gap-5">
             <div className="relative group">
-               <Input placeholder="Tên nhóm (VD: Đi Đà Lạt 🍁)" value={name} onChange={e => setName(e.target.value)} className="bg-pink-faint/20 border-pink-border/30 focus:border-pink-brand transition-all" />
+               <Input 
+                placeholder="Tên nhóm (VD: Đi Đà Lạt 🍁)" 
+                value={name} 
+                onChange={e => setName(e.target.value)} 
+                maxLength={40}
+                className="bg-pink-faint/20 border-pink-border/30 focus:border-pink-brand transition-all" 
+               />
+               <span className="absolute right-3 bottom-3 text-[10px] font-bold text-pink-muted/40 pointer-events-none">
+                 {40 - name.length}
+               </span>
             </div>
             <div className="relative group">
-               <Input as="textarea" rows={2} placeholder="Mô tả ngắn gọn..." value={desc} onChange={e => setDesc(e.target.value)} className="bg-pink-faint/20 border-pink-border/30 focus:border-pink-brand transition-all" />
+               <Input 
+                as="textarea" 
+                rows={2} 
+                placeholder="Mô tả ngắn gọn..." 
+                value={desc} 
+                onChange={e => setDesc(e.target.value)} 
+                maxLength={100}
+                className="bg-pink-faint/20 border-pink-border/30 focus:border-pink-brand transition-all" 
+               />
+               <span className="absolute right-3 bottom-3 text-[10px] font-bold text-pink-muted/40 pointer-events-none">
+                 {100 - desc.length}
+               </span>
             </div>
           </div>
           <div className="flex gap-4 justify-end mt-2">
@@ -192,13 +212,31 @@ export default function GroupsPage({ user }) {
             </div>
             
             <div className="flex flex-col gap-5">
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5 relative">
                 <label className="text-[11px] font-bold uppercase tracking-wider text-pink-muted ml-1">Tên nhóm</label>
-                <Input value={editModal.name} onChange={e => setEditModal({ ...editModal, name: e.target.value })} className="bg-pink-faint/20 border-pink-border/30" />
+                <Input 
+                  value={editModal.name} 
+                  onChange={e => setEditModal({ ...editModal, name: e.target.value })} 
+                  maxLength={40}
+                  className="bg-pink-faint/20 border-pink-border/30" 
+                />
+                <span className="absolute right-3 bottom-3 text-[10px] font-bold text-pink-muted/40 pointer-events-none">
+                  {40 - editModal.name.length}
+                </span>
               </div>
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5 relative">
                 <label className="text-[11px] font-bold uppercase tracking-wider text-pink-muted ml-1">Mô tả</label>
-                <Input as="textarea" rows={3} value={editModal.desc} onChange={e => setEditModal({ ...editModal, desc: e.target.value })} className="bg-pink-faint/20 border-pink-border/30" />
+                <Input 
+                  as="textarea" 
+                  rows={3} 
+                  value={editModal.desc} 
+                  onChange={e => setEditModal({ ...editModal, desc: e.target.value })} 
+                  maxLength={100}
+                  className="bg-pink-faint/20 border-pink-border/30" 
+                />
+                <span className="absolute right-3 bottom-3 text-[10px] font-bold text-pink-muted/40 pointer-events-none">
+                  {100 - editModal.desc.length}
+                </span>
               </div>
             </div>
 
