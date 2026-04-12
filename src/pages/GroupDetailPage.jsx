@@ -11,6 +11,7 @@ import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import { ADMIN_EMAIL } from "../constants";
 import { useGroups } from "../hooks/useGroups";
+import toast from "react-hot-toast";
 
 export default function GroupDetailPage({ user, userProfile }) {
   const { id } = useParams();
@@ -83,7 +84,7 @@ export default function GroupDetailPage({ user, userProfile }) {
   function handleInvite() {
     const inviteLink = `${window.location.origin}/invite/${id}`;
     navigator.clipboard.writeText(inviteLink);
-    alert("Đã mượn link lời mời vào Clipboard! Gửi cho đồng đội ngay nào.");
+    toast.success("Đã mượn link lời mời vào Clipboard! Gửi cho đồng đội ngay nào.");
   }
 
   const isOwner = group?.ownerUid === user?.uid || user?.email === ADMIN_EMAIL;
@@ -100,7 +101,7 @@ export default function GroupDetailPage({ user, userProfile }) {
           {/* Vạch trang trí bên trái */}
           <div className="absolute top-0 left-0 w-1.5 h-full bg-pink-brand rounded-l-[24px]"></div>
           
-          <div className="flex-1 min-w-0 ml-1.5">
+          <div className="flex-1 min-w-0 ml-1.5 pr-0 sm:pr-[320px]">
             {isEditing ? (
                <div className="flex flex-col gap-3 mb-4 pr-0 sm:pr-8 animate-fade-in opacity-100">
                  <div className="relative">
@@ -125,11 +126,11 @@ export default function GroupDetailPage({ user, userProfile }) {
             ) : (
                <>
                  <div className="flex items-end gap-3 mb-1">
-                   <h2 className="text-[28px] sm:text-[32px] font-bold text-pink-brand tracking-tight leading-tight break-words">
+                   <h2 className="text-[28px] sm:text-[32px] font-black text-pink-brand tracking-tight leading-tight break-words">
                      {group.name}
                    </h2>
                    {isOwner && (
-                     <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity pb-0.5">
+                     <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity pb-1.5">
                        <button onClick={() => setIsEditing(true)} className="p-1.5 text-pink-brand hover:bg-pink-50 rounded-lg transition-colors" title="Sửa tên nhóm">
                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                        </button>
@@ -140,15 +141,20 @@ export default function GroupDetailPage({ user, userProfile }) {
                    )}
                  </div>
                  {group.description && (
-                   <p className="mt-2 text-sm text-text-sub leading-relaxed break-words whitespace-pre-wrap">
+                   <p className="mt-2 text-sm text-text-sub font-medium opacity-80 leading-relaxed break-words whitespace-pre-wrap max-w-2xl">
                      {group.description}
                    </p>
                  )}
-                 <p className="text-[11px] font-medium text-pink-muted mt-2">
-                   Được tạo vào: {formatDate(group.createdAt)}
-                 </p>
-               </>
-            )}
+                  <div className="flex flex-wrap items-center gap-4 mt-5">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50/50 rounded-full border border-gray-100">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-pink-muted/60"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                      <span className="text-[11px] font-bold text-pink-muted uppercase tracking-widest whitespace-nowrap">
+                        {formatDate(group.createdAt)}
+                      </span>
+                    </div>
+                  </div>
+                </>
+             )}
             
             {/* Cụm Micro-UI hiển thị thành viên */}
             <div className="flex items-center gap-2 mt-5">
@@ -165,13 +171,27 @@ export default function GroupDetailPage({ user, userProfile }) {
                    );
                  })}
                </div>
-               <span className="text-[13px] font-semibold text-pink-soft ml-1.5">
+               <span className="text-[13px] font-bold text-pink-soft ml-1.5">
                  {group.members?.length || 1} thành viên
                </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-3 shrink-0 sm:absolute sm:top-8 sm:right-8 mt-6 sm:mt-0">
+            {isOwner && group.inviteCode && (
+              <div 
+                onClick={() => {
+                  navigator.clipboard.writeText(group.inviteCode);
+                  toast.success("Đã sao chép mã mời!");
+                }}
+                className="group/code flex items-center gap-2.5 px-3 py-1.5 bg-pink-pale rounded-xl border border-pink-brand/10 cursor-pointer hover:bg-pink-brand/5 hover:border-pink-brand/30 transition-all duration-300 shadow-sm h-10"
+                title="Nhấn để sao chép mã mời"
+              >
+                <span className="text-[9px] font-black text-pink-brand uppercase tracking-[1px] border-r border-pink-brand/10 pr-2.5">Mã mời</span>
+                <span className="text-[13px] font-black text-pink-brand tracking-[2px]">{group.inviteCode}</span>
+                <svg className="text-pink-brand/40 group-hover/code:text-pink-brand transition-all" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+              </div>
+            )}
             <button 
               onClick={() => navigate(`/add/${id}`)} 
               title="Thêm wish"

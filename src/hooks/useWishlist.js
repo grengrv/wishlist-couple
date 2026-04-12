@@ -5,6 +5,7 @@ import {
   deleteDoc, doc, orderBy, query
 } from "firebase/firestore";
 import { ADMIN_EMAIL } from "../constants";
+import toast from "react-hot-toast";
 
 /**
  * Custom hook quản lý toàn bộ logic dữ liệu wishlist:
@@ -186,7 +187,7 @@ export function useWishlist(user, userProfile, groupId = null) {
 
     // Chặn nếu không phải chủ và không phải admin
     if (item?.uid && item.uid !== user.uid && user.email !== ADMIN_EMAIL) {
-      alert("Bạn không thể xóa wishlist của người khác!");
+      toast.error("Bạn không thể xóa wishlist của người khác!");
       return;
     }
 

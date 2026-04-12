@@ -5,6 +5,7 @@
 import { useState } from "react";
 import Button from "./ui/Button";
 import Input from "./ui/Input";
+import { useConfirm } from "../context/ConfirmContext";
 
 export default function AddForm({
   tenMon, setTenMon,
@@ -18,12 +19,34 @@ export default function AddForm({
   formError,
   isImageTooLarge,
   nenAnh,
-  setFormError
+  setFormError,
+  existingItems
 }) {
   const [focusField, setFocusField] = useState(null); // 'ten' | 'note' | null
 
   const handleCloseError = () => {
     setFormError("");
+  };
+
+  const handleThemClick = async () => {
+    if (!tenMon.trim()) return;
+    
+    // Kiểm tra trùng tên (Không phân biệt hoa thường và khoảng cách thừa)
+    const isDuplicate = existingItems?.some(item => 
+      item.ten?.trim().toLowerCase() === tenMon.trim().toLowerCase()
+    );
+
+    if (isDuplicate) {
+      const isOk = await confirm({
+        title: "Trùng món rồi nhé! ✨",
+        message: `Bạn đã có món "${tenMon.trim()}" trong danh sách rồi, vẫn muốn thêm tiếp hả?`,
+        confirmText: "Vẫn thêm luôn",
+        cancelText: "Để tớ xem lại",
+      });
+      if (!isOk) return;
+    }
+    
+    themMon();
   };
 
   return (
@@ -95,7 +118,7 @@ export default function AddForm({
           <Input
             value={tenMon}
             onChange={e => setTenMon(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && themMon()}
+            onKeyDown={e => e.key === "Enter" && handleThemClick()}
             onFocus={() => setFocusField("ten")}
             onBlur={() => setFocusField(null)}
             maxLength={40}
@@ -181,7 +204,7 @@ export default function AddForm({
           </div>
         )}
 
-        <Button onClick={themMon} disabled={dangTai || (isImageTooLarge && !previewAnh)}>
+        <Button onClick={handleThemClick} disabled={dangTai || (isImageTooLarge && !previewAnh)}>
           {dangTai ? "Đang xử lý..." : "✦ Thêm vào danh sách"}
         </Button>
       </div>

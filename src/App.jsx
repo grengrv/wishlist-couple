@@ -3,6 +3,8 @@ import { Routes, Route } from "react-router-dom";
 import { auth, db } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
+import { Toaster } from "react-hot-toast";
+import { ConfirmProvider } from "./context/ConfirmContext";
 
 import Profile from "./Profile";
 import Header from "./components/Header";
@@ -59,7 +61,36 @@ function App() {
 
   // ── Cấu trúc Web Component ──
   return (
-    <div className="min-h-screen flex flex-col bg-body-bg relative">
+    <ConfirmProvider>
+      <div className="min-h-screen flex flex-col bg-body-bg relative">
+      <Toaster 
+        position="top-center"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: "#fff",
+            color: "#4a4a4a",
+            borderRadius: "20px",
+            padding: "12px 24px",
+            boxShadow: "0 10px 40px rgba(0,0,0,0.08)",
+            fontWeight: "700",
+            fontSize: "14px",
+            border: "1px solid rgba(255, 182, 193, 0.2)"
+          },
+          success: {
+            iconTheme: {
+              primary: "#ff85a2",
+              secondary: "#fff",
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: "#ff4d4d",
+              secondary: "#fff",
+            },
+          }
+        }}
+      />
       <Header 
         user={user} 
         userProfile={userProfile} 
@@ -98,6 +129,7 @@ function App() {
 
       <Footer />
     </div>
+    </ConfirmProvider>
   );
 }
 

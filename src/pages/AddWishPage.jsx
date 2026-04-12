@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useWishlist } from "../hooks/useWishlist";
 import AddForm from "../components/AddForm";
+import toast from "react-hot-toast";
 
 export default function AddWishPage({ user, userProfile }) {
   const { groupId } = useParams();
@@ -8,12 +9,13 @@ export default function AddWishPage({ user, userProfile }) {
   
   const {
     tenMon, setTenMon, ghiChu, setGhiChu, previewAnh, dangTai, keoVao, setKeoVao, chonAnh, xoaAnh, themMon,
-    formError, isImageTooLarge, nenAnh, setFormError
+    formError, isImageTooLarge, nenAnh, setFormError, items
   } = useWishlist(user, userProfile, groupId);
 
   const handleCreate = async () => {
     const success = await themMon();
     if (success) {
+      toast.success("Đã ghi lại điều ước thành công! ✨");
       // Đợi một chút để người dùng thấy trạng thái hoàn tất nếu cần, hoặc navigate ngay
       navigate(-1); 
     }
@@ -29,10 +31,10 @@ export default function AddWishPage({ user, userProfile }) {
       </button>
 
       <div className="mb-10 text-center sm:text-left">
-        <h2 className="text-[36px] font-black text-text-base tracking-tight mb-2 leading-tight">
+        <h2 className="text-[36px] font-black text-pink-brand tracking-tight mb-1">
           {groupId ? "Thêm vào nhóm" : "Điều ước mới"}
         </h2>
-        <p className="text-text-sub font-medium opacity-80">Ghi lại những mơ ước và dự định của chúng mình</p>
+        <p className="text-text-sub font-medium text-[16px] opacity-80">Ghi lại những mơ ước và dự định của chúng mình</p>
       </div>
 
       <div className="bg-white/40 backdrop-blur-sm rounded-[32px] p-1 sm:p-2 border border-white/50 shadow-sm">
@@ -47,6 +49,7 @@ export default function AddWishPage({ user, userProfile }) {
           isImageTooLarge={isImageTooLarge}
           nenAnh={nenAnh}
           setFormError={setFormError}
+          existingItems={items}
         />
       </div>
     </div>

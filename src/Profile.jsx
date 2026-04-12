@@ -12,9 +12,19 @@ export default function Profile({ userProfile, onClose, onUpdate }) {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [keoVao, setKeoVao] = useState(false);
+    const [error, setError] = useState(null);
 
     function chonAvatar(file) {
-        if (!file || !file.type.startsWith("image/")) return;
+        setError(null);
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+            setError("Chỉ chấp nhận file ảnh!");
+            return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+            setError("Ảnh quá lớn! Vui lòng chọn ảnh dưới 2MB.");
+            return;
+        }
 
         // Resize ảnh trước khi lưu
         const reader = new FileReader();
@@ -43,7 +53,25 @@ export default function Profile({ userProfile, onClose, onUpdate }) {
     }
 
     async function luuThongTin() {
-        if (username.trim() === "") return;
+        setError(null);
+        const trimmedName = username.trim();
+        
+        if (trimmedName === "") {
+            setError("Username không được để trống.");
+            return;
+        }
+        if (trimmedName.length < 3 || trimmedName.length > 20) {
+            setError("Username phải từ 3 đến 20 ký tự.");
+            return;
+        }
+        
+        // Chỉ cho phép chữ (bao gồm tiếng Việt), số và khoảng trắng
+        const regex = /^[a-zA-Z0-9\sÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔƠƯ_]+$/;
+        if (!regex.test(trimmedName)) {
+            setError("Username không được chứa ký tự đặc biệt.");
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -146,6 +174,12 @@ export default function Profile({ userProfile, onClose, onUpdate }) {
                             className="!opacity-50 !cursor-not-allowed"
                         />
                     </div>
+
+                    {error && (
+                        <div className="bg-red-50 text-red-500 text-[13px] font-bold p-3 rounded-xl border border-red-100 animate-shake mb-2">
+                             ⚠ {error}
+                        </div>
+                    )}
 
                     <Button
                         onClick={luuThongTin}

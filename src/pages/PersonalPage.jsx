@@ -28,9 +28,10 @@ export default function PersonalPage({ user, userProfile }) {
         </div>
         <button 
           onClick={() => navigate("/add")}
-          className="px-8 h-12 bg-gradient-brand text-white font-bold rounded-2xl shadow-xl shadow-pink-brand/20 hover:scale-[1.05] active:scale-[0.95] transition-all flex items-center justify-center gap-2 group"
+          title="Thêm wish"
+          className="w-12 h-12 bg-gradient-brand text-white font-bold rounded-2xl shadow-xl shadow-pink-brand/20 hover:scale-[1.05] active:scale-[0.95] transition-all flex items-center justify-center group"
         >
-          <span className="text-xl group-hover:rotate-90 transition-transform">✦</span> Thêm điều mới
+          <span className="text-2xl group-hover:rotate-90 transition-transform">✦</span>
         </button>
       </div>
 

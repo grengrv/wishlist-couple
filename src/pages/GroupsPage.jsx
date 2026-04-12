@@ -5,13 +5,22 @@ import { db } from "../firebase";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import { useGroups } from "../hooks/useGroups";
+import { useConfirm } from "../context/ConfirmContext";
+import toast from "react-hot-toast";
 
 export default function GroupsPage({ user }) {
-  const { groups, taoNhom, suaNhom, xoaNhom } = useGroups(user);
+  const { groups, taoNhom, suaNhom, xoaNhom, thamGiaBangMa } = useGroups(user);
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const [showCreate, setShowCreate] = useState(false);
+  const [showJoin, setShowJoin] = useState(false);
+  
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
+
+  const [joinCode, setJoinCode] = useState("");
+  const [joinError, setJoinError] = useState(null);
+  const [isJoining, setIsJoining] = useState(false);
 
   // Context Menu State
   const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, group: null });
@@ -28,12 +37,67 @@ export default function GroupsPage({ user }) {
     if (!name.trim()) return;
     const newId = await taoNhom(name, desc);
     if (newId) {
+      toast.success("Đã tạo nhóm thành công! 🥳");
       setShowCreate(false);
       setName("");
       setDesc("");
       navigate(`/groups/${newId}`);
     }
   }
+
+  async function handleJoin() {
+    if (joinCode.length !== 6) {
+      setJoinError("Mã mời phải đủ 6 ký tự.");
+      return;
+    }
+    
+    setJoinError(null);
+    setIsJoining(true);
+    
+    const result = await thamGiaBangMa(joinCode);
+    
+    if (result.error) {
+      toast.error(result.error);
+      setJoinError(result.error);
+      setIsJoining(false);
+    } else {
+      toast.success("Chào mừng bạn đã gia nhập nhóm! ✨");
+      setJoinCode("");
+      setShowJoin(false);
+      navigate(`/groups/${result.id}`);
+    }
+  }
+
+  const handleCloseJoin = async () => {
+    if (joinCode.length > 0) {
+      const isOk = await confirm({
+        title: "Dừng lại chút nè!",
+        message: "Bạn đang nhập dở mã mời, bạn có chắc chắn muốn thoát không?",
+        confirmText: "Thoát luôn",
+        cancelText: "Ở lại tiếp",
+      });
+      if (!isOk) return;
+    }
+    setShowJoin(false);
+    setJoinCode("");
+    setJoinError(null);
+  };
+
+  const handleCloseEdit = async () => {
+    const isChanged = editModal.name !== editModal.group?.name || 
+                      editModal.desc !== (editModal.group?.description || "");
+    
+    if (isChanged) {
+      const isOk = await confirm({
+        title: "Chưa lưu thay đổi!",
+        message: "Thông tin thay đổi chưa được lưu, bạn có chắc chắn muốn hủy bỏ không?",
+        confirmText: "Hủy bỏ",
+        cancelText: "Ở lại lưu",
+      });
+      if (!isOk) return;
+    }
+    setEditModal({ visible: false, group: null, name: "", desc: "" });
+  };
 
   const handleContextMenu = (e, group) => {
     e.preventDefault();
@@ -67,8 +131,18 @@ export default function GroupsPage({ user }) {
   const handleDelete = async () => {
     const g = contextMenu.group;
     if (!g) return;
-    if (window.confirm(`Bạn có chắc chắn muốn xóa nhóm "${g.name}"? Hành động này không thể hoàn tác.`)) {
+    
+    const isOk = await confirm({
+      title: "Xóa nhóm này sao?",
+      message: `Bạn có chắc chắn muốn xóa nhóm "${g.name}"? Hành động này không thể hoàn tác đâu nhé.`,
+      confirmText: "Xóa vĩnh viễn",
+      cancelText: "Để tớ nghĩ lại",
+      variant: "danger"
+    });
+
+    if (isOk) {
       await xoaNhom(g.id);
+      toast.success("Đã xóa nhóm thành công! 🗑️");
     }
     setContextMenu({ ...contextMenu, visible: false });
   };
@@ -77,27 +151,129 @@ export default function GroupsPage({ user }) {
     <div className="py-10 flex flex-col w-full animate-fade-in px-4 sm:px-0 relative">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
         <div>
-          <h2 className="text-[34px] font-bold text-pink-brand tracking-tight">Nhóm</h2>
-          <p className="text-pink-muted font-medium text-[15px] mt-1 tracking-wide">Tạo và chia sẻ wishlist cùng bạn bè</p>
+          <h2 className="text-[36px] font-black text-pink-brand tracking-tight mb-1">Nhóm</h2>
+          <p className="text-text-sub font-medium text-[16px] opacity-80">Tạo hoặc tham gia không gian chung cùng bạn bè</p>
         </div>
-        <button 
-          onClick={() => setShowCreate(!showCreate)}
-          title={showCreate ? "Đóng form" : "Tạo nhóm mới"}
-          className={`
-            w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-lg shrink-0
-            ${showCreate 
-              ? "bg-white border border-pink-border text-pink-brand rotate-45" 
-              : "bg-gradient-brand text-white shadow-pink-brand/20 hover:scale-110 active:scale-95"
-            }
-          `}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-        </button>
+        
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={async () => { 
+                if (showJoin) await handleCloseJoin();
+                else { setShowJoin(true); setShowCreate(false); setJoinError(null); }
+            }}
+            title={showJoin ? "Đóng" : "Tham gia bằng mã"}
+            className={`
+              h-12 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-lg font-bold text-sm
+              ${showJoin 
+                ? "w-12 bg-white border border-pink-border text-pink-brand" 
+                : "px-5 bg-white border border-pink-border text-pink-brand hover:bg-pink-faint shadow-pink-brand/5 active:scale-95 gap-2"
+              }
+            `}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            {!showJoin && <span>Tham gia bằng mã</span>}
+          </button>
+
+          <button 
+            onClick={() => { setShowCreate(!showCreate); setShowJoin(false); }}
+            title={showCreate ? "Đóng form" : "Tạo nhóm mới"}
+            className={`
+              w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-lg shrink-0
+              ${showCreate 
+                ? "bg-white border border-pink-border text-pink-brand rotate-45" 
+                : "bg-gradient-brand text-white shadow-pink-brand/20 hover:scale-110 active:scale-95"
+              }
+            `}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
+        </div>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-1">
+        {groups.length === 0 && !showCreate && (
+          <div className="col-span-full flex flex-col items-center justify-center py-24 bg-white rounded-[32px] border-2 border-dashed border-pink-border/40 px-6 text-center">
+            <div className="w-20 h-20 bg-pink-faint/50 rounded-3xl flex items-center justify-center text-pink-brand mb-6 transition-transform hover:scale-110 duration-500 shadow-sm border border-pink-border/20">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-pink-brand mb-2">Bạn chưa tham gia nhóm nào</h3>
+            <p className="text-pink-soft text-[15px] leading-relaxed max-w-[340px] font-medium opacity-80">
+              Hãy cùng tạo một không gian riêng tư để lưu giữ<br className="hidden sm:block" /> những dự định chung của đôi mình nhé!
+            </p>
+          </div>
+        )}
+        {groups.map(g => (
+          <GroupCard 
+            key={g.id} 
+            group={g} 
+            onClick={() => navigate(`/groups/${g.id}`)} 
+            onContextMenu={(e) => handleContextMenu(e, g)}
+          />
+        ))}
+      </div>
+
+      {/* Join Group Modal */}
+      {showJoin && (
+        <div 
+          onClick={handleCloseJoin}
+          className="fixed inset-0 bg-black/60 backdrop-blur-[4px] flex items-center justify-center z-[10000] p-6 animate-fade-in"
+        >
+          <div 
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-[40px] w-full max-w-[440px] p-8 sm:p-10 shadow-2xl animate-slide-up flex flex-col gap-8 relative overflow-hidden"
+          >
+            {/* Decoration */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-pink-faint/40 rounded-full -mr-16 -mt-16"></div>
+            
+            <div className="flex flex-col gap-2 relative">
+              <h3 className="text-3xl font-black text-pink-brand tracking-tight">Tham gia nhóm</h3>
+              <p className="text-text-sub text-[15px] font-medium opacity-70">Nhập mã mời 6 ký tự được chia sẻ</p>
+            </div>
+
+            <div className="flex flex-col gap-6 relative">
+               <div className="relative group">
+                  <Input 
+                    placeholder="ABC123" 
+                    value={joinCode} 
+                    onChange={e => setJoinCode(e.target.value.toUpperCase().slice(0, 6))} 
+                    className="text-center font-black tracking-[12px] text-3xl uppercase h-20 bg-pink-faint/20 border-pink-border/30 focus:border-pink-brand rounded-3xl transition-all"
+                  />
+               </div>
+               {joinError && (
+                 <p className="text-sm font-bold text-red-500 animate-shake flex items-center gap-2 justify-center">
+                   <span>⚠</span> {joinError}
+                 </p>
+               )}
+            </div>
+
+            <div className="flex flex-col gap-3 relative mt-4">
+              <button 
+                onClick={handleJoin} 
+                disabled={joinCode.length !== 6 || isJoining}
+                className="w-full h-14 font-black bg-gradient-brand text-white rounded-[20px] shadow-xl shadow-pink-brand/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100"
+              >
+                {isJoining ? "Đang xử lý..." : "Tham gia ngay ✦"}
+              </button>
+              <button 
+                onClick={handleCloseJoin}
+                className="w-full h-12 rounded-[20px] font-bold text-pink-muted hover:bg-pink-faint hover:text-pink-brand transition-all active:scale-95"
+              >
+                Để sau nhé
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Group Form (Inline) */}
       {showCreate && (
         <div className="bg-white p-6 sm:p-8 rounded-[24px] border border-pink-border/40 flex flex-col gap-6 animate-slide-up shadow-sm mb-12">
           <div className="flex flex-col gap-1">
@@ -150,33 +326,6 @@ export default function GroupsPage({ user }) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-1">
-        {groups.length === 0 && !showCreate && (
-          <div className="col-span-full flex flex-col items-center justify-center py-24 bg-white rounded-[32px] border-2 border-dashed border-pink-border/40 px-6 text-center">
-            <div className="w-20 h-20 bg-pink-faint/50 rounded-3xl flex items-center justify-center text-pink-brand mb-6 transition-transform hover:scale-110 duration-500 shadow-sm border border-pink-border/20">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-              </svg>
-            </div>
-            <h3 className="text-xl font-semibold text-pink-brand mb-2">Bạn chưa tham gia nhóm nào</h3>
-            <p className="text-pink-soft text-[15px] leading-relaxed max-w-[340px] font-medium opacity-80">
-              Hãy cùng tạo một không gian riêng tư để lưu giữ<br className="hidden sm:block" /> những dự định chung của đôi mình nhé!
-            </p>
-          </div>
-        )}
-        {groups.map(g => (
-          <GroupCard 
-            key={g.id} 
-            group={g} 
-            onClick={() => navigate(`/groups/${g.id}`)} 
-            onContextMenu={(e) => handleContextMenu(e, g)}
-          />
-        ))}
-      </div>
-
       {/* Context Menu UI */}
       {contextMenu.visible && (
         <div 
@@ -204,8 +353,14 @@ export default function GroupsPage({ user }) {
 
       {/* Edit Modal UI */}
       {editModal.visible && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center z-[10000] p-6 animate-fade-in px-4">
-          <div className="bg-white rounded-[32px] w-full max-w-[480px] p-8 shadow-2xl animate-slide-up flex flex-col gap-6">
+        <div 
+          onClick={handleCloseEdit}
+          className="fixed inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center z-[10000] p-6 animate-fade-in px-4"
+        >
+          <div 
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-[32px] w-full max-w-[480px] p-8 shadow-2xl animate-slide-up flex flex-col gap-6"
+          >
             <div className="flex flex-col gap-1">
               <h3 className="text-2xl font-black text-pink-brand">Chỉnh sửa nhóm</h3>
               <p className="text-text-sub text-sm font-medium">Cập nhật thông tin không gian chung của bạn</p>
