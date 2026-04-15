@@ -24,7 +24,6 @@ export function useGroups(user) {
     if (!name.trim() || name.length < 2) return null;
     if (name.length > 40 || (description && description.length > 100)) return null;
 
-    // Sinh mã mời ngẫu nhiên 6 ký tự (Chữ in hoa và Số)
     const generateInviteCode = () => {
       const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
       let code = "";
@@ -33,16 +32,19 @@ export function useGroups(user) {
       }
       return code;
     };
-    
+
+    const inviteCode = generateInviteCode(); // tách ra trước
+
     const docRef = await addDoc(collection(db, "groups"), {
       name,
       description: description || "",
       ownerUid: user.uid,
       members: [user.uid],
-      inviteCode: generateInviteCode(),
+      inviteCode,
       createdAt: new Date()
     });
-    return docRef.id;
+
+    return { id: docRef.id, inviteCode }; // trả về cả hai
   }
 
   async function thamGiaNhom(groupId) {
@@ -79,7 +81,7 @@ export function useGroups(user) {
   async function suaNhom(groupId, updateData) {
     if (updateData.name && (updateData.name.length < 2 || updateData.name.length > 40)) return;
     if (updateData.description && updateData.description.length > 100) return;
-    
+
     const groupRef = doc(db, "groups", groupId);
     await updateDoc(groupRef, updateData);
   }
