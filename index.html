@@ -1,13 +1,83 @@
-<!doctype html>
-<html lang="en">
-  <head>
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>wishlist-couple</title>
-  </head>
-  <body>
+    <title>Wishlist của chúng mình</title>
+    <script src="https://cdn.jsdelivr.net/npm/sileo-toast@latest/dist/sileo-toast.js"></script>
+</head>
+
+<body>
+    <div id="sileo-toast-container"></div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
-  </body>
+</body>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, orderBy, query }
+        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCv_f10d1H0XxjYCpZeI_0NuAQibv7Cp5E",
+        authDomain: "wishlist-couple.firebaseapp.com",
+        projectId: "wishlist-couple",
+        storageBucket: "wishlist-couple.firebasestorage.app",
+        messagingSenderId: "733085795389",
+        appId: "1:733085795389:web:f6dbac08b4049f386c1654"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const input = document.getElementById('ten-mon');
+    const nutThem = document.getElementById('nut-them');
+    const danhSach = document.getElementById('danh-sach');
+
+    // Hiển thị một món lên giao diện
+    function hienThi(id, ten) {
+        const li = document.createElement('li');
+        li.textContent = ten;
+
+        // Nút xóa
+        const nutXoa = document.createElement('button');
+        nutXoa.textContent = ' Xóa';
+        nutXoa.onclick = async () => {
+            await deleteDoc(doc(db, "wishlist", id));
+            li.remove();
+        };
+
+        li.appendChild(nutXoa);
+        danhSach.appendChild(li);
+    }
+
+    // Khi load trang: đọc toàn bộ từ Firebase
+    async function layDanhSach() {
+        const q = query(collection(db, "wishlist"), orderBy("taoLuc"));
+        const snapshot = await getDocs(q);
+        snapshot.forEach(d => {
+            hienThi(d.id, d.data().ten);
+        });
+    }
+
+    // Khi nhấn Thêm: lưu vào Firebase rồi hiển thị
+    nutThem.addEventListener('click', async function () {
+        const ten = input.value.trim();
+        if (ten === '') return;
+
+        const docRef = await addDoc(collection(db, "wishlist"), {
+            ten: ten,
+            taoLuc: new Date()
+        });
+
+        hienThi(docRef.id, ten);
+        input.value = '';
+    });
+
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') nutThem.click();
+    });
+</script>
+
 </html>

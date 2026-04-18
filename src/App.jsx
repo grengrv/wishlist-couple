@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import { auth, db } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { Toaster } from "react-hot-toast";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { ConfirmProvider } from "./context/ConfirmContext";
+import AppToast from "./components/ui/AppToast";
 
 import Profile from "./Profile";
 import Header from "./components/Header";
+import { notifyLogout, notifyError } from "./utils/notify";
 import Footer from "./components/Footer";
 import Auth from "./auths/Auth";
 import Admin from "./Admin/Admin";
@@ -28,24 +29,44 @@ function App() {
   const [checking, setChecking] = useState(true);
   const [selectedItem, setSelectedItem] = useState(null);
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      notifyLogout();
+    } catch (err) {
+      notifyError("Đăng xuất thất bại");
+    }
+  };
+
   // Lắng nghe trạng thái đăng nhập Firebase
   useEffect(() => {
+    let unsubProfile = null;
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       setChecking(false);
 
       if (u && !u.isAnonymous) {
-        // Load profile từ Firestore
-        const profileDoc = await getDoc(doc(db, "users", u.uid));
-        if (profileDoc.exists()) {
-          setUserProfile(profileDoc.data());
-        } else {
-          // User cũ chưa có profile, tạo mặc định
-          setUserProfile({ username: u.displayName || u.email, avatar: null });
+        // Load profile từ Firestore real-time
+        unsubProfile = onSnapshot(doc(db, "users", u.uid), (docSnap) => {
+          if (docSnap.exists()) {
+            setUserProfile(docSnap.data());
+          } else {
+            // User cũ chưa có profile, tạo mặc định
+            setUserProfile({ username: u.displayName || u.email, avatar: null });
+          }
+        });
+      } else {
+        setUserProfile(null);
+        if (unsubProfile) {
+          unsubProfile();
+          unsubProfile = null;
         }
       }
     });
-    return unsub;
+    return () => {
+      unsub();
+      if (unsubProfile) unsubProfile();
+    };
   }, []);
 
   // Đã bỏ logic useWishlist ở App.jsx. Data fetching do các trang (HomePage, GroupDetailPage) tự xử lý.
@@ -63,72 +84,45 @@ function App() {
   return (
     <ConfirmProvider>
       <div className="min-h-screen flex flex-col bg-body-bg relative">
-      <Toaster 
-        position="top-center"
-        toastOptions={{
-          duration: 3000,
-          style: {
-            background: "#fff",
-            color: "#4a4a4a",
-            borderRadius: "20px",
-            padding: "12px 24px",
-            boxShadow: "0 10px 40px rgba(0,0,0,0.08)",
-            fontWeight: "700",
-            fontSize: "14px",
-            border: "1px solid rgba(255, 182, 193, 0.2)"
-          },
-          success: {
-            iconTheme: {
-              primary: "#ff85a2",
-              secondary: "#fff",
-            },
-          },
-          error: {
-            iconTheme: {
-              primary: "#ff4d4d",
-              secondary: "#fff",
-            },
-          }
-        }}
-      />
-      <Header 
-        user={user} 
-        userProfile={userProfile} 
-        onOpenProfile={() => setShowProfile(true)} 
-        onLogout={() => signOut(auth)} 
-      />
+        <AppToast />
+        <Header
+          user={user}
+          userProfile={userProfile}
+          onOpenProfile={() => setShowProfile(true)}
+          onLogout={() => signOut(auth)}
+        />
 
-      <main className="flex-1 w-full max-w-[1600px] mx-auto px-[5%] md:px-[10%] flex flex-col transition-all duration-500">
-        {!user ? (
-          <Auth />
-        ) : user.email === ADMIN_EMAIL ? (
-          <Admin />
-        ) : (
-          <div className="flex-1 w-full flex flex-col">
-            {/* Modal Profile dùng chung toàn app */}
-            {showProfile && (
-              <Profile
-                userProfile={userProfile}
-                onClose={() => setShowProfile(false)}
-                onUpdate={(updated) => setUserProfile(prev => ({ ...prev, ...updated }))}
-              />
-            )}
+        <main className="flex-1 w-full max-w-[1600px] mx-auto px-[5%] md:px-[10%] flex flex-col transition-all duration-500">
+          {!user ? (
+            <Auth />
+          ) : user.email === ADMIN_EMAIL ? (
+            <Admin />
+          ) : (
+            <div className="flex-1 w-full flex flex-col">
+              {/* Modal Profile dùng chung toàn app */}
+              {showProfile && (
+                <Profile
+                  userProfile={userProfile}
+                  onClose={() => setShowProfile(false)}
+                  onUpdate={(updated) => setUserProfile(prev => ({ ...prev, ...updated }))}
+                />
+              )}
 
-            <Routes>
-              <Route path="/" element={<HomePage user={user} userProfile={userProfile} />} />
-              <Route path="/personal" element={<PersonalPage user={user} userProfile={userProfile} />} />
-              <Route path="/groups" element={<GroupsPage user={user} />} />
-              <Route path="/groups/:id" element={<GroupDetailPage user={user} userProfile={userProfile} />} />
-              <Route path="/invite/:id" element={<InvitePage user={user} />} />
-              <Route path="/add" element={<AddWishPage user={user} userProfile={userProfile} />} />
-              <Route path="/add/:groupId" element={<AddWishPage user={user} userProfile={userProfile} />} />
-            </Routes>
-          </div>
-        )}
-      </main>
+              <Routes>
+                <Route path="/" element={<HomePage user={user} userProfile={userProfile} />} />
+                <Route path="/personal" element={<PersonalPage user={user} userProfile={userProfile} />} />
+                <Route path="/groups" element={<GroupsPage user={user} />} />
+                <Route path="/groups/:id" element={<GroupDetailPage user={user} userProfile={userProfile} />} />
+                <Route path="/invite/:id" element={<InvitePage user={user} />} />
+                <Route path="/add" element={<AddWishPage user={user} userProfile={userProfile} />} />
+                <Route path="/add/:groupId" element={<AddWishPage user={user} userProfile={userProfile} />} />
+              </Routes>
+            </div>
+          )}
+        </main>
 
-      <Footer />
-    </div>
+        <Footer />
+      </div>
     </ConfirmProvider>
   );
 }

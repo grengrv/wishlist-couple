@@ -1,12 +1,11 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useWishlist } from "../hooks/useWishlist";
 import AddForm from "../components/AddForm";
-import toast from "react-hot-toast";
 
 export default function AddWishPage({ user, userProfile }) {
   const { groupId } = useParams();
   const navigate = useNavigate();
-  
+
   const {
     tenMon, setTenMon, ghiChu, setGhiChu, previewAnh, dangTai, keoVao, setKeoVao, chonAnh, xoaAnh, themMon,
     formError, isImageTooLarge, nenAnh, setFormError, items
@@ -15,42 +14,68 @@ export default function AddWishPage({ user, userProfile }) {
   const handleCreate = async () => {
     const success = await themMon();
     if (success) {
-      toast.success("Đã ghi lại điều ước thành công! ✨");
-      // Đợi một chút để người dùng thấy trạng thái hoàn tất nếu cần, hoặc navigate ngay
-      navigate(-1); 
+      navigate(-1);
+      return true;
     }
+    return false;
   };
 
   return (
-    <div className="py-12 max-w-3xl mx-auto w-full animate-fade-in px-5 sm:px-0">
-      <button 
-        onClick={() => navigate(-1)} 
-        className="text-sm font-semibold text-pink-muted hover:text-pink-brand mb-8 flex items-center gap-1 transition-colors group"
-      >
-        <span className="text-lg leading-none group-hover:-translate-x-1 transition-transform">←</span> Quay lại
-      </button>
+    <div className="min-h-screen py-10 md:py-20 max-w-4xl mx-auto w-full animate-fade-in px-6 relative">
 
-      <div className="mb-10 text-center sm:text-left">
-        <h2 className="text-[36px] font-black text-pink-brand tracking-tight mb-1">
-          {groupId ? "Thêm vào nhóm" : "Điều ước mới"}
-        </h2>
-        <p className="text-text-sub font-medium text-[16px] opacity-80">Ghi lại những mơ ước và dự định của chúng mình</p>
+      {/* Background Decor - Tạo chiều sâu cho trang */}
+      <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-pink-100/30 blur-[120px] rounded-full -z-10 animate-pulse" />
+
+      {/* Top Bar: Nút quay lại tinh tế */}
+      <div className="mb-12">
+        <button
+          onClick={() => navigate(-1)}
+          className="group flex items-center gap-3 py-2 px-4 rounded-full bg-white/50 backdrop-blur-md border border-gray-100 text-gray-400 hover:text-pink-500 hover:bg-white transition-all duration-300 shadow-sm"
+        >
+          <div className="w-6 h-6 rounded-full bg-gray-100 group-hover:bg-pink-50 flex items-center justify-center transition-colors">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          </div>
+          <span className="text-xs font-black uppercase tracking-widest">Quay lại</span>
+        </button>
       </div>
 
-      <div className="bg-white/40 backdrop-blur-sm rounded-[32px] p-1 sm:p-2 border border-white/50 shadow-sm">
-        <AddForm
-          tenMon={tenMon} setTenMon={setTenMon}
-          ghiChu={ghiChu} setGhiChu={setGhiChu}
-          previewAnh={previewAnh} dangTai={dangTai}
-          keoVao={keoVao} setKeoVao={setKeoVao}
-          chonAnh={chonAnh} xoaAnh={xoaAnh}
-          themMon={handleCreate}
-          formError={formError}
-          isImageTooLarge={isImageTooLarge}
-          nenAnh={nenAnh}
-          setFormError={setFormError}
-          existingItems={items}
-        />
+      {/* Page Header */}
+      <div className="mb-16 text-center">
+        <div className="inline-block relative mb-4">
+          <span className="absolute -top-4 -right-8 text-4xl animate-bounce pointer-events-none">✨</span>
+          <h2 className="text-4xl md:text-6xl font-black text-gray-900 tracking-tighter leading-none">
+            {groupId ? "Thêm vào nhóm" : ""} <span className="text-pink-500"></span>
+          </h2>
+        </div>
+        <p className="text-gray-400 font-bold text-lg mt-4 max-w-md mx-auto leading-relaxed">
+          Ghi lại những mơ ước và dự định <br className="hidden md:block" /> để chúng mình cùng nhau thực hiện.
+        </p>
+      </div>
+
+      {/* Main Form Container */}
+      <div className="relative">
+        {/* Hiệu ứng viền phát sáng nhẹ bao quanh Form */}
+        <div className="absolute -inset-1 bg-gradient-to-r from-pink-200 via-rose-100 to-pink-200 rounded-[40px] blur opacity-20" />
+
+        <div className="relative">
+          <AddForm
+            tenMon={tenMon} setTenMon={setTenMon}
+            ghiChu={ghiChu} setGhiChu={setGhiChu}
+            previewAnh={previewAnh} dangTai={dangTai}
+            keoVao={keoVao} setKeoVao={setKeoVao}
+            chonAnh={chonAnh} xoaAnh={xoaAnh}
+            themMon={handleCreate}
+            formError={formError}
+            isImageTooLarge={isImageTooLarge}
+            nenAnh={nenAnh}
+            setFormError={setFormError}
+            existingItems={items}
+            isGroup={!!groupId}
+          />
+        </div>
       </div>
     </div>
   );

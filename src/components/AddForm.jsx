@@ -1,11 +1,8 @@
-/**
- * AddForm component - Form thêm điều ước mới
- * Bao gồm: drop zone ảnh, input tên, textarea ghi chú, nút thêm
- */
 import { useState } from "react";
 import Button from "./ui/Button";
 import Input from "./ui/Input";
 import { useConfirm } from "../context/ConfirmContext";
+import { notifyThemWish, notifyError } from "../utils/notify";
 
 export default function AddForm({
   tenMon, setTenMon,
@@ -20,19 +17,19 @@ export default function AddForm({
   isImageTooLarge,
   nenAnh,
   setFormError,
-  existingItems
+  existingItems,
+  isGroup = false
 }) {
-  const [focusField, setFocusField] = useState(null); // 'ten' | 'note' | null
+  const [focusField, setFocusField] = useState(null);
+  const confirm = useConfirm();
 
-  const handleCloseError = () => {
-    setFormError("");
-  };
+  const handleCloseError = () => setFormError("");
 
   const handleThemClick = async () => {
     if (!tenMon.trim()) return;
-    
-    // Kiểm tra trùng tên (Không phân biệt hoa thường và khoảng cách thừa)
-    const isDuplicate = existingItems?.some(item => 
+
+    // Kiểm tra trùng lặp
+    const isDuplicate = existingItems?.some(item =>
       item.ten?.trim().toLowerCase() === tenMon.trim().toLowerCase()
     );
 
@@ -45,25 +42,31 @@ export default function AddForm({
       });
       if (!isOk) return;
     }
-    
-    themMon();
+
+    // Thực hiện thêm món
+    try {
+      const success = await themMon();
+      if (success) {
+        notifyThemWish(isGroup);
+      }
+      // success === false hoặc undefined: lỗi đã được xử lý bên trong themMon (formError)
+    } catch {
+      notifyError("Gửi điều ước thất bại. Vui lòng thử lại!");
+    }
   };
 
   return (
-    <div className="bg-white rounded-[20px] p-7 mb-8 border border-pink-border flex flex-col gap-4 max-w-3xl mx-auto w-full transition-all duration-500 shadow-sm hover:shadow-md">
-      <p className="text-[13px] font-semibold text-pink-brand uppercase tracking-[0.8px]">
-        Thêm điều ước mới
-      </p>
+    <div className="bg-white/80 backdrop-blur-xl rounded-[32px] p-8 mb-12 border border-white shadow-[0_20px_50px_rgba(236,72,153,0.05)] flex flex-col gap-6 max-w-2xl mx-auto w-full transition-all duration-500 hover:shadow-[0_30px_60px_rgba(236,72,153,0.08)]">
 
       {/* DROP ZONE */}
       <div
         className={`
-          border-2 rounded-[14px] text-center transition-all bg-pink-faint
-          ${previewAnh 
-            ? "p-3 border-solid border-pink-light cursor-default" 
-            : "p-8 border-dashed border-pink-light cursor-pointer text-[#d47a9a] hover:border-pink-brand hover:bg-pink-pale hover:text-pink-brand"
+          relative group border-2 rounded-[24px] overflow-hidden transition-all duration-500
+          ${previewAnh
+            ? "aspect-[16/9] border-transparent shadow-inner"
+            : "aspect-[16/6] border-dashed border-gray-100 bg-gray-50/50 cursor-pointer flex items-center justify-center"
           }
-          ${keoVao && !previewAnh ? "!border-pink-brand !bg-pink-pale !text-pink-brand" : ""}
+          ${keoVao && !previewAnh ? "!border-pink-300 !bg-pink-50/50 scale-[0.98]" : ""}
         `}
         onDragOver={e => { e.preventDefault(); setKeoVao(true); }}
         onDragLeave={() => setKeoVao(false)}
@@ -75,46 +78,35 @@ export default function AddForm({
         onClick={() => !previewAnh && document.getElementById("file-input").click()}
       >
         {previewAnh ? (
-          <div className="relative">
-            <img src={previewAnh} alt="preview" className="w-full max-h-[220px] object-cover rounded-[10px] block" />
-            <button
-              className="absolute -top-2.5 -right-2.5 w-7 h-7 rounded-full border-2 border-white bg-pink-brand text-white text-base cursor-pointer flex items-center justify-center leading-none shadow-[0_2px_6px_rgba(0,0,0,0.15)] z-10"
-              onClick={e => { e.stopPropagation(); xoaAnh(); }}
-            >
-              ×
-            </button>
-          </div>
+          <>
+            <img src={previewAnh} alt="preview" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+              <button
+                className="bg-white text-gray-900 px-6 py-2.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl transform translate-y-2 group-hover:translate-y-0 transition-all hover:bg-pink-500 hover:text-white"
+                onClick={e => { e.stopPropagation(); xoaAnh(); }}
+              >
+                Thay đổi ảnh
+              </button>
+            </div>
+          </>
         ) : (
-          <div className="">
-            <div className="mb-2.5 opacity-70 flex justify-center">
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <div className="text-center group-hover:scale-105 transition-transform">
+            <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-sm mx-auto mb-4 text-gray-300 group-hover:text-pink-500 group-hover:rotate-12 transition-all">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="3" />
                 <circle cx="8.5" cy="8.5" r="1.5" />
                 <path d="M21 15l-5-5L5 21" />
               </svg>
             </div>
-            <p className="text-[13px] leading-[1.7]">Kéo thả hoặc dán ảnh vào đây</p>
-            <span className="block text-[11px] mt-1 opacity-60">Ctrl+V · Kéo thả · Nhấn để chọn file</span>
+            <p className="text-[11px] font-black text-gray-400 uppercase tracking-[2px]">Thả hình ảnh vào đây</p>
           </div>
         )}
-        <input
-          id="file-input"
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={e => {
-            if (e.target.files?.[0]) {
-              chonAnh(e.target.files[0]);
-              e.target.value = ""; // Quan trọng: Reset value để có thể chọn lại cùng 1 file
-            }
-          }}
-        />
+        <input id="file-input" type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) { chonAnh(e.target.files[0]); e.target.value = ""; } }} />
       </div>
 
       {/* INPUTS */}
-      <div className="flex flex-col gap-3">
-        {/* Tên món */}
-        <div className="relative group/input">
+      <div className="flex flex-col gap-4">
+        <div className="relative">
           <Input
             value={tenMon}
             onChange={e => setTenMon(e.target.value)}
@@ -122,18 +114,17 @@ export default function AddForm({
             onFocus={() => setFocusField("ten")}
             onBlur={() => setFocusField(null)}
             maxLength={40}
-            placeholder="Tên món đồ... (2-40 ký tự)"
-            className={formError && tenMon.length < 2 ? "border-red-300 focus:border-red-400" : ""}
+            placeholder="Bạn đang mong muốn điều gì?..."
+            className={`!rounded-2xl !bg-gray-50/50 !border-gray-100 !h-14 !font-bold focus:!bg-white focus:!ring-2 focus:!ring-pink-50 transition-all ${formError && tenMon.length < 2 ? "!border-red-300" : ""}`}
           />
           {focusField === "ten" && (
-            <span className="absolute right-3.5 bottom-2.5 text-[10px] font-bold text-pink-muted/60 pointer-events-none animate-fade-in">
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-pink-400 bg-white px-2 py-1 rounded-lg shadow-sm border border-pink-50 animate-fade-in">
               {40 - tenMon.length}
             </span>
           )}
         </div>
 
-        {/* Ghi chú */}
-        <div className="relative group/input">
+        <div className="relative">
           <Input
             as="textarea"
             value={ghiChu}
@@ -141,73 +132,65 @@ export default function AddForm({
             onFocus={() => setFocusField("note")}
             onBlur={() => setFocusField(null)}
             maxLength={100}
-            placeholder="Ghi chú ngắn gọn... (Tối đa 100 ký tự)"
+            placeholder="Ghi chú thêm một chút chi tiết nhé..."
             rows={3}
+            className="!rounded-2xl !bg-gray-50/50 !border-gray-100 !font-medium focus:!bg-white focus:!ring-2 focus:!ring-pink-50 transition-all"
           />
           {focusField === "note" && (
-            <span className="absolute right-3.5 bottom-3 text-[10px] font-bold text-pink-muted/60 pointer-events-none animate-fade-in">
+            <span className="absolute right-4 bottom-4 text-[10px] font-black text-pink-400 bg-white px-2 py-1 rounded-lg shadow-sm border border-pink-50 animate-fade-in">
               {100 - ghiChu.length}
             </span>
           )}
         </div>
 
-        {/* Popup Thông báo lỗi & Gợi ý nén ảnh */}
-        {formError && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center z-[10000] p-6 animate-fade-in" onClick={handleCloseError}>
-            <div 
-              className="bg-white rounded-[24px] w-full max-w-[400px] p-8 shadow-2xl animate-slide-up relative flex flex-col items-center text-center gap-5"
-              onClick={e => e.stopPropagation()}
-            >
-              <div className="w-16 h-16 rounded-full bg-pink-faint flex items-center justify-center text-pink-brand mb-1">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                  <line x1="12" y1="9" x2="12" y2="13"></line>
-                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                </svg>
-              </div>
-              
-              <div className="flex flex-col gap-2">
-                <h3 className="text-xl font-bold text-text-base">Thông báo</h3>
-                <p className="text-[14px] text-text-sub leading-relaxed">
-                  {formError}
-                </p>
-              </div>
+        <Button
+          onClick={handleThemClick}
+          disabled={dangTai || (isImageTooLarge && !previewAnh)}
+          className="!rounded-2xl !py-4 bg-gray-900 text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-gray-200 hover:bg-pink-600 active:scale-95 transition-all mt-2"
+        >
+          {dangTai ? "Đang gửi lên mây..." : "Gửi mong muốn ✦"}
+        </Button>
+      </div>
 
+      {/* ERROR MODAL (CHỈ DÀNH CHO XỬ LÝ ẢNH QUÁ LỚN) */}
+      {(isImageTooLarge || formError === "Đang nén ảnh...") && (
+        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-md flex items-center justify-center z-[10000] p-6 animate-fade-in" onClick={handleCloseError}>
+          <div
+            className="bg-white rounded-[40px] w-full max-w-[380px] p-10 shadow-2xl animate-slide-up relative flex flex-col items-center text-center gap-6"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="w-20 h-20 rounded-3xl bg-pink-50 flex items-center justify-center text-pink-500 rotate-12 transition-transform hover:rotate-0 duration-500">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-2xl font-black text-gray-900 tracking-tight">Ối! Có lỗi nhỏ</h3>
+              <p className="text-sm text-gray-400 font-bold leading-relaxed">{formError}</p>
+            </div>
+
+            <div className="flex flex-col gap-3 w-full">
               {isImageTooLarge ? (
-                <div className="flex flex-col gap-3 w-full mt-2">
-                  <button 
-                    onClick={() => { nenAnh(); }}
-                    className="w-full py-3.5 bg-gradient-brand text-white font-bold rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-pink-brand/20"
-                  >
-                    Đồng ý nén ảnh
+                <>
+                  <button onClick={nenAnh} className="w-full py-4 bg-gray-900 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-pink-600 transition-all shadow-xl shadow-gray-200">
+                    Nén ảnh giúp tớ
                   </button>
-                  <button 
-                    onClick={() => { 
-                      xoaAnh(); 
-                      handleCloseError(); 
-                      setTimeout(() => document.getElementById("file-input").click(), 0);
-                    }}
-                    className="w-full py-3 text-pink-brand font-bold rounded-2xl border border-pink-border hover:bg-pink-brand hover:text-white hover:border-transparent transition-all"
-                  >
+                  <button onClick={() => { xoaAnh(); handleCloseError(); setTimeout(() => document.getElementById("file-input").click(), 0); }} className="w-full py-4 text-gray-400 font-black text-xs uppercase tracking-widest hover:text-gray-900 transition-all">
                     Chọn ảnh khác
                   </button>
-                </div>
+                </>
               ) : (
-                <button 
-                  onClick={handleCloseError}
-                  className="w-full mt-2 py-3.5 bg-pink-faint text-pink-brand font-bold rounded-2xl hover:bg-pink-light/20 transition-all"
-                >
+                <button onClick={handleCloseError} className="w-full py-4 bg-gray-900 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-gray-800 transition-all shadow-xl shadow-gray-200">
                   Đã hiểu
                 </button>
               )}
             </div>
           </div>
-        )}
-
-        <Button onClick={handleThemClick} disabled={dangTai || (isImageTooLarge && !previewAnh)}>
-          {dangTai ? "Đang xử lý..." : "✦ Thêm vào danh sách"}
-        </Button>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

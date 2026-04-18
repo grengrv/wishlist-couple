@@ -10,6 +10,7 @@ import { doc, setDoc, query, collection, where, getDocs } from "firebase/firesto
 import { useEffect, useCallback } from "react";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
+import { notifyDangNhap, notifyDangKy, notifyError } from "../utils/notify";
 
 export default function Auth() {
     const [mode, setMode] = useState("login");
@@ -78,19 +79,19 @@ export default function Auth() {
         // Validation Checks for Register
         if (mode === "register") {
             if (!validateUsernameFormat(username)) {
-                setError("Username không hợp lệ (3-20 ký tự, chữ/số/_)");
+                notifyError("Username không hợp lệ (3-20 ký tự, chữ/số/_)");
                 return;
             }
             if (usernameStatus.state === "invalid") {
-                setError(usernameStatus.message);
+                notifyError(usernameStatus.message);
                 return;
             }
             if (!validateEmail(email)) {
-                setError("Email không đúng định dạng");
+                notifyError("Email không đúng định dạng");
                 return;
             }
             if (!validatePassword(password)) {
-                setError("Mật khẩu yếu: Cần ít nhất 8 ký tự, 1 chữ hoa và 1 chữ số");
+                notifyError("Mật khẩu yếu: Cần ít nhất 8 ký tự, 1 chữ hoa và 1 chữ số");
                 return;
             }
         }
@@ -99,9 +100,10 @@ export default function Auth() {
         try {
             if (mode === "login") {
                 await signInWithEmailAndPassword(auth, email, password);
+                notifyDangNhap();
             } else {
                 if (username.trim() === "") {
-                    setError("Vui lòng nhập username");
+                    notifyError("Vui lòng nhập username");
                     setLoading(false);
                     return;
                 }
@@ -117,13 +119,14 @@ export default function Auth() {
                     avatar: null,
                     taoLuc: new Date()
                 });
+                notifyDangKy();
             }
         } catch (err) {
-            if (err.code === "auth/invalid-credential") setError("Email hoặc mật khẩu không đúng");
-            else if (err.code === "auth/email-already-in-use") setError("Email đã được sử dụng");
-            else if (err.code === "auth/weak-password") setError("Mật khẩu phải ít nhất 6 ký tự");
-            else if (err.code === "auth/invalid-email") setError("Email không hợp lệ");
-            else setError("Có lỗi xảy ra, thử lại nhé");
+            if (err.code === "auth/invalid-credential") notifyError("Email hoặc mật khẩu không đúng");
+            else if (err.code === "auth/email-already-in-use") notifyError("Email đã được sử dụng");
+            else if (err.code === "auth/weak-password") notifyError("Mật khẩu phải ít nhất 6 ký tự");
+            else if (err.code === "auth/invalid-email") notifyError("Email không hợp lệ");
+            else notifyError("Có lỗi xảy ra, thử lại nhé");
         }
         setLoading(false);
     }
@@ -133,8 +136,9 @@ export default function Auth() {
         setLoading(true);
         try {
             await signInAnonymously(auth);
+            notifyDangNhap();
         } catch (err) {
-            setError("Không thể đăng nhập ẩn danh, thử lại nhé");
+            notifyError("Không thể đăng nhập ẩn danh, thử lại nhé");
         }
         setLoading(false);
     }
@@ -220,7 +224,7 @@ export default function Auth() {
                         </div>
                     </div>
 
-                    {error && <p className="text-[12px] font-medium text-pink-brand bg-pink-pale/60 border border-pink-border/30 px-3 py-2.5 rounded-xl text-center animate-shake">{error}</p>}
+
                     
                     <Button onClick={handleSubmit} disabled={loading || (mode === 'register' && usernameStatus.state === 'invalid')}>
                         {loading ? "Đang xử lý..." : mode === "login" ? "Đăng nhập" : "Đăng ký"}

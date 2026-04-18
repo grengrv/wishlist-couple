@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getDoc, doc, updateDoc } from "firebase/firestore";
+import { getDoc, doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
 import { useWishlist } from "../hooks/useWishlist";
 import Stats from "../components/Stats";
@@ -11,7 +11,9 @@ import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import { ADMIN_EMAIL } from "../constants";
 import { useGroups } from "../hooks/useGroups";
-import toast from "react-hot-toast";
+import { useConfirm } from "../context/ConfirmContext";
+import { notifyXoaWish, notifyXoaNhom, notifyLuuNhom, notifyCopied, notifyError } from "../utils/notify";
+import Profile from "../Profile";
 
 function generateInviteCode() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -28,66 +30,133 @@ export default function GroupDetailPage({ user, userProfile }) {
   const [group, setGroup] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const { suaNhom, xoaNhom } = useGroups(user);
+  const confirm = useConfirm();
 
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
 
+  const [showMembers, setShowMembers] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+
   const {
     items, xoaMon,
   } = useWishlist(user, userProfile, id);
 
+  const isEditingRef = useRef(false);
   useEffect(() => {
-    async function fetchGroup() {
-      const snap = await getDoc(doc(db, "groups", id));
-      if (snap.exists()) {
-        const gData = snap.data();
+    isEditingRef.current = isEditing;
+  }, [isEditing]);
 
-        // Tự động tạo inviteCode nếu nhóm cũ chưa có
-        if (!gData.inviteCode) {
-          const newCode = generateInviteCode();
-          await updateDoc(doc(db, "groups", id), { inviteCode: newCode });
-          gData.inviteCode = newCode;
-        }
+  useEffect(() => {
+    let unsubGroup;
+    let unsubUsers = [];
 
-        // Fetch profile avatars của các thành viên (tối đa lấy 3 người hiển thị)
-        if (gData.members && gData.members.length > 0) {
-          const memberDocs = await Promise.all(
-            gData.members.slice(0, 3).map(uid => getDoc(doc(db, "users", uid)))
-          );
-          gData.memberProfiles = memberDocs
-            .filter(d => d.exists())
-            .map(d => d.data());
-        } else {
-          gData.memberProfiles = [];
-        }
+    unsubGroup = onSnapshot(doc(db, "groups", id), (snap) => {
+      if (!snap.exists()) {
+        navigate("/groups");
+        return;
+      }
+      
+      const gData = snap.data();
+      
+      // Tự động tạo inviteCode nếu nhóm cũ chưa có
+      if (!gData.inviteCode) {
+        const newCode = generateInviteCode();
+        updateDoc(doc(db, "groups", id), { inviteCode: newCode });
+        gData.inviteCode = newCode;
+      }
 
-        setGroup(gData);
+      setGroup(prev => {
+        const currentProfiles = prev?.memberProfiles || [];
+        return { ...gData, memberProfiles: currentProfiles };
+      });
+
+      if (!isEditingRef.current) {
         setEditName(gData.name);
         setEditDesc(gData.description || "");
-      } else {
-        navigate("/groups");
       }
-    }
-    fetchGroup();
+
+      // Lắng nghe realtime profile của các thành viên
+      const memberIds = gData.members || [];
+      
+      unsubUsers.forEach(unsub => unsub());
+      unsubUsers = [];
+
+      if (memberIds.length === 0) {
+        setGroup(prev => ({ ...prev, memberProfiles: [] }));
+      } else {
+        const profilesMap = new Map();
+        
+        memberIds.forEach(uid => {
+          const unsub = onSnapshot(doc(db, "users", uid), (uSnap) => {
+            if (uSnap.exists()) {
+              profilesMap.set(uid, { uid, ...uSnap.data() });
+            } else {
+              profilesMap.delete(uid);
+            }
+            
+            setGroup(prev => {
+              if (!prev) return prev;
+              const newProfiles = prev.members.map(mUid => profilesMap.get(mUid)).filter(Boolean);
+              return { ...prev, memberProfiles: newProfiles };
+            });
+
+            // Cập nhật selectedUser realtime nếu đang xem
+            setSelectedUser(current => {
+              if (current && current.uid === uid) {
+                return profilesMap.get(uid);
+              }
+              return current;
+            });
+          });
+          unsubUsers.push(unsub);
+        });
+      }
+    });
+
+    return () => {
+      if (unsubGroup) unsubGroup();
+      unsubUsers.forEach(unsub => unsub());
+    };
   }, [id, navigate]);
 
   async function handleXoa(wishId) {
-    await xoaMon(wishId);
+    const ok = await xoaMon(wishId);
+    if (ok) {
+      notifyXoaWish();
+    }
+    // ok === false: notify đã được gọi bên trong xoaMon
     if (selectedItem?.id === wishId) setSelectedItem(null);
   }
 
   async function handleLuuGroup() {
     if (!editName.trim()) return;
-    await suaNhom(id, { name: editName, description: editDesc });
-    setGroup(prev => ({ ...prev, name: editName, description: editDesc }));
-    setIsEditing(false);
+    try {
+      await suaNhom(id, { name: editName, description: editDesc });
+      setGroup(prev => ({ ...prev, name: editName, description: editDesc }));
+      setIsEditing(false);
+      notifyLuuNhom();
+    } catch {
+      notifyError("Lưu thông tin nhóm thất bại. Vui lòng thử lại!");
+    }
   }
 
   async function handleXoaGroup() {
-    if (window.confirm("Bạn có chắc chắn muốn giải tán nhóm này? Toàn bộ thiết lập và lời mời sẽ bị hủy bỏ vĩnh viễn.")) {
+    const ok = await confirm({
+      title: "Giải tán nhóm?",
+      message: "Bạn có chắc chắn muốn giải tán nhóm này? Toàn bộ thiết lập và lời mời sẽ bị hủy bỏ vĩnh viễn.",
+      confirmText: "Giải tán",
+      cancelText: "Hủy bỏ",
+      variant: "danger",
+    });
+    if (!ok) return;
+    try {
       await xoaNhom(id);
+      notifyXoaNhom();
       navigate("/groups");
+    } catch {
+      notifyError("Giải tán nhóm thất bại. Vui lòng thử lại!");
     }
   }
 
@@ -100,7 +169,7 @@ export default function GroupDetailPage({ user, userProfile }) {
   function handleInvite() {
     const inviteLink = `${window.location.origin}/invite/${id}`;
     navigator.clipboard.writeText(inviteLink);
-    toast.success("Đã mượn link lời mời vào Clipboard! Gửi cho đồng đội ngay nào.");
+    notifyCopied();
   }
 
   const isOwner = group?.ownerUid === user?.uid || user?.email === ADMIN_EMAIL;
@@ -108,10 +177,13 @@ export default function GroupDetailPage({ user, userProfile }) {
   if (!group) return <p className="py-10 text-center text-pink-brand animate-pulse">Đang tải phòng...</p>;
 
   return (
-    <div className="py-10 mx-auto w-full transition-all duration-500">
-      <button onClick={() => navigate("/groups")} className="text-sm font-semibold text-pink-muted hover:text-pink-brand mb-4 flex items-center gap-1 transition-colors">
-        <span className="text-lg leading-none">←</span> Quay lại danh sách
-      </button>
+    <div className="flex w-full items-start transition-all duration-500 pt-6 md:pt-10">
+      
+      {/* CỘT MAIN CONTENT */}
+      <div className={`flex-1 min-w-0 transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${showMembers ? "pr-6 lg:pr-10" : "pr-0"}`}>
+        <button onClick={() => navigate("/groups")} className="text-sm font-semibold text-pink-muted hover:text-pink-brand mb-4 flex items-center gap-1 transition-colors">
+          <span className="text-lg leading-none">←</span> Quay lại danh sách
+        </button>
 
       <div className="group relative flex flex-col sm:flex-row sm:items-start justify-between gap-6 mb-10 bg-white p-6 sm:p-8 rounded-[24px] border border-pink-border shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
         {/* Vạch trang trí bên trái */}
@@ -173,9 +245,13 @@ export default function GroupDetailPage({ user, userProfile }) {
           )}
 
           {/* Cụm Micro-UI hiển thị thành viên */}
-          <div className="flex items-center gap-2 mt-5">
+          <div 
+            className="flex items-center gap-2 mt-5 cursor-pointer group/members hover:bg-pink-50 w-fit px-3 py-2 -ml-3 rounded-2xl transition-colors"
+            onClick={() => setShowMembers(true)}
+            title="Xem danh sách thành viên"
+          >
             <div className="flex -space-x-2">
-              {group.memberProfiles?.map((profile, idx) => {
+              {group.memberProfiles?.slice(0, 3).map((profile, idx) => {
                 const zIndices = ['z-20', 'z-10', 'z-0'];
                 if (profile.avatar) {
                   return <img key={idx} src={profile.avatar} alt="avatar" className={`w-8 h-8 rounded-full border-2 border-white object-cover ${zIndices[idx]}`} />;
@@ -186,9 +262,14 @@ export default function GroupDetailPage({ user, userProfile }) {
                   </div>
                 );
               })}
+              {group.memberProfiles?.length > 3 && (
+                <div className="w-8 h-8 rounded-full bg-pink-100 border-2 border-white flex items-center justify-center text-[10px] text-pink-500 font-bold z-0">
+                  +{group.memberProfiles.length - 3}
+                </div>
+              )}
             </div>
-            <span className="text-[13px] font-bold text-pink-soft ml-1.5">
-              {group.members?.length || 1} thành viên
+            <span className="text-[13px] font-bold text-pink-soft ml-1.5 group-hover/members:text-pink-500 transition-colors">
+              {group.members?.length || 1} thành viên <span className="opacity-50 ml-1 text-[10px]">▶</span>
             </span>
           </div>
         </div>
@@ -198,7 +279,7 @@ export default function GroupDetailPage({ user, userProfile }) {
             <div
               onClick={() => {
                 navigator.clipboard.writeText(group.inviteCode);
-                toast.success("Đã sao chép mã mời!");
+                notifyCopied();
               }}
               className="group/code flex items-center gap-2.5 px-3 py-1.5 bg-pink-pale rounded-xl border border-pink-brand/10 cursor-pointer hover:bg-pink-brand/5 hover:border-pink-brand/30 transition-all duration-300 shadow-sm h-10"
               title="Nhấn để sao chép mã mời"
@@ -242,6 +323,85 @@ export default function GroupDetailPage({ user, userProfile }) {
         user={user}
         adminEmail={ADMIN_EMAIL}
       />
+
+      {/* NÚT TOGGLE THÀNH VIÊN GẮN CẠNH PHẢI */}
+      <button 
+        onClick={() => setShowMembers(true)}
+        title="Danh sách thành viên"
+        className={`fixed top-1/2 right-0 -translate-y-1/2 bg-white border border-r-0 border-pink-100 shadow-[-5px_0_20px_rgba(236,72,153,0.1)] pl-2 pr-1 py-4 rounded-l-2xl z-[90] text-pink-400 hover:text-pink-500 hover:bg-pink-50 transition-all duration-500 flex flex-col items-center gap-1 ${showMembers ? "translate-x-full opacity-0 pointer-events-none" : "translate-x-0 opacity-100"}`}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="mt-1"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+
+      </div> {/* END MAIN CONTENT COLUMN */}
+
+      {/* CỘT SIDEBAR CHỨA PANEL */}
+      <div className={`shrink-0 transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${showMembers ? "w-[300px] sm:w-[340px] opacity-100 pointer-events-auto" : "w-0 opacity-0 pointer-events-none"}`}>
+        
+        {/* PANEL THỰC SỰ - STICKY ĐỂ LUÔN HIỆN */}
+        <div 
+          className={`w-[300px] sm:w-[340px] sticky top-28 h-[calc(100vh-8rem)] bg-white rounded-[32px] border border-pink-100 shadow-[0_20px_50px_rgba(236,72,153,0.08)] z-[80] flex flex-col overflow-hidden transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${showMembers ? "translate-x-0" : "translate-x-[50px]"}`}
+        >
+          <div className="p-6 border-b border-pink-50 flex items-center justify-between bg-white shrink-0">
+            <div>
+              <h3 className="text-[18px] font-black text-gray-900 tracking-tight flex items-center gap-2">
+                Thành viên 
+                <span className="bg-pink-100 text-pink-500 text-[12px] px-2 py-0.5 rounded-full">{group.memberProfiles?.length || 0}</span>
+              </h3>
+            </div>
+            <button className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-pink-50 hover:text-pink-500 transition-all" onClick={() => setShowMembers(false)}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-1 bg-gray-50/30">
+            {group.memberProfiles?.map((member, idx) => {
+              const statusColors = { online: "#34d399", idle: "#fbbf24", dnd: "#f43f5e", offline: "#9ca3af" };
+              return (
+                <div 
+                  key={idx} 
+                  className="flex items-center gap-4 p-3 hover:bg-white rounded-2xl cursor-pointer transition-all duration-300 group/item hover:shadow-[0_4px_15px_rgba(236,72,153,0.05)] border border-transparent hover:border-pink-50"
+                  onClick={() => setSelectedUser(member)}
+                >
+                  <div className="relative shrink-0">
+                    {member.avatar ? (
+                      <img src={member.avatar} alt="avatar" className="w-[46px] h-[46px] rounded-[16px] object-cover shadow-sm group-hover/item:scale-105 transition-transform duration-300" />
+                    ) : (
+                      <div className="w-[46px] h-[46px] rounded-[16px] bg-gradient-to-br from-pink-400 to-rose-400 flex items-center justify-center text-white font-black text-lg shadow-sm group-hover/item:scale-105 transition-transform duration-300">
+                        {(member.displayName || member.username || "?").charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    {/* Status Dot */}
+                    <div className="absolute -bottom-1 -right-1 w-[14px] h-[14px] rounded-full border-[2.5px] border-white flex items-center justify-center bg-white shadow-sm z-10 transition-colors">
+                      <div className="w-full h-full rounded-full" style={{ backgroundColor: statusColors[member.status || "online"] }}></div>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-[15px] text-gray-900 truncate group-hover/item:text-pink-600 transition-colors">{member.displayName || member.username}</div>
+                    {member.customStatus ? (
+                      <div className="text-[11px] text-pink-500 font-bold truncate mt-0.5 flex items-center gap-1">
+                        <span>💭</span> {member.customStatus}
+                      </div>
+                    ) : (
+                      <div className="text-[12px] text-gray-500 font-medium truncate mt-0.5">@{member.username}</div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* HIỂN THỊ PROFILE THÀNH VIÊN */}
+      {selectedUser && (
+        <Profile 
+          userProfile={selectedUser} 
+          onClose={() => setSelectedUser(null)} 
+          isReadOnly={selectedUser.uid !== user?.uid} 
+        />
+      )}
     </div>
   );
 }

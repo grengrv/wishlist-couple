@@ -5,7 +5,7 @@ import {
   deleteDoc, doc, orderBy, query
 } from "firebase/firestore";
 import { ADMIN_EMAIL } from "../constants";
-import toast from "react-hot-toast";
+import { notifyError } from "../utils/notify";
 
 /**
  * Custom hook quản lý toàn bộ logic dữ liệu wishlist:
@@ -73,7 +73,7 @@ export function useWishlist(user, userProfile, groupId = null) {
     // 1. Kiểm tra định dạng
     const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     if (!allowedTypes.includes(file.type)) {
-      setFormError("Chỉ chấp nhận ảnh định dạng JPG, PNG, WEBP hoặc GIF.");
+      notifyError("Chỉ chấp nhận ảnh định dạng JPG, PNG, WEBP hoặc GIF.");
       return;
     }
 
@@ -130,7 +130,7 @@ export function useWishlist(user, userProfile, groupId = null) {
       setPendingFile(null);
       setFormError("");
     } catch (err) {
-      setFormError("Lỗi khi nén ảnh. Thử chọn ảnh khác nhé.");
+      notifyError("Lỗi khi nén ảnh. Thử chọn ảnh khác nhé.");
     } finally {
       setDangTai(false);
     }
@@ -149,15 +149,15 @@ export function useWishlist(user, userProfile, groupId = null) {
   async function themMon() {
     setFormError("");
     if (tenMon.trim().length < 2) {
-      setFormError("Tên món phải có ít nhất 2 ký tự.");
+      notifyError("Tên món phải có ít nhất 2 ký tự.");
       return;
     }
     if (tenMon.length > 40) {
-      setFormError("Tên món không được quá 40 ký tự.");
+      notifyError("Tên món không được quá 40 ký tự.");
       return;
     }
     if (ghiChu.length > 100) {
-      setFormError("Ghi chú tối đa 100 ký tự.");
+      notifyError("Ghi chú tối đa 100 ký tự.");
       return;
     }
 
@@ -187,11 +187,17 @@ export function useWishlist(user, userProfile, groupId = null) {
 
     // Chặn nếu không phải chủ và không phải admin
     if (item?.uid && item.uid !== user.uid && user.email !== ADMIN_EMAIL) {
-      toast.error("Bạn không thể xóa wishlist của người khác!");
-      return;
+      notifyError("Bạn không thể xóa wishlist của người khác!");
+      return false;
     }
 
-    await deleteDoc(doc(db, "wishlist", id));
+    try {
+      await deleteDoc(doc(db, "wishlist", id));
+      return true;
+    } catch {
+      notifyError("Không thể xóa món này. Vui lòng thử lại!");
+      return false;
+    }
   }
 
   return {

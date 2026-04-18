@@ -1,58 +1,87 @@
 /**
  * Footer Component
- * Chân trang với lời chào kết thúc lãng mạn
+ * Chân trang với phong cách lãng mạn, hiện đại
  */
 export default function Footer() {
   return (
-    <footer className="bg-white border-t border-pink-border py-10 mt-12">
-      <div className="max-w-[1600px] mx-auto px-[5%] md:px-[10%] w-full flex flex-col md:flex-row justify-between gap-8 transition-all duration-500">
-        
-        {/* Brand */}
-        <div className="flex-1">
-          <h2 className="text-xl font-bold text-deep-red mb-2">Wishlist ♥</h2>
-          <p className="text-sm text-text-sub leading-[1.6]">
-            Nơi ghi giữ những điều mơ ước, cùng nhau chinh phục từng mục tiêu nhỏ trong cuộc sống.
+    <footer className="relative bg-white/50 backdrop-blur-md border-t border-pink-100/50 py-16 mt-20 overflow-hidden">
+      {/* Các đốm màu trang trí phía sau (Glow effect) */}
+      <div className="absolute top-0 left-1/4 w-64 h-64 bg-pink-100/30 rounded-full blur-[80px] -z-10"></div>
+      <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-rose-100/20 rounded-full blur-[100px] -z-10"></div>
+
+      <div className="max-w-[1440px] mx-auto px-6 md:px-12 w-full flex flex-col md:flex-row justify-between gap-12 transition-all duration-500">
+
+        {/* Brand Section */}
+        <div className="flex-1 max-w-sm">
+          <div className="flex items-center gap-2 mb-4 group cursor-default">
+            <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-rose-400 rounded-lg flex items-center justify-center shadow-md shadow-pink-200 group-hover:rotate-12 transition-transform">
+              <span className="text-white text-sm">♥</span>
+            </div>
+            <h2 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-gray-600 tracking-tight">
+              Wishlist
+            </h2>
+          </div>
+          <p className="text-[15px] text-gray-500 leading-relaxed font-medium">
+            Nơi ghi giữ những điều mơ ước, cùng nhau chinh phục từng mục tiêu nhỏ để tạo nên một hành trình hạnh phúc lớn lao.
           </p>
         </div>
 
-        {/* Quick Links */}
-        <div className="flex gap-10">
+        {/* Links Groups */}
+        <div className="flex flex-wrap gap-12 md:gap-24">
           <div>
-            <h3 className="font-semibold text-text-base mb-3 text-sm">Chuyên mục</h3>
-            <ul className="flex flex-col gap-2 text-sm text-text-sub">
-              <li><a href="#" className="hover:text-pink-brand transition-colors">Trang chủ</a></li>
-              <li><a href="#" className="hover:text-pink-brand transition-colors">Khám phá</a></li>
-              <li><a href="#" className="hover:text-pink-brand transition-colors">Hỗ trợ</a></li>
+            <h3 className="text-xs uppercase tracking-[2px] font-black text-gray-400 mb-6">Chuyên mục</h3>
+            <ul className="flex flex-col gap-4">
+              {['Trang chủ', 'Khám phá', 'Hỗ trợ'].map((item) => (
+                <li key={item}>
+                  <a href="#" className="text-[15px] font-bold text-gray-600 hover:text-pink-500 transition-all flex items-center group">
+                    <span className="w-0 group-hover:w-2 h-[2px] bg-pink-400 mr-0 group-hover:mr-2 transition-all"></span>
+                    {item}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
+
           <div>
-            <h3 className="font-semibold text-text-base mb-3 text-sm">Pháp lý</h3>
-            <ul className="flex flex-col gap-2 text-sm text-text-sub">
-              <li><a href="#" className="hover:text-pink-brand transition-colors">Điều khoản</a></li>
-              <li><a href="#" className="hover:text-pink-brand transition-colors">Bảo mật</a></li>
+            <h3 className="text-xs uppercase tracking-[2px] font-black text-gray-400 mb-6">Pháp lý</h3>
+            <ul className="flex flex-col gap-4">
+              {['Điều khoản', 'Bảo mật'].map((item) => (
+                <li key={item}>
+                  <a href="#" className="text-[15px] font-bold text-gray-600 hover:text-pink-500 transition-all flex items-center group">
+                    <span className="w-0 group-hover:w-2 h-[2px] bg-pink-400 mr-0 group-hover:mr-2 transition-all"></span>
+                    {item}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
       </div>
 
       {/* Copyright & Social */}
-      <div className="max-w-[1600px] mx-auto px-[5%] md:px-[10%] w-full mt-8 pt-6 border-t border-dashed border-pink-border flex flex-col sm:flex-row items-center justify-between gap-4 transition-all duration-500">
-        <p className="text-xs text-text-footer">
-          &copy; {new Date().getFullYear()} Wishlist Couple. Made with ♥
+      <div className="max-w-[1440px] mx-auto px-6 md:px-12 w-full mt-16 pt-8 border-t border-pink-50 flex flex-col sm:flex-row items-center justify-between gap-6 transition-all duration-500">
+        <p className="text-sm font-bold text-gray-400">
+          &copy; {new Date().getFullYear()} <span className="text-pink-400/80">Wishlist Couple</span>. Crafted with ♥
         </p>
-        <div className="flex items-center gap-3 text-text-footer">
-          {/* Facebook Icon */}
-          <a href="#" className="hover:text-pink-brand transition-colors">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
-          </a>
-          {/* Twitter Icon */}
-          <a href="#" className="hover:text-pink-brand transition-colors">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4l11.733 16h4.267l-11.733 -16z"/><path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"/></svg>
-          </a>
-          {/* Insta Icon */}
-          <a href="#" className="hover:text-pink-brand transition-colors">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-          </a>
+
+        <div className="flex items-center gap-2">
+          {/* Social Buttons - Dạng Circle Soft */}
+          {[
+            { id: 'fb', path: 'M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z' },
+            { id: 'tw', path: 'M4 4l11.733 16h4.267l-11.733 -16z M4 20l6.768 -6.768' },
+            { id: 'ins', path: 'M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z' }
+          ].map((social) => (
+            <a
+              key={social.id}
+              href="#"
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 text-gray-400 hover:bg-pink-50 hover:text-pink-500 hover:-translate-y-1 transition-all duration-300"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d={social.path}></path>
+                {social.id === 'ins' && <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>}
+              </svg>
+            </a>
+          ))}
         </div>
       </div>
     </footer>

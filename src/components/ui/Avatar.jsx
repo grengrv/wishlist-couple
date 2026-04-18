@@ -18,6 +18,7 @@ export default function Avatar({ src, name = "?", size = "sm", className = "", .
   if (src) {
     return (
       <img 
+        key={src}
         src={src} 
         alt="avatar" 
         className={`
