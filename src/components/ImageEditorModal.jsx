@@ -1,6 +1,8 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "../utils/cropImage";
+import { useConfirm } from "../context/ConfirmContext";
+import { notifyCompressing } from "../utils/notify";
 
 export default function ImageEditorModal({ isOpen, imageSrc, file, isBanner, isGif, onClose, onSave }) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -8,6 +10,7 @@ export default function ImageEditorModal({ isOpen, imageSrc, file, isBanner, isG
   const [rotation, setRotation] = useState(0);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const confirm = useConfirm();
 
   const aspect = isBanner ? 16 / 9 : 1 / 1;
 
@@ -15,15 +18,57 @@ export default function ImageEditorModal({ isOpen, imageSrc, file, isBanner, isG
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
+  const handleRequestClose = useCallback(async () => {
+    if (isProcessing) return;
+
+    if (imageSrc) {
+      const ok = await confirm({
+        title: "Hủy chỉnh sửa?",
+        message: "Bạn có chắc muốn thoát? Các thay đổi trên ảnh này sẽ không được lưu.",
+        confirmText: "Thoát",
+        cancelText: "Ở lại",
+        variant: "danger"
+      });
+      if (!ok) return;
+    }
+    onClose();
+  }, [isProcessing, imageSrc, confirm, onClose]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        handleRequestClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleRequestClose]);
+
   const handleSave = async () => {
     if (isGif) {
-      // Pass the original source and file to keep GIF animation
-      onSave(imageSrc, file);
+      try {
+        setIsProcessing(true);
+        // Convert blob URL back to Base64 for Firestore storage without losing animation
+        const response = await fetch(imageSrc);
+        const blob = await response.blob();
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          onSave(reader.result, file);
+          setIsProcessing(false);
+        };
+        reader.readAsDataURL(blob);
+      } catch (err) {
+        console.error("GIF conversion error:", err);
+        setIsProcessing(false);
+      }
       return;
     }
 
     try {
       setIsProcessing(true);
+      if (!isGif) notifyCompressing();
       const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels, rotation);
       onSave(croppedImage, null);
     } catch (e) {
@@ -36,14 +81,14 @@ export default function ImageEditorModal({ isOpen, imageSrc, file, isBanner, isG
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-gray-900/80 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="bg-white rounded-[32px] w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-gray-900/80 backdrop-blur-sm p-4 animate-fade-in" onClick={() => !isProcessing && handleRequestClose()}>
+      <div className="bg-white rounded-[32px] w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="p-5 border-b border-gray-100 flex items-center justify-between">
           <h3 className="text-xl font-black text-gray-800">
             {isGif ? "Xem trước ảnh động" : "Chỉnh sửa hình ảnh"}
           </h3>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+          <button onClick={handleRequestClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
         </div>
@@ -123,7 +168,7 @@ export default function ImageEditorModal({ isOpen, imageSrc, file, isBanner, isG
         {/* Footer */}
         <div className="p-5 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
           <button 
-            onClick={onClose} 
+            onClick={handleRequestClose} 
             className="px-6 py-2.5 text-sm font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-xl transition-all"
           >
             Hủy

@@ -71,24 +71,58 @@ export default async function getCroppedImg(
     return null;
   }
 
-  // Set the size of the cropped canvas
-  croppedCanvas.width = pixelCrop.width;
-  croppedCanvas.height = pixelCrop.height;
-
-  // Draw the cropped image onto the new canvas
+  // Intelligent Multi-pass Compression Logic
+  // Target: Keep Base64 under ~400KB to ensure doc stays under 1MB (Avatar + Banner)
+  let quality = 0.8;
+  let maxW = 800;
+  let resultDataUrl = "";
+  
+  // First pass
+  let targetWidth = pixelCrop.width;
+  let targetHeight = pixelCrop.height;
+  if (targetWidth > maxW) {
+    targetHeight = (maxW / targetWidth) * targetHeight;
+    targetWidth = maxW;
+  }
+  
+  croppedCanvas.width = targetWidth;
+  croppedCanvas.height = targetHeight;
   croppedCtx.drawImage(
     canvas,
-    pixelCrop.x,
-    pixelCrop.y,
-    pixelCrop.width,
-    pixelCrop.height,
-    0,
-    0,
-    pixelCrop.width,
-    pixelCrop.height
+    pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height,
+    0, 0, targetWidth, targetHeight
   );
 
-  // As Base64 string
-  // To optimize size for performance, use JPEG format with 0.8 quality
-  return croppedCanvas.toDataURL('image/jpeg', 0.8);
+  resultDataUrl = croppedCanvas.toDataURL('image/jpeg', quality);
+
+  // If still too large (> 400KB raw), try more aggressive compression
+  // 400KB raw = ~533KB Base64
+  if (resultDataUrl.length > 550000) {
+    quality = 0.6;
+    maxW = 600;
+    
+    targetWidth = pixelCrop.width;
+    targetHeight = pixelCrop.height;
+    if (targetWidth > maxW) {
+      targetHeight = (maxW / targetWidth) * targetHeight;
+      targetWidth = maxW;
+    }
+    
+    croppedCanvas.width = targetWidth;
+    croppedCanvas.height = targetHeight;
+    croppedCtx.clearRect(0, 0, targetWidth, targetHeight);
+    croppedCtx.drawImage(
+      canvas,
+      pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height,
+      0, 0, targetWidth, targetHeight
+    );
+    resultDataUrl = croppedCanvas.toDataURL('image/jpeg', quality);
+  }
+
+  // Final emergency pass if still too large
+  if (resultDataUrl.length > 600000) {
+    resultDataUrl = croppedCanvas.toDataURL('image/jpeg', 0.4);
+  }
+
+  return resultDataUrl;
 }

@@ -77,11 +77,11 @@ export function useWishlist(user, userProfile, groupId = null) {
       return;
     }
 
-    // 2. Kiểm tra kích thước (5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    // 2. Kiểm tra kích thước (400KB cho Firestore Base64)
+    if (file.size > 400 * 1024) {
       setIsImageTooLarge(true);
       setPendingFile(file);
-      setFormError("Ảnh quá lớn (trên 5MB) không thể lưu trữ.");
+      setFormError("Ảnh quá lớn (trên 400KB). Vui lòng chọn ảnh nhỏ hơn để lưu trữ.");
       return;
     }
 
@@ -163,22 +163,29 @@ export function useWishlist(user, userProfile, groupId = null) {
 
     setDangTai(true);
 
-    const docRef = await addDoc(collection(db, "wishlist"), {
-      ten: tenMon,
-      ghiChu: ghiChu,
-      anhUrl: anhBase64 || null,
-      taoLuc: new Date(),
-      uid: user.uid,
-      themBoi: userProfile?.username || user.email || "Khách ẩn danh",
-      avatarNguoiThem: userProfile?.avatar || null,
-      groupId: groupId || null
-    });
-    
-    setTenMon("");
-    setGhiChu("");
-    xoaAnh();
-    setDangTai(false);
-    return true;
+    try {
+      const docRef = await addDoc(collection(db, "wishlist"), {
+        ten: tenMon,
+        ghiChu: ghiChu,
+        anhUrl: anhBase64 || null,
+        taoLuc: new Date(),
+        uid: user.uid,
+        themBoi: userProfile?.username || user.email || "Khách ẩn danh",
+        avatarNguoiThem: userProfile?.avatar || null,
+        groupId: groupId || null
+      });
+      
+      setTenMon("");
+      setGhiChu("");
+      xoaAnh();
+      return true;
+    } catch (err) {
+      notifyError("Không thể thêm món này. Thử lại sau nhé!");
+      console.error(err);
+      return false;
+    } finally {
+      setDangTai(false);
+    }
   }
 
   /** Xóa item khỏi Firestore (chỉ chủ hoặc admin) */

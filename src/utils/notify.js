@@ -64,11 +64,15 @@ export function notifyCapNhatHoSo() {
 }
 
 export function notifyDoiAvatar() {
-  toastStore.show("Đã áp dụng ảnh đại diện (Xem trước)");
+  toastStore.show("Đổi ảnh đại diện thành công");
 }
 
 export function notifyDoiBanner() {
-  toastStore.show("Đã áp dụng ảnh nền (Xem trước)");
+  toastStore.show("Đổi ảnh nền thành công");
+}
+
+export function notifyCompressing() {
+  toastStore.show("Đang tối ưu ảnh...");
 }
 
 // ── TẠO NHÓM (create_group) ──────────────────────────────────────────────────
@@ -105,6 +109,6 @@ export function notifyLogout() {
 }
 
 // ── LỖI (error) ───────────────────────────────────────────────────────────────
-export function notifyError(message = "Có lỗi xảy ra, thử lại nhé!") {
+export function notifyError(message = "Cập nhật thất bại") {
   toastStore.show(message, "error");
 }
