@@ -483,13 +483,13 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                                     style={{ color: activeTheme?.color }}
                                     className="text-[15px] font-bold mb-4 opacity-50"
                                 >
-                                    @{profile?.username || "user"}
+                                    {profile?.username || "user"}
                                 </p>
 
                                 {profile?.customStatus && (
                                     <div
                                         style={{ color: activeTheme.color, borderColor: `${activeTheme.color}20` }}
-                                        className="bg-white/40 backdrop-blur-md border font-bold px-5 py-2.5 rounded-2xl flex items-center gap-2 mb-6 max-w-full"
+                                        className="font-bold px-5 py-2.5 flex items-center gap-2 mb-6 max-w-full"
                                     >
                                         <span className="text-sm break-words">{profile.customStatus}</span>
                                     </div>
@@ -521,7 +521,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                                 )}
                             </div>
 
-                            <div className="flex items-center justify-center bg-white/60 backdrop-blur-xl border border-white/40 rounded-[24px] p-4 mb-6">
+                            <div className="flex items-center justify-center p-5">
                                 <div className="flex items-center gap-3">
 
                                     <div>
