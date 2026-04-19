@@ -212,30 +212,30 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                               )}
                             </div>
                           </div>
-                          
+
                           {/* Comment Actions */}
                           <div className="flex items-center gap-4 mt-1.5">
                             <span className="text-[10px] text-gray-400 font-bold">
                               {new Date(c.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                             </span>
-                            
-                            <button 
+
+                            <button
                               onClick={() => {
                                 const currentLikes = c.likes || [];
                                 const hasLiked = currentLikes.includes(user?.uid);
-                                const newLikes = hasLiked 
+                                const newLikes = hasLiked
                                   ? currentLikes.filter(id => id !== user?.uid)
                                   : [...currentLikes, user?.uid];
-                                
+
                                 // Call parent onComment with updated data (assuming backend handles nested updates)
-                                onComment(item.id, null, { ...c, likes: newLikes }, true); 
+                                onComment(item.id, null, { ...c, likes: newLikes }, true);
                               }}
                               className={`text-[11px] font-black transition-colors ${c.likes?.includes(user?.uid) ? 'text-pink-500' : 'text-gray-400 hover:text-gray-600'}`}
                             >
                               Thích
                             </button>
 
-                            <button 
+                            <button
                               onClick={() => {
                                 setReplyingTo(replyingTo === c.id ? null : c.id);
                                 setReplyText("");
@@ -247,7 +247,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                             </button>
 
                             {c.likes?.length > 0 && (
-                              <button 
+                              <button
                                 onClick={() => {
                                   const likeUsers = allPossibleMembers.filter(m => c.likes.includes(m.uid));
                                   setShowLikesModal({ title: "Lượt thích bình luận", users: likeUsers });
@@ -321,31 +321,31 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                                       )}
                                     </span>
                                   </div>
-                                  
+
                                   {/* Reply Actions */}
                                   <div className="flex items-center gap-4 mt-1">
                                     <span className="text-[10px] text-gray-400 font-bold">
                                       {new Date(reply.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                                     </span>
 
-                                    <button 
+                                    <button
                                       onClick={() => {
                                         const currentLikes = reply.likes || [];
                                         const hasLiked = currentLikes.includes(user?.uid);
-                                        const newLikes = hasLiked 
+                                        const newLikes = hasLiked
                                           ? currentLikes.filter(id => id !== user?.uid)
                                           : [...currentLikes, user?.uid];
-                                        
+
                                         // Update reply inside parent comment
                                         const updatedReplies = c.replies.map(r => r.id === reply.id ? { ...r, likes: newLikes } : r);
-                                        onComment(item.id, null, { ...c, replies: updatedReplies }, true); 
+                                        onComment(item.id, null, { ...c, replies: updatedReplies }, true);
                                       }}
                                       className={`text-[10px] font-black transition-colors ${reply.likes?.includes(user?.uid) ? 'text-pink-500' : 'text-gray-400 hover:text-gray-600'}`}
                                     >
                                       Thích
                                     </button>
 
-                                    <button 
+                                    <button
                                       onClick={() => {
                                         setReplyingTo(c.id);
                                         setReplyText(`@${reply.username} `);
@@ -357,7 +357,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                                     </button>
 
                                     {reply.likes?.length > 0 && (
-                                      <button 
+                                      <button
                                         onClick={() => {
                                           const likeUsers = allPossibleMembers.filter(m => reply.likes.includes(m.uid));
                                           setShowLikesModal({ title: "Lượt thích phản hồi", users: likeUsers });
@@ -416,13 +416,13 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                       {replyingTo === c.id && (
                         <div className="ml-10 mt-2 flex items-center gap-3 animate-fade-in bg-gray-50/50 p-2 rounded-xl">
                           <Avatar src={userProfile?.avatar} name={userProfile?.username} size="xs" className="w-6 h-6" />
-                          <input 
+                          <input
                             autoFocus
                             value={replyText}
                             onChange={(e) => setReplyText(e.target.value)}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' && replyText.trim()) {
-                                onComment(item.id, replyText, c, true, replyTargetUser); 
+                                onComment(item.id, replyText, c, true, replyTargetUser);
                                 setReplyText("");
                                 setReplyingTo(null);
                                 setReplyTargetUser(null);
@@ -431,7 +431,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                             placeholder={`Trả lời ${c.username}...`}
                             className="flex-1 bg-transparent outline-none text-[13px] font-medium placeholder:text-gray-400"
                           />
-                          <button 
+                          <button
                             disabled={!replyText.trim()}
                             onClick={() => {
                               onComment(item.id, replyText, c, true, replyTargetUser);
@@ -631,11 +631,11 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
 
       {/* Likes User Modal */}
       {showLikesModal && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[10000] p-4 animate-fade-in"
           onClick={() => setShowLikesModal(null)}
         >
-          <div 
+          <div
             className="bg-white w-full max-w-[360px] rounded-[32px] overflow-hidden shadow-2xl animate-slide-up"
             onClick={e => e.stopPropagation()}
           >

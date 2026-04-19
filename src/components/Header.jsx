@@ -90,12 +90,13 @@ export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
                         className="w-8 h-8 md:w-9 md:h-9 rounded-full ring-2 ring-pink-100/50 transition-transform duration-500 group-hover:scale-105"
                       />
                       {/* Dot Status */}
-                      <span 
+                      <span
                         className="absolute bottom-0 right-0 w-3.5 h-3.5 border-[3px] border-white rounded-full shadow-sm"
-                        style={{ backgroundColor: 
-                          userProfile?.status === 'idle' ? '#fbbf24' : 
-                          userProfile?.status === 'dnd' ? '#f43f5e' : 
-                          userProfile?.status === 'offline' ? '#9ca3af' : '#34d399' 
+                        style={{
+                          backgroundColor:
+                            userProfile?.status === 'idle' ? '#fbbf24' :
+                              userProfile?.status === 'dnd' ? '#f43f5e' :
+                                userProfile?.status === 'offline' ? '#9ca3af' : '#34d399'
                         }}
                       ></span>
                     </div>

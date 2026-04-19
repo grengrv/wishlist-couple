@@ -97,10 +97,10 @@ export default function ImageEditorModal({ isOpen, imageSrc, file, isBanner, isG
         <div className="relative w-full h-[50vh] bg-gray-100 flex items-center justify-center overflow-hidden">
           {isGif ? (
             <div className="w-full h-full flex flex-col items-center justify-center p-6 gap-4">
-              <img 
-                src={imageSrc} 
-                alt="preview" 
-                className={`object-contain max-h-[80%] rounded-xl shadow-md ${isBanner ? "aspect-video" : "aspect-square"}`} 
+              <img
+                src={imageSrc}
+                alt="preview"
+                className={`object-contain max-h-[80%] rounded-xl shadow-md ${isBanner ? "aspect-video" : "aspect-square"}`}
               />
               <p className="text-sm font-bold text-pink-500 bg-pink-50 px-4 py-2 rounded-full text-center">
                 ✨ Ảnh động GIF sẽ được giữ nguyên hiệu ứng để tối ưu trải nghiệm.
@@ -146,18 +146,18 @@ export default function ImageEditorModal({ isOpen, imageSrc, file, isBanner, isG
             <div className="flex items-center gap-4">
               <span className="text-xs font-bold text-gray-500 w-16">Xoay ảnh</span>
               <div className="flex flex-1 gap-3">
-                <button 
-                  onClick={() => setRotation(r => r - 90)} 
+                <button
+                  onClick={() => setRotation(r => r - 90)}
                   className="flex-1 py-2 bg-gray-50 hover:bg-pink-50 hover:text-pink-600 text-gray-600 font-bold text-sm rounded-xl transition-colors border border-gray-100 flex items-center justify-center gap-2"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
                   Trái
                 </button>
-                <button 
-                  onClick={() => setRotation(r => r + 90)} 
+                <button
+                  onClick={() => setRotation(r => r + 90)}
                   className="flex-1 py-2 bg-gray-50 hover:bg-pink-50 hover:text-pink-600 text-gray-600 font-bold text-sm rounded-xl transition-colors border border-gray-100 flex items-center justify-center gap-2"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /></svg>
                   Phải
                 </button>
               </div>
@@ -167,14 +167,14 @@ export default function ImageEditorModal({ isOpen, imageSrc, file, isBanner, isG
 
         {/* Footer */}
         <div className="p-5 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
-          <button 
-            onClick={handleRequestClose} 
+          <button
+            onClick={handleRequestClose}
             className="px-6 py-2.5 text-sm font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-xl transition-all"
           >
             Hủy
           </button>
-          <button 
-            onClick={handleSave} 
+          <button
+            onClick={handleSave}
             disabled={isProcessing}
             className="px-8 py-2.5 text-sm font-black text-white bg-gray-900 rounded-xl shadow-lg shadow-gray-900/20 hover:bg-pink-500 hover:shadow-pink-500/30 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
           >

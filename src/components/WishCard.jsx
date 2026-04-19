@@ -19,7 +19,7 @@ export default function WishCard({ item, onClick, user }) {
       <div className="px-4 py-3.5 pr-10 flex-1 min-w-0 flex flex-col justify-center gap-1.5">
         <h3 className="text-base font-semibold text-text-base leading-[1.4] truncate">{item.ten}</h3>
         {item.ghiChu && <p className="text-[13px] text-text-light leading-[1.6] line-clamp-2">{item.ghiChu}</p>}
-        
+
         {/* Social Counters */}
         <div className="flex items-center gap-3 mt-1">
           <div className={`flex items-center gap-1 text-[11px] font-bold ${isLiked ? 'text-rose-500' : 'text-gray-400'}`}>
