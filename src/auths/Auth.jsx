@@ -54,7 +54,7 @@ export default function Auth() {
         }
 
         setUsernameStatus({ state: "checking", message: "Đang kiểm tra..." });
-        
+
         const timer = setTimeout(async () => {
             try {
                 const q = query(collection(db, "users"), where("username", "==", username.trim()));
@@ -75,7 +75,7 @@ export default function Auth() {
 
     async function handleSubmit() {
         setError("");
-        
+
         // Validation Checks for Register
         if (mode === "register") {
             if (!validateUsernameFormat(username)) {
@@ -225,7 +225,7 @@ export default function Auth() {
                     </div>
 
 
-                    
+
                     <Button onClick={handleSubmit} disabled={loading || (mode === 'register' && usernameStatus.state === 'invalid')}>
                         {loading ? "Đang xử lý..." : mode === "login" ? "Đăng nhập" : "Đăng ký"}
                     </Button>

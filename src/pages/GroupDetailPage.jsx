@@ -40,7 +40,7 @@ export default function GroupDetailPage({ user, userProfile }) {
   const [selectedUser, setSelectedUser] = useState(null);
 
   const {
-    items, xoaMon,
+    items, xoaMon, thichMon, binhLuanMon, xoaBinhLuan
   } = useWishlist(user, userProfile, id);
 
   const isEditingRef = useRef(false);
@@ -122,12 +122,9 @@ export default function GroupDetailPage({ user, userProfile }) {
   }, [id, navigate]);
 
   async function handleXoa(wishId) {
-    const ok = await xoaMon(wishId);
-    if (ok) {
-      notifyXoaWish();
-    }
-    // ok === false: notify đã được gọi bên trong xoaMon
     if (selectedItem?.id === wishId) setSelectedItem(null);
+    notifyXoaWish();
+    await xoaMon(wishId);
   }
 
   async function handleLuuGroup() {
@@ -317,11 +314,16 @@ export default function GroupDetailPage({ user, userProfile }) {
       <WishList items={items} onSelectItem={setSelectedItem} />
 
       <ItemModal
-        item={selectedItem}
+        item={items.find(i => i.id === selectedItem?.id) || selectedItem}
         onClose={() => setSelectedItem(null)}
         onDelete={handleXoa}
         user={user}
+        userProfile={userProfile}
         adminEmail={ADMIN_EMAIL}
+        onLike={thichMon}
+        onComment={binhLuanMon}
+        onDeleteComment={xoaBinhLuan}
+        members={group.memberProfiles}
       />
 
       {/* NÚT TOGGLE THÀNH VIÊN GẮN CẠNH PHẢI */}

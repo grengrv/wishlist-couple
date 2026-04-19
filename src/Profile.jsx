@@ -13,6 +13,9 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
     const confirm = useConfirm();
     const [mode, setMode] = useState("view"); // "view" | "edit"
 
+    // Safety check: ensure profile is always an object
+    const profile = userProfile || {};
+
     // Form state
     const [displayName, setDisplayName] = useState(userProfile?.displayName || userProfile?.username || "");
     const [username, setUsername] = useState(userProfile?.username || "");
@@ -27,7 +30,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
     const [bannerBase64, setBannerBase64] = useState(null);
 
     const [loading, setLoading] = useState(false);
-    
+
     // Editor State
     const [editorConfig, setEditorConfig] = useState({
         isOpen: false,
@@ -58,7 +61,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
         offline: "#9ca3af" // gray-400
     };
 
-    const hasUnsavedChanges = 
+    const hasUnsavedChanges =
         displayName !== (userProfile?.displayName || userProfile?.username || "") ||
         username !== (userProfile?.username || "") ||
         bio !== (userProfile?.bio || "") ||
@@ -82,7 +85,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
             });
             if (!ok) return;
         }
-        
+
         onClose();
     }, [loading, mode, hasUnsavedChanges, confirm, onClose]);
 
@@ -105,10 +108,10 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
         }
 
         const isGif = file.type === "image/gif";
-        
+
         // Limits for initial selection (Strict for Base64 safety)
-        if (isGif && file.size > 350 * 1024) {
-            notifyError("GIF quá lớn (tối đa 350KB). GIF không thể nén mà vẫn giữ chuyển động.");
+        if (isGif && file.size > 600 * 1024) {
+            notifyError("GIF quá nặng, vui lòng chọn file nhỏ hơn");
             return;
         } else if (!isGif && file.size > 8 * 1024 * 1024) {
             notifyError("Ảnh quá lớn (tối đa 8MB)");
@@ -116,7 +119,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
         }
 
         console.log(`Original file size: ${(file.size / 1024).toFixed(2)} KB`);
-        
+
         // Open editor immediately with blob URL (no heavy processing yet)
         const objectUrl = URL.createObjectURL(file);
         setEditorConfig({
@@ -196,26 +199,26 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
             let totalB64Size = 0;
             if (payload.avatar) totalB64Size += payload.avatar.length;
             else if (userProfile?.avatar) totalB64Size += userProfile.avatar.length;
-            
+
             if (payload.banner) totalB64Size += payload.banner.length;
             else if (userProfile?.banner) totalB64Size += userProfile.banner.length;
 
             console.log(`Estimated Base64 storage size: ${(totalB64Size / 1024).toFixed(2)} KB`);
 
-            // Safe threshold 1MB (Firestore limit is 1,048,576 bytes)
-            if (totalB64Size > 1040000) {
-                notifyError("Dữ liệu quá lớn (vượt giới hạn 1MB)");
+            // Safe threshold 900KB (Base64 length)
+            if (totalB64Size > 900000) {
+                notifyError("Dữ liệu quá lớn (vượt giới hạn 900KB)");
                 setLoading(false);
                 return;
             }
 
             const userRef = doc(db, "users", auth.currentUser.uid);
             await setDoc(userRef, payload, { merge: true });
-            
+
             // SUCCESS
             const fullUpdatedData = { ...profile, ...payload };
             if (onUpdate) onUpdate(fullUpdatedData);
-            
+
             if (payload.avatar) notifyDoiAvatar();
             else if (payload.banner) notifyDoiBanner();
             else notifyCapNhatHoSo();
@@ -284,11 +287,12 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                     </button>
                 </div>
 
-                {/* AVATAR CENTERED */}
-                <div className="px-6 relative flex flex-col items-center pb-2">
-                    <div className="relative -mt-[60px] group mb-4 z-30">
-                        <div 
-                            className={`w-[120px] h-[120px] rounded-[36px] border-[6px] border-white bg-white shadow-xl overflow-hidden relative ${!isReadOnly ? 'cursor-pointer' : ''} rotate-3 group-hover:rotate-0 transition-transform duration-500`} 
+                {/* HEADER CONTENT: VERTICAL CENTERED LAYOUT */}
+                <div className="px-6 relative flex flex-col items-center text-center gap-3 pb-2 w-full">
+                    {/* AVATAR CENTERED */}
+                    <div className="relative -mt-[60px] group z-30 shrink-0">
+                        <div
+                            className={`w-[120px] h-[120px] rounded-[36px] border-[6px] border-white bg-white shadow-xl overflow-hidden relative ${!isReadOnly ? 'cursor-pointer' : ''} rotate-3 group-hover:rotate-0 transition-transform duration-500`}
                             onClick={() => {
                                 if (isReadOnly) return;
                                 if (mode === "view") {
@@ -303,10 +307,10 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                                 <img key={avatarPreview} src={avatarPreview} alt="avatar" className="w-full h-full object-cover" />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center text-4xl font-black text-white bg-gradient-to-br from-pink-400 to-rose-400">
-                                    {(userProfile?.displayName || userProfile?.username || "?")[0].toUpperCase()}
+                                    {(profile?.displayName || profile?.username || "?")[0].toUpperCase()}
                                 </div>
                             )}
-    
+
                             {mode === "edit" && !isReadOnly && (
                                 <div className="absolute inset-0 bg-pink-500/50 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
@@ -320,24 +324,31 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                         {!isReadOnly && <input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={e => processImage(e.target.files[0], false)} />}
                     </div>
 
-                    {/* NAMES & STATUS PILL */}
-                    {mode === "view" && (
-                        <div className="flex flex-col items-center text-center w-full">
-                            <h2 className="text-[26px] font-black text-gray-900 tracking-tight leading-none mb-1">
-                                {userProfile?.displayName || userProfile?.username}
-                            </h2>
-                            <p className="text-[15px] font-bold text-gray-400 mb-4">
-                                @{userProfile?.username}
-                            </p>
+                    {/* USER INFO CENTERED */}
+                    <div className="flex flex-col items-center text-center w-full min-w-0">
+                        {mode === "view" ? (
+                            <>
+                                <h2 className="text-[26px] font-black text-gray-900 tracking-tight leading-tight mb-1 whitespace-normal break-words w-full px-2">
+                                    {profile?.displayName || profile?.username || "Người dùng"}
+                                </h2>
+                                <p className="text-[15px] font-bold text-gray-400 mb-4">
+                                    @{profile?.username || "user"}
+                                </p>
 
-                            {userProfile?.customStatus && (
-                                <div className="bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-100/50 text-pink-500 font-bold px-5 py-2.5 rounded-2xl shadow-sm flex items-center gap-2 mb-6 max-w-full">
-                                    <span className="text-lg">💭</span>
-                                    <span className="truncate">{userProfile.customStatus}</span>
-                                </div>
-                            )}
-                        </div>
-                    )}
+                                {profile?.customStatus && (
+                                    <div className="bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-100/50 text-pink-500 font-bold px-5 py-2.5 rounded-2xl shadow-sm flex items-center gap-2 mb-6 max-w-full">
+                                        <span className="text-lg shrink-0">💭</span>
+                                        <span className="text-sm break-words">{profile.customStatus}</span>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <div className="w-full mt-2">
+                                <h3 className="text-lg font-black text-gray-800 mb-1">Đang chỉnh sửa</h3>
+                                <p className="text-[11px] font-bold text-gray-400 mb-4 uppercase tracking-widest">Cập nhật thông tin của bạn</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* CONTENT */}
@@ -424,7 +435,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                     )}
                 </div>
             </div>
-            
+
             {/* IMAGE EDITOR MODAL */}
             <ImageEditorModal
                 isOpen={editorConfig.isOpen}

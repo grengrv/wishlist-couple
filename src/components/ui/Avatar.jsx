@@ -1,26 +1,32 @@
+import { useState } from "react";
+
 /**
  * Avatar — UI Primitive
  * 
  * src: URL hình ảnh (nếu có)
  * name: Tên người dùng để lấy fallback chữ cái đầu (nếu ko có src)
- * size: "sm" | "lg"
+ * size: "sm" | "md" | "lg"
  */
 
 const sizes = {
+  xs: "w-[20px] h-[20px] text-[9px]",
   sm: "w-[22px] h-[22px] text-[10px]",
   md: "w-[38px] h-[38px] text-[16px] border-2", // Dành cho admin-bar
   lg: "w-[110px] h-[110px] text-[42px] border-[3px]" // Dành cho upload 
 };
 
 export default function Avatar({ src, name = "?", size = "sm", className = "", ...props }) {
+  const [imgError, setImgError] = useState(false);
   const isSm = size === "sm";
 
-  if (src) {
+  // Hiển thị ảnh nếu có src và không bị lỗi load
+  if (src && !imgError) {
     return (
       <img 
         key={src}
         src={src} 
         alt="avatar" 
+        onError={() => setImgError(true)}
         className={`
           ${sizes[size]} 
           rounded-full object-cover shrink-0
@@ -32,7 +38,11 @@ export default function Avatar({ src, name = "?", size = "sm", className = "", .
     );
   }
 
-  // Fallback Initials
+  // Fallback Initials (Chữ cái đầu)
+  // Bảo vệ tránh crash khi name là null/undefined
+  const safeName = String(name || "?");
+  const initial = (safeName[0] || "?").toUpperCase();
+
   return (
     <div 
       className={`
@@ -44,7 +54,7 @@ export default function Avatar({ src, name = "?", size = "sm", className = "", .
       `}
       {...props}
     >
-      {(name[0] || "?").toUpperCase()}
+      {initial}
     </div>
   );
 }

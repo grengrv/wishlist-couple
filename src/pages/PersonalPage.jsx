@@ -10,15 +10,12 @@ import { notifyXoaWish } from "../utils/notify";
 export default function PersonalPage({ user, userProfile }) {
   const navigate = useNavigate();
   const [selectedItem, setSelectedItem] = useState(null);
-  const { items, xoaMon } = useWishlist(user, userProfile, null);
+  const { items, xoaMon, thichMon, binhLuanMon, xoaBinhLuan } = useWishlist(user, userProfile, null);
 
   async function handleXoa(id) {
-    const ok = await xoaMon(id);
-    if (ok) {
-      notifyXoaWish();
-    }
-    // ok === false: notify đã được gọi bên trong xoaMon
     if (selectedItem?.id === id) setSelectedItem(null);
+    notifyXoaWish();
+    await xoaMon(id);
   }
 
   return (
@@ -70,11 +67,15 @@ export default function PersonalPage({ user, userProfile }) {
       </div>
 
       <ItemModal
-        item={selectedItem}
+        item={items.find(i => i.id === selectedItem?.id) || selectedItem}
         onClose={() => setSelectedItem(null)}
         onDelete={handleXoa}
         user={user}
+        userProfile={userProfile}
         adminEmail={ADMIN_EMAIL}
+        onLike={thichMon}
+        onComment={binhLuanMon}
+        onDeleteComment={xoaBinhLuan}
       />
     </div>
   );

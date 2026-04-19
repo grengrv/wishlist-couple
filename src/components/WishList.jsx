@@ -5,7 +5,7 @@ import WishCard from "./WishCard";
  * @param {Array} items - Danh sách items
  * @param {Function} onSelectItem - Callback khi chọn item để xem modal
  */
-export default function WishList({ items, onSelectItem }) {
+export default function WishList({ items, onSelectItem, user }) {
   return (
     <>
       {items.length > 0 && (
@@ -18,7 +18,7 @@ export default function WishList({ items, onSelectItem }) {
           </p>
         )}
         {items.map(item => (
-          <WishCard key={item.id} item={item} onClick={onSelectItem} />
+          <WishCard key={item.id} item={item} onClick={onSelectItem} user={user} />
         ))}
       </div>
     </>
