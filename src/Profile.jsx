@@ -415,7 +415,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                 {/* HEADER CONTENT: VERTICAL CENTERED LAYOUT */}
                 <div className="px-6 relative flex flex-col items-center text-center gap-3 pb-2 w-full">
                     {/* AVATAR CENTERED */}
-                    <div className="relative -mt-[60px] group z-30 shrink-0">
+                    <div className="relative -mt-[60px] group z-30 shrink-0 border-1 border-white rounded-[100px]">
                         <div
                             className={`w-[120px] h-[120px] rounded-[100px] shadow-xl overflow-hidden relative ${!isReadOnly ? 'cursor-pointer' : ''} rotate-3 group-hover:rotate-0 transition-transform duration-500`}
                             onClick={() => {
@@ -508,7 +508,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                 <div className="px-6 pb-6">
                     {mode === "view" ? (
                         <>
-                            <div className="backdrop-blur-xl p-1 mb-10 flex items-center justify-center">
+                            <div className="backdrop-blur-xl mb-10 flex items-center justify-center">
                                 {userProfile?.bio ? (
                                     <p
                                         style={{ color: activeTheme?.color }}

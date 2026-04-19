@@ -14,11 +14,11 @@ export default function Footer() {
         {/* Brand Section */}
         <div className="flex-1 max-w-sm">
           <div className="flex items-center gap-2 mb-4 group cursor-default">
-            <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-rose-400 rounded-lg flex items-center justify-center shadow-md shadow-pink-200 group-hover:rotate-12 transition-transform">
+            <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-rose-400 rounded-lg flex items-center justify-center group-hover:rotate-12 transition-transform">
               <span className="text-white text-sm">♥</span>
             </div>
             <h2 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
-              Wishlist
+              Wishifyy
             </h2>
           </div>
           <p className="text-[15px] text-text-muted leading-relaxed font-medium">

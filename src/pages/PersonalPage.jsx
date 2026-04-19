@@ -24,7 +24,7 @@ export default function PersonalPage({ user, userProfile }) {
       {/* 1. Floating Profile Intro - Sạch sẽ, không còn dải thông báo hệ thống */}
       <div className="flex flex-col md:flex-row items-center gap-8 mb-20 bg-card-bg/40 backdrop-blur-md p-8 rounded-[40px] border border-border-primary/60 shadow-[0_20px_50px_rgba(236,72,153,0.05)]">
         <div className="relative group">
-          <div className="absolute -inset-2 bg-gradient-to-tr from-pink-300 to-rose-300 rounded-full blur opacity-30 group-hover:opacity-60 transition duration-1000"></div>
+          <div className="absolute -inset-2 from-pink-300 to-rose-300 rounded-full blur opacity-30 group-hover:opacity-60 transition duration-1000"></div>
           <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-card-bg shadow-xl">
             <img
               src={userProfile?.avatar || "https://via.placeholder.com/150"}
