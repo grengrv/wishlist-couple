@@ -1,5 +1,31 @@
 @import "tailwindcss";
 
+:root {
+  --bg-primary: #f8f9fa;
+  --bg-secondary: #ffffff;
+  --text-primary: #111111;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
+  --border-primary: #f1f3f5;
+  --card-bg: #ffffff;
+  --card-hover: #f1f3f5;
+  --glass-bg: rgba(255, 255, 255, 0.4);
+  --header-bg: rgba(255, 255, 255, 0.7);
+}
+
+.dark {
+  --bg-primary: #0f0f12;
+  --bg-secondary: #18181b;
+  --text-primary: #ffffff;
+  --text-secondary: #d1d5db;
+  --text-muted: #9ca3af;
+  --border-primary: #27272a;
+  --card-bg: #18181b;
+  --card-hover: #27272a;
+  --glass-bg: rgba(24, 24, 27, 0.4);
+  --header-bg: rgba(15, 15, 18, 0.7);
+}
+
 /* ═══════════════════════════════════════════
    DESIGN TOKENS — Custom colors, fonts
    Dùng var(--color-*) hoặc class text-pink-brand v.v.
@@ -12,18 +38,21 @@
   --color-pink-light: #f0a8c0;
   --color-pink-pale: #fdeef4;
   --color-pink-faint: #fff9fb;
-  --color-pink-border: #f5dde8;
+  --color-pink-border: var(--border-primary);
   --color-pink-muted: #d4a0b5;
   --color-pink-soft: #b0889a;
 
-  /* Text */
-  --color-text-base: #2d2d2d;
-  --color-text-sub: #777;
-  --color-text-light: #999;
-  --color-text-footer: #bbb;
-
-  /* Background */
-  --color-body-bg: #fdf6f9;
+  /* Theme variables */
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-border-primary: var(--border-primary);
+  --color-card-bg: var(--card-bg);
+  --color-card-hover: var(--card-hover);
+  --color-glass-bg: var(--glass-bg);
+  --color-header-bg: var(--header-bg);
 
   /* Font */
   --font-sans: 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
@@ -34,10 +63,11 @@
  ═══════════════════════════════════════════ */
 body {
   font-family: var(--font-sans);
-  background-color: var(--color-body-bg);
-  color: var(--color-text-base);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   min-height: 100vh;
   overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 #root {
@@ -112,12 +142,13 @@ body {
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #fbcfe8;
+    background: var(--color-border-primary);
     border-radius: 10px;
+    border: 1px solid var(--color-bg-primary);
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #f9a8d4;
+    background: var(--color-pink-light);
   }
 
   .custom-scrollbar-white::-webkit-scrollbar {
@@ -160,7 +191,7 @@ body {
   }
 
   .bg-gradient-about {
-    background: linear-gradient(to right, #fdf2f7, #fafafa);
+    background: linear-gradient(to right, var(--color-bg-primary), var(--color-bg-secondary));
   }
 
   /* Smooth Focus Ring */

@@ -30,9 +30,9 @@ export default function AddWishPage({ user, userProfile }) {
       <div className="mb-12">
         <button
           onClick={() => navigate(-1)}
-          className="group flex items-center gap-3 py-2 px-4 rounded-full bg-white/50 backdrop-blur-md border border-gray-100 text-gray-400 hover:text-pink-500 hover:bg-white transition-all duration-300 shadow-sm"
+          className="group flex items-center gap-3 py-2 px-4 rounded-full bg-bg-secondary/50 backdrop-blur-md border border-border-primary/20 text-text-secondary hover:text-pink-500 hover:bg-bg-secondary transition-all duration-300 shadow-sm"
         >
-          <div className="w-6 h-6 rounded-full bg-gray-100 group-hover:bg-pink-50 flex items-center justify-center transition-colors">
+          <div className="w-6 h-6 rounded-full bg-bg-primary group-hover:bg-pink-500/10 flex items-center justify-center transition-colors">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <line x1="19" y1="12" x2="5" y2="12"></line>
               <polyline points="12 19 5 12 12 5"></polyline>
@@ -45,21 +45,17 @@ export default function AddWishPage({ user, userProfile }) {
       {/* Page Header */}
       <div className="mb-16 text-center">
         <div className="inline-block relative mb-4">
-          <span className="absolute -top-4 -right-8 text-4xl animate-bounce pointer-events-none">✨</span>
-          <h2 className="text-4xl md:text-6xl font-black text-gray-900 tracking-tighter leading-none">
-            {groupId ? "Thêm vào nhóm" : ""} <span className="text-pink-500"></span>
+          <h2 className="text-4xl md:text-6xl font-black text-text-primary tracking-tighter leading-none">
+            {groupId ? "Thêm vào nhóm" : "Thêm điều ước"} <span className="text-pink-500">mới</span>
           </h2>
         </div>
-        <p className="text-gray-400 font-bold text-lg mt-4 max-w-md mx-auto leading-relaxed">
+        <p className="text-text-secondary font-bold text-lg mt-4 max-w-md mx-auto leading-relaxed">
           Ghi lại những mơ ước và dự định <br className="hidden md:block" /> để chúng mình cùng nhau thực hiện.
         </p>
       </div>
 
       {/* Main Form Container */}
       <div className="relative">
-        {/* Hiệu ứng viền phát sáng nhẹ bao quanh Form */}
-        <div className="absolute -inset-1 bg-gradient-to-r from-pink-200 via-rose-100 to-pink-200 rounded-[40px] blur opacity-20" />
-
         <div className="relative">
           <AddForm
             tenMon={tenMon} setTenMon={setTenMon}

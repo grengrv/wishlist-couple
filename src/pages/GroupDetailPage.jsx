@@ -178,11 +178,11 @@ export default function GroupDetailPage({ user, userProfile }) {
 
       {/* CỘT MAIN CONTENT */}
       <div className={`flex-1 min-w-0 transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${showMembers ? "pr-6 lg:pr-10" : "pr-0"}`}>
-        <button onClick={() => navigate("/groups")} className="text-sm font-semibold text-pink-muted hover:text-pink-brand mb-4 flex items-center gap-1 transition-colors">
+        <button onClick={() => navigate("/groups")} className="text-sm font-semibold text-text-muted hover:text-pink-brand mb-4 flex items-center gap-1 transition-colors">
           <span className="text-lg leading-none">←</span> Quay lại danh sách
         </button>
 
-        <div className="group relative flex flex-col sm:flex-row sm:items-start justify-between gap-6 mb-10 bg-white p-6 sm:p-8 rounded-[24px] border border-pink-border shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
+        <div className="group relative flex flex-col sm:flex-row sm:items-start justify-between gap-6 mb-10 bg-card-bg p-6 sm:p-8 rounded-[24px] border border-border-primary shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
           {/* Vạch trang trí bên trái */}
           <div className="absolute top-0 left-0 w-1.5 h-full bg-pink-brand rounded-l-[24px]"></div>
 
@@ -191,13 +191,13 @@ export default function GroupDetailPage({ user, userProfile }) {
               <div className="flex flex-col gap-3 mb-4 pr-0 sm:pr-8 animate-fade-in opacity-100">
                 <div className="relative">
                   <Input value={editName} onChange={e => setEditName(e.target.value)} maxLength={40} placeholder="Tên không gian nhóm" />
-                  <span className="absolute right-3 bottom-2 text-[10px] font-bold text-pink-muted/40 pointer-events-none">
+                  <span className="absolute right-3 bottom-2 text-[10px] font-bold text-text-muted/40 pointer-events-none">
                     {40 - editName.length}
                   </span>
                 </div>
                 <div className="relative">
                   <Input as="textarea" rows={2} value={editDesc} onChange={e => setEditDesc(e.target.value)} maxLength={100} placeholder="Viết vài dòng giới thiệu..." />
-                  <span className="absolute right-3 bottom-2 text-[10px] font-bold text-pink-muted/40 pointer-events-none">
+                  <span className="absolute right-3 bottom-2 text-[10px] font-bold text-text-muted/40 pointer-events-none">
                     {100 - editDesc.length}
                   </span>
                 </div>
@@ -226,14 +226,14 @@ export default function GroupDetailPage({ user, userProfile }) {
                   )}
                 </div>
                 {group.description && (
-                  <p className="mt-2 text-sm text-text-sub font-medium opacity-80 leading-relaxed break-words whitespace-pre-wrap max-w-2xl">
+                  <p className="mt-2 text-sm text-text-secondary font-medium leading-relaxed break-words whitespace-pre-wrap max-w-2xl">
                     {group.description}
                   </p>
                 )}
                 <div className="flex flex-wrap items-center gap-4 mt-5">
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50/50 rounded-full border border-gray-100">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-pink-muted/60"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                    <span className="text-[11px] font-bold text-pink-muted uppercase tracking-widest whitespace-nowrap">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-bg-primary/50 rounded-full border border-border-primary">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-text-muted/60"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    <span className="text-[11px] font-bold text-text-muted uppercase tracking-widest whitespace-nowrap">
                       {formatDate(group.createdAt)}
                     </span>
                   </div>
@@ -251,16 +251,16 @@ export default function GroupDetailPage({ user, userProfile }) {
                 {group.memberProfiles?.slice(0, 3).map((profile, idx) => {
                   const zIndices = ['z-20', 'z-10', 'z-0'];
                   if (profile.avatar) {
-                    return <img key={idx} src={profile.avatar} alt="avatar" className={`w-8 h-8 rounded-full border-2 border-white object-cover ${zIndices[idx]}`} />;
+                    return <img key={idx} src={profile.avatar} alt="avatar" className={`w-8 h-8 rounded-full border-2 border-card-bg object-cover ${zIndices[idx]}`} />;
                   }
                   return (
-                    <div key={idx} className={`w-8 h-8 rounded-full bg-pink-faint border-2 border-white flex items-center justify-center text-[12px] text-pink-brand font-bold ${zIndices[idx]}`}>
+                    <div key={idx} className={`w-8 h-8 rounded-full bg-bg-primary border-2 border-card-bg flex items-center justify-center text-[12px] text-pink-brand font-bold ${zIndices[idx]}`}>
                       {(profile.username || "?").charAt(0).toUpperCase()}
                     </div>
                   );
                 })}
                 {group.memberProfiles?.length > 3 && (
-                  <div className="w-8 h-8 rounded-full bg-pink-100 border-2 border-white flex items-center justify-center text-[10px] text-pink-500 font-bold z-0">
+                  <div className="w-8 h-8 rounded-full bg-bg-primary border-2 border-card-bg flex items-center justify-center text-[10px] text-pink-500 font-bold z-0">
                     +{group.memberProfiles.length - 3}
                   </div>
                 )}
@@ -289,14 +289,14 @@ export default function GroupDetailPage({ user, userProfile }) {
             <button
               onClick={() => navigate(`/add/${id}`)}
               title="Thêm wish"
-              className="w-12 h-12 rounded-2xl bg-gradient-brand text-white flex items-center justify-center shadow-lg shadow-pink-brand/20 hover:scale-[1.05] active:scale-[0.95] transition-all font-bold"
+              className="w-12 h-12 rounded-2xl bg-text-primary text-bg-primary flex items-center justify-center shadow-lg shadow-pink-brand/20 hover:scale-[1.05] active:scale-[0.95] transition-all font-bold"
             >
               <span className="text-xl">✦</span>
             </button>
             <button
               onClick={handleInvite}
               title="Mời tham gia"
-              className="w-12 h-12 rounded-2xl bg-white border border-pink-border text-pink-brand flex items-center justify-center shadow-sm hover:bg-pink-faint transition-all shrink-0"
+              className="w-12 h-12 rounded-2xl bg-card-bg border border-border-primary text-pink-brand flex items-center justify-center shadow-sm hover:bg-card-hover transition-all shrink-0"
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="18" cy="5" r="3"></circle>
@@ -330,7 +330,7 @@ export default function GroupDetailPage({ user, userProfile }) {
         <button
           onClick={() => setShowMembers(true)}
           title="Danh sách thành viên"
-          className={`fixed top-1/2 right-0 -translate-y-1/2 bg-white border border-r-0 border-pink-100 shadow-[-5px_0_20px_rgba(236,72,153,0.1)] pl-2 pr-1 py-4 rounded-l-2xl z-[90] text-pink-400 hover:text-pink-500 hover:bg-pink-50 transition-all duration-500 flex flex-col items-center gap-1 ${showMembers ? "translate-x-full opacity-0 pointer-events-none" : "translate-x-0 opacity-100"}`}
+          className={`fixed top-1/2 right-0 -translate-y-1/2 bg-card-bg border border-r-0 border-border-primary shadow-[-5px_0_20px_rgba(236,72,153,0.1)] pl-2 pr-1 py-4 rounded-l-2xl z-[90] text-text-muted hover:text-pink-500 hover:bg-card-hover transition-all duration-500 flex flex-col items-center gap-1 ${showMembers ? "translate-x-full opacity-0 pointer-events-none" : "translate-x-0 opacity-100"}`}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="mt-1"><polyline points="15 18 9 12 15 6"></polyline></svg>
@@ -343,27 +343,27 @@ export default function GroupDetailPage({ user, userProfile }) {
 
         {/* PANEL THỰC SỰ - STICKY ĐỂ LUÔN HIỆN */}
         <div
-          className={`w-[300px] sm:w-[340px] sticky top-28 h-[calc(100vh-8rem)] bg-white rounded-[32px] border border-pink-100 shadow-[0_20px_50px_rgba(236,72,153,0.08)] z-[80] flex flex-col overflow-hidden transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${showMembers ? "translate-x-0" : "translate-x-[50px]"}`}
+          className={`w-[300px] sm:w-[340px] sticky top-28 h-[calc(100vh-8rem)] bg-card-bg rounded-[32px] border border-border-primary shadow-[0_20px_50px_rgba(236,72,153,0.08)] z-[80] flex flex-col overflow-hidden transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${showMembers ? "translate-x-0" : "translate-x-[50px]"}`}
         >
-          <div className="p-6 border-b border-pink-50 flex items-center justify-between bg-white shrink-0">
+          <div className="p-6 border-b border-border-primary flex items-center justify-between bg-card-bg shrink-0">
             <div>
-              <h3 className="text-[18px] font-black text-gray-900 tracking-tight flex items-center gap-2">
+              <h3 className="text-[18px] font-black text-text-primary tracking-tight flex items-center gap-2">
                 Thành viên
-                <span className="bg-pink-100 text-pink-500 text-[12px] px-2 py-0.5 rounded-full">{group.memberProfiles?.length || 0}</span>
+                <span className="bg-bg-primary text-pink-500 text-[12px] px-2 py-0.5 rounded-full">{group.memberProfiles?.length || 0}</span>
               </h3>
             </div>
-            <button className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-pink-50 hover:text-pink-500 transition-all" onClick={() => setShowMembers(false)}>
+            <button className="w-8 h-8 rounded-xl bg-bg-primary flex items-center justify-center text-text-muted hover:bg-pink-500/10 hover:text-pink-500 transition-all" onClick={() => setShowMembers(false)}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-1 bg-gray-50/30">
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-1 bg-bg-primary/30">
             {group.memberProfiles?.map((member, idx) => {
               const statusColors = { online: "#34d399", idle: "#fbbf24", dnd: "#f43f5e", offline: "#9ca3af" };
               return (
                 <div
                   key={idx}
-                  className="flex items-center gap-4 p-3 hover:bg-white rounded-2xl cursor-pointer transition-all duration-300 group/item hover:shadow-[0_4px_15px_rgba(236,72,153,0.05)] border border-transparent hover:border-pink-50"
+                  className="flex items-center gap-4 p-3 hover:bg-card-bg rounded-2xl cursor-pointer transition-all duration-300 group/item hover:shadow-md border border-transparent hover:border-border-primary"
                   onClick={() => setSelectedUser(member)}
                 >
                   <div className="relative shrink-0">
@@ -375,18 +375,18 @@ export default function GroupDetailPage({ user, userProfile }) {
                       </div>
                     )}
                     {/* Status Dot */}
-                    <div className="absolute -bottom-1 -right-1 w-[14px] h-[14px] rounded-full border-[2.5px] border-white flex items-center justify-center bg-white shadow-sm z-10 transition-colors">
+                    <div className="absolute -bottom-1 -right-1 w-[14px] h-[14px] rounded-full border-[2.5px] border-card-bg flex items-center justify-center bg-card-bg shadow-sm z-10 transition-colors">
                       <div className="w-full h-full rounded-full" style={{ backgroundColor: statusColors[member.status || "online"] }}></div>
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold text-[15px] text-gray-900 truncate group-hover/item:text-pink-600 transition-colors">{member.displayName || member.username}</div>
+                    <div className="font-bold text-[15px] text-text-primary truncate group-hover/item:text-pink-600 transition-colors">{member.displayName || member.username}</div>
                     {member.customStatus ? (
                       <div className="text-[11px] text-pink-500 font-bold truncate mt-0.5 flex items-center gap-1">
                         <span>💭</span> {member.customStatus}
                       </div>
                     ) : (
-                      <div className="text-[12px] text-gray-500 font-medium truncate mt-0.5">@{member.username}</div>
+                      <div className="text-[12px] text-text-secondary font-medium truncate mt-0.5">@{member.username}</div>
                     )}
                   </div>
                 </div>

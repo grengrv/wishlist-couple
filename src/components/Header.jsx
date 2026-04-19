@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import Button from "./ui/Button";
 import Avatar from "./ui/Avatar";
+import ThemeToggle from "./ui/ThemeToggle";
 
 export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -31,7 +32,7 @@ export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
 
       <header
         className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ease-in-out ${isScrolled
-          ? "bg-white/70 backdrop-blur-xl shadow-[0_10px_40px_rgba(236,72,153,0.08)] py-2"
+          ? "bg-header-bg/70 backdrop-blur-xl shadow-[0_10px_40px_rgba(236,72,153,0.08)] py-2 border-b border-border-primary/20"
           : "bg-transparent py-6"
           }`}
       >
@@ -40,17 +41,17 @@ export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
 
             {/* Logo */}
             <Link to="/" className="group flex items-center gap-3 no-underline shrink-0">
-              <div className="w-11 h-11 bg-gradient-to-br from-pink-500 to-rose-400 rounded-2xl flex items-center justify-center shadow-lg shadow-pink-200 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+              <div className="w-11 h-11 bg-gradient-to-br from-pink-500 to-rose-400 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
                 <span className="text-white text-2xl font-bold">♥</span>
               </div>
-              <h1 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 tracking-tighter">
-                Wishlist
+              <h1 className="p-0.5 text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-text-primary to-text-secondary tracking-tighter">
+                Wishifyy
               </h1>
             </Link>
 
             {/* Desktop Nav - Capsule Style (No Dark Borders) */}
             {user && (
-              <nav className="hidden md:flex items-center bg-white/40 backdrop-blur-sm p-1.5 rounded-2xl border border-white/60 shadow-sm">
+              <nav className="hidden md:flex items-center bg-glass-bg backdrop-blur-sm p-1.5 rounded-2xl border border-border-primary/50 shadow-sm">
                 {navLinks.map((link) => {
                   const isActive = link.path === "/" ? pathname === "/" : pathname.startsWith(link.path);
                   return (
@@ -58,8 +59,8 @@ export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
                       key={link.path}
                       to={link.path}
                       className={`px-8 py-2.5 rounded-xl text-[15px] font-bold transition-all duration-300 ${isActive
-                        ? "bg-white text-pink-600 shadow-[0_4px_12px_rgba(236,72,153,0.1)] scale-[1.05]"
-                        : "text-gray-500 hover:text-pink-500"
+                        ? "bg-bg-secondary text-pink-600 shadow-[0_4px_12px_rgba(236,72,153,0.1)] scale-[1.05]"
+                        : "text-text-secondary hover:text-pink-500"
                         }`}
                     >
                       {link.name}
@@ -71,15 +72,14 @@ export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
 
             {/* User Actions */}
             <div className="hidden md:flex items-center gap-5">
+              <ThemeToggle />
               {!user ? (
-                <Button
-                >
-                </Button>
+                <div />
               ) : (
                 <div className="flex items-center gap-4">
                   {/* Cải tiến Profile: To hơn, lãng mạn hơn */}
                   <div
-                    className="flex items-center gap-4 p-1.5 pr-6 rounded-full bg-white/50 border border-white/80 hover:border-pink-200 hover:bg-white hover:shadow-[0_10px_30px_rgba(236,72,153,0.1)] transition-all duration-500 cursor-pointer group"
+                    className="flex items-center gap-4 p-1.5 pr-6 rounded-full bg-glass-bg border border-border-primary/50 hover:border-pink-200 hover:bg-bg-secondary hover:shadow-[0_10px_30px_rgba(236,72,153,0.1)] transition-all duration-500 cursor-pointer group"
                     onClick={onOpenProfile}
                   >
                     {/* Avatar Section - Phóng lớn hơn nữa */}
@@ -91,7 +91,7 @@ export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
                       />
                       {/* Dot Status */}
                       <span
-                        className="absolute bottom-0 right-0 w-3.5 h-3.5 border-[3px] border-white rounded-full shadow-sm"
+                        className="absolute bottom-0 right-0 w-3.5 h-3.5 border-[3px] border-bg-secondary rounded-full shadow-sm"
                         style={{
                           backgroundColor:
                             userProfile?.status === 'idle' ? '#fbbf24' :
@@ -103,11 +103,11 @@ export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
 
                     {/* Text Section - Căn chỉnh lại để không đè nhau */}
                     <div className="flex flex-col justify-center gap-0.5">
-                      <span className="text-[16px] font-bold text-gray-800 leading-tight">
+                      <span className="text-[16px] font-bold text-text-primary leading-tight">
                         {user.isAnonymous ? "Khách ẩn danh" : (userProfile?.displayName || userProfile?.username || user.email?.split("@")[0])}
                       </span>
                       {/* Status text */}
-                      <span className="text-[11px] text-gray-500 font-bold tracking-[1px] uppercase">
+                      <span className="text-[11px] text-text-muted font-bold tracking-[1px] uppercase">
                         {userProfile?.status || "online"}
                       </span>
                     </div>
@@ -115,7 +115,7 @@ export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
 
                   <button
                     onClick={onLogout}
-                    className="w-11 h-11 flex items-center justify-center text-gray-400 hover:text-rose-500 hover:bg-rose-50 rounded-2xl transition-all duration-300 group"
+                    className="w-11 h-11 flex items-center justify-center text-text-secondary hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-2xl transition-all duration-300 group"
                     title="Đăng xuất"
                   >
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-1 transition-transform">
@@ -144,7 +144,11 @@ export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
 
         {/* Mobile Menu - Glass Style */}
         <div className={`md:hidden absolute top-[calc(100%+12px)] left-5 right-5 transition-all duration-500 ease-[cubic-bezier(0.17,0.67,0.83,0.67)] origin-top ${isMobileMenuOpen ? "scale-100 opacity-100" : "scale-95 opacity-0 pointer-events-none"}`}>
-          <div className="bg-white/90 backdrop-blur-2xl rounded-[32px] border border-white shadow-[0_20px_60px_rgba(236,72,153,0.15)] p-6">
+          <div className="bg-bg-secondary/90 backdrop-blur-2xl rounded-[32px] border border-border-primary shadow-[0_20px_60px_rgba(236,72,153,0.15)] p-6">
+            <div className="flex items-center justify-between mb-6">
+              <span className="text-sm font-black text-text-muted uppercase tracking-widest">Menu</span>
+              <ThemeToggle />
+            </div>
             {user && (
               <div className="space-y-2 mb-4">
                 {navLinks.map((link) => (
@@ -154,7 +158,7 @@ export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`flex items-center justify-between p-4 rounded-2xl font-black transition-all ${pathname === link.path
                       ? "bg-gradient-to-r from-pink-500 to-rose-400 text-white shadow-lg"
-                      : "text-gray-600 hover:bg-pink-50"
+                      : "text-text-secondary hover:bg-pink-50 dark:hover:bg-pink-900/10"
                       }`}
                   >
                     {link.name}
@@ -165,12 +169,12 @@ export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
             )}
 
             {user ? (
-              <div className="flex items-center justify-between bg-pink-50/50 p-4 rounded-[24px] border border-pink-100">
+              <div className="flex items-center justify-between bg-glass-bg p-4 rounded-[24px] border border-border-primary/50">
                 <div className="flex items-center gap-4" onClick={() => { onOpenProfile(); setIsMobileMenuOpen(false); }}>
-                  <Avatar src={userProfile?.avatar} name={userProfile?.username} size="md" className="w-12 h-12 shadow-md ring-2 ring-white" />
-                  <span className="font-black text-gray-800">{userProfile?.username || "Tài khoản"}</span>
+                  <Avatar src={userProfile?.avatar} name={userProfile?.username} size="md" className="w-12 h-12 shadow-md ring-2 ring-border-primary" />
+                  <span className="font-black text-text-primary">{userProfile?.username || "Tài khoản"}</span>
                 </div>
-                <button onClick={onLogout} className="text-rose-500 font-black p-2 bg-white rounded-xl shadow-sm">Thoát</button>
+                <button onClick={onLogout} className="text-rose-500 font-black p-2 bg-bg-secondary rounded-xl shadow-sm">Thoát</button>
               </div>
             ) : (
               <Button className="w-full py-5 rounded-2xl bg-pink-500 text-white font-black shadow-xl">Đăng nhập ngay</Button>

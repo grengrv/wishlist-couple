@@ -4,10 +4,10 @@
  */
 export default function Footer() {
   return (
-    <footer className="relative bg-white/50 backdrop-blur-md border-t border-pink-100/50 py-16 mt-20 overflow-hidden">
+    <footer className="relative bg-bg-secondary/50 backdrop-blur-md border-t border-border-primary/50 py-16 mt-20 overflow-hidden">
       {/* Các đốm màu trang trí phía sau (Glow effect) */}
-      <div className="absolute top-0 left-1/4 w-64 h-64 bg-pink-100/30 rounded-full blur-[80px] -z-10"></div>
-      <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-rose-100/20 rounded-full blur-[100px] -z-10"></div>
+      <div className="absolute top-0 left-1/4 w-64 h-64 bg-pink-100/10 rounded-full blur-[80px] -z-10"></div>
+      <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-rose-100/10 rounded-full blur-[100px] -z-10"></div>
 
       <div className="max-w-[1440px] mx-auto px-6 md:px-12 w-full flex flex-col md:flex-row justify-between gap-12 transition-all duration-500">
 
@@ -17,11 +17,11 @@ export default function Footer() {
             <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-rose-400 rounded-lg flex items-center justify-center shadow-md shadow-pink-200 group-hover:rotate-12 transition-transform">
               <span className="text-white text-sm">♥</span>
             </div>
-            <h2 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-gray-600 tracking-tight">
+            <h2 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
               Wishlist
             </h2>
           </div>
-          <p className="text-[15px] text-gray-500 leading-relaxed font-medium">
+          <p className="text-[15px] text-text-muted leading-relaxed font-medium">
             Nơi ghi giữ những điều mơ ước, cùng nhau chinh phục từng mục tiêu nhỏ để tạo nên một hành trình hạnh phúc lớn lao.
           </p>
         </div>
@@ -29,11 +29,11 @@ export default function Footer() {
         {/* Links Groups */}
         <div className="flex flex-wrap gap-12 md:gap-24">
           <div>
-            <h3 className="text-xs uppercase tracking-[2px] font-black text-gray-400 mb-6">Chuyên mục</h3>
+            <h3 className="text-xs uppercase tracking-[2px] font-black text-text-muted mb-6">Chuyên mục</h3>
             <ul className="flex flex-col gap-4">
               {['Trang chủ', 'Khám phá', 'Hỗ trợ'].map((item) => (
                 <li key={item}>
-                  <a href="#" className="text-[15px] font-bold text-gray-600 hover:text-pink-500 transition-all flex items-center group">
+                  <a href="#" className="text-[15px] font-bold text-text-secondary hover:text-pink-500 transition-all flex items-center group">
                     <span className="w-0 group-hover:w-2 h-[2px] bg-pink-400 mr-0 group-hover:mr-2 transition-all"></span>
                     {item}
                   </a>
@@ -43,11 +43,11 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="text-xs uppercase tracking-[2px] font-black text-gray-400 mb-6">Pháp lý</h3>
+            <h3 className="text-xs uppercase tracking-[2px] font-black text-text-muted mb-6">Pháp lý</h3>
             <ul className="flex flex-col gap-4">
               {['Điều khoản', 'Bảo mật'].map((item) => (
                 <li key={item}>
-                  <a href="#" className="text-[15px] font-bold text-gray-600 hover:text-pink-500 transition-all flex items-center group">
+                  <a href="#" className="text-[15px] font-bold text-text-secondary hover:text-pink-500 transition-all flex items-center group">
                     <span className="w-0 group-hover:w-2 h-[2px] bg-pink-400 mr-0 group-hover:mr-2 transition-all"></span>
                     {item}
                   </a>
@@ -59,8 +59,8 @@ export default function Footer() {
       </div>
 
       {/* Copyright & Social */}
-      <div className="max-w-[1440px] mx-auto px-6 md:px-12 w-full mt-16 pt-8 border-t border-pink-50 flex flex-col sm:flex-row items-center justify-between gap-6 transition-all duration-500">
-        <p className="text-sm font-bold text-gray-400">
+      <div className="max-w-[1440px] mx-auto px-6 md:px-12 w-full mt-16 pt-8 border-t border-border-primary/50 flex flex-col sm:flex-row items-center justify-between gap-6 transition-all duration-500">
+        <p className="text-sm font-bold text-text-muted">
           &copy; {new Date().getFullYear()} <span className="text-pink-400/80">Wishlist Couple</span>. Crafted with ♥
         </p>
 
@@ -74,7 +74,7 @@ export default function Footer() {
             <a
               key={social.id}
               href="#"
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 text-gray-400 hover:bg-pink-50 hover:text-pink-500 hover:-translate-y-1 transition-all duration-300"
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-primary text-text-muted hover:bg-pink-500/10 hover:text-pink-500 hover:-translate-y-1 transition-all duration-300 border border-border-primary/50"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d={social.path}></path>

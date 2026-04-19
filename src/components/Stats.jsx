@@ -46,10 +46,10 @@ export default function Stats({ items }) {
       {statsData.map((stat, index) => (
         <div
           key={index}
-          className="flex-1 min-w-[130px] bg-white border border-gray-100 rounded-[24px] p-5 flex items-center gap-5 transition-all duration-300 hover:shadow-[0_10px_25px_rgba(236,72,153,0.05)] hover:-translate-y-1"
+          className="flex-1 min-w-[130px] bg-bg-secondary border border-border-primary rounded-[24px] p-5 flex items-center gap-5 transition-all duration-300 hover:shadow-[0_10px_25px_rgba(236,72,153,0.05)] hover:-translate-y-1"
         >
           {/* Icon tròn nhỏ xinh */}
-          <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 bg-bg-primary rounded-2xl flex items-center justify-center flex-shrink-0">
             {stat.icon}
           </div>
 
@@ -57,7 +57,7 @@ export default function Stats({ items }) {
             <span className={`text-2xl font-black ${stat.textColor} leading-none`}>
               {stat.value}
             </span>
-            <span className="text-[11px] font-medium text-gray-500 uppercase tracking-widest mt-1.5">
+            <span className="text-[11px] font-medium text-text-muted uppercase tracking-widest mt-1.5">
               {stat.label}
             </span>
           </div>

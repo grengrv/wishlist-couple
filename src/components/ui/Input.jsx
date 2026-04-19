@@ -6,13 +6,13 @@
  */
 const baseClass = `
   w-full px-[14px] py-[11px]
-  border-[1.5px] border-pink-border
-  rounded-xl text-[14px] text-text-base
-  bg-pink-faint placeholder:text-pink-muted
+  border-[1.5px] border-border-primary
+  rounded-xl text-[14px] text-text-primary
+  bg-bg-primary placeholder:text-text-muted
   outline-none resize-none
   font-[inherit]
   transition-[border,box-shadow] duration-200
-  focus:border-pink-hot focus:bg-white
+  focus:border-pink-hot focus:bg-bg-secondary
   focus:shadow-[0_0_0_3px_rgba(233,30,140,0.08)]
   disabled:opacity-50 disabled:cursor-not-allowed
 `;

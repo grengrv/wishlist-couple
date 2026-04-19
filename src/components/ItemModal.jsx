@@ -109,7 +109,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
         </button>
 
         <div
-          className="bg-white w-full max-w-[1100px] h-full md:h-[90vh] overflow-hidden relative shadow-[0_30px_100px_rgba(0,0,0,0.5)] animate-slide-up rounded-none md:rounded-2xl md:rounded-r-3xl flex flex-col md:flex-row"
+          className="bg-bg-secondary w-full max-w-[1100px] h-full md:h-[90vh] overflow-hidden relative shadow-[0_30px_100px_rgba(0,0,0,0.5)] animate-slide-up rounded-none md:rounded-2xl md:rounded-r-3xl flex flex-col md:flex-row border border-border-primary/30"
           onClick={e => e.stopPropagation()}
         >
 
@@ -122,27 +122,27 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                 className="w-full h-full object-contain"
               />
             ) : (
-              <div className="flex flex-col items-center gap-3 text-gray-700">
+              <div className="flex flex-col items-center gap-3 text-text-muted">
                 <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
                   <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                   <circle cx="8.5" cy="8.5" r="1.5"></circle>
                   <polyline points="21 15 16 10 5 21"></polyline>
                 </svg>
-                <span className="text-[10px] font-black uppercase tracking-[3px] opacity-30">No Image Preview</span>
+                <span className="text-[10px] font-black uppercase tracking-[3px] opacity-30 text-text-muted">No Image Preview</span>
               </div>
             )}
           </div>
 
           {/* RIGHT PANEL: CONTENT */}
-          <div className="w-full md:w-[40%] lg:w-[35%] flex flex-col bg-white flex-1 min-h-0 border-l border-gray-100">
+          <div className="w-full md:w-[40%] lg:w-[35%] flex flex-col bg-bg-secondary flex-1 min-h-0 border-l border-border-primary/50">
 
             {/* HEADER */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-50 shrink-0">
+            <div className="flex items-center justify-between p-4 border-b border-border-primary/50 shrink-0">
               <div className="flex items-center gap-3">
-                <Avatar src={item.avatarNguoiThem} name={item.themBoi} className="w-9 h-9 border border-pink-50" />
+                <Avatar src={item.avatarNguoiThem} name={item.themBoi} className="w-9 h-9 border border-border-primary/30" />
                 <div className="flex flex-col">
-                  <span className="text-[14px] font-black text-gray-900 leading-tight">{item.themBoi || "Ẩn danh"}</span>
-                  <span className="text-[11px] text-gray-400 font-bold">Wish Author</span>
+                  <span className="text-[14px] font-black text-text-primary leading-tight">{item.themBoi || "Ẩn danh"}</span>
+                  <span className="text-[11px] text-text-muted font-bold">Wish Author</span>
                 </div>
               </div>
 
@@ -150,7 +150,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                 {isAuthorOrAdmin && (
                   <button
                     onClick={() => onDelete(item.id)}
-                    className="p-2 text-gray-300 hover:text-rose-500 transition-colors rounded-full hover:bg-rose-50 flex items-center justify-center"
+                    className="p-2 text-text-muted hover:text-rose-500 transition-colors rounded-full hover:bg-rose-500/10 flex items-center justify-center"
                     title="Xóa điều ước"
                   >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -163,24 +163,24 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
             </div>
 
             {/* BODY: CAPTION & COMMENTS */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto custom-scrollbar bg-white">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto custom-scrollbar bg-bg-secondary">
 
               {/* CAPTION */}
-              <div className="p-4 flex gap-3 border-b border-gray-50/50">
+              <div className="p-4 flex gap-3 border-b border-border-primary/30">
                 <div className="shrink-0">
                   <Avatar src={item.avatarNguoiThem} name={item.themBoi} className="w-9 h-9" />
                 </div>
                 <div className="flex flex-col gap-1 min-w-0">
                   <div className="text-[14px] leading-[1.5]">
-                    <span className="font-black text-gray-900 mr-2">{item.themBoi || "Ẩn danh"}</span>
+                    <span className="font-black text-text-primary mr-2">{item.themBoi || "Ẩn danh"}</span>
                     <span className="font-black text-pink-500 text-lg block md:inline mb-1 md:mb-0">{item.ten}</span>
                   </div>
                   {item.ghiChu && (
-                    <p className="text-[14px] text-gray-600 font-medium whitespace-pre-wrap">
+                    <p className="text-[14px] text-text-secondary font-medium whitespace-pre-wrap">
                       {item.ghiChu}
                     </p>
                   )}
-                  <span className="text-[10px] text-gray-400 font-black uppercase tracking-wider mt-2">
+                  <span className="text-[10px] text-text-muted font-black uppercase tracking-wider mt-2">
                     {formatNgay(item.taoLuc)}
                   </span>
                 </div>
@@ -205,8 +205,8 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                         </div>
                         <div className="flex-1 min-w-0 pr-6">
                           <div className="flex items-baseline gap-2 flex-wrap">
-                            <span className="text-[13px] font-black text-gray-900">{c.username}</span>
-                            <div className="text-[14px] text-gray-700 font-medium leading-relaxed break-words">
+                            <span className="text-[13px] font-black text-text-primary">{c.username}</span>
+                            <div className="text-[14px] text-text-secondary font-medium leading-relaxed break-words">
                               {c.content.split(/(@\w+)/g).map((part, i) =>
                                 part.startsWith('@') ? <span key={i} className="text-pink-500 font-black cursor-pointer hover:underline">{part}</span> : part
                               )}
@@ -215,7 +215,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
 
                           {/* Comment Actions */}
                           <div className="flex items-center gap-4 mt-1.5">
-                            <span className="text-[10px] text-gray-400 font-bold">
+                            <span className="text-[10px] text-text-muted font-bold">
                               {new Date(c.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                             </span>
 
@@ -230,7 +230,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                                 // Call parent onComment with updated data (assuming backend handles nested updates)
                                 onComment(item.id, null, { ...c, likes: newLikes }, true);
                               }}
-                              className={`text-[11px] font-black transition-colors ${c.likes?.includes(user?.uid) ? 'text-pink-500' : 'text-gray-400 hover:text-gray-600'}`}
+                              className={`text-[11px] font-black transition-colors ${c.likes?.includes(user?.uid) ? 'text-pink-500' : 'text-text-muted hover:text-text-secondary'}`}
                             >
                               Thích
                             </button>
@@ -241,7 +241,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                                 setReplyText("");
                                 setReplyTargetUser(null);
                               }}
-                              className="text-[11px] font-black text-gray-400 hover:text-gray-600"
+                              className="text-[11px] font-black text-text-muted hover:text-text-secondary"
                             >
                               Trả lời
                             </button>
@@ -252,7 +252,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                                   const likeUsers = allPossibleMembers.filter(m => c.likes.includes(m.uid));
                                   setShowLikesModal({ title: "Lượt thích bình luận", users: likeUsers });
                                 }}
-                                className="text-[11px] font-black text-gray-400 hover:text-pink-500"
+                                className="text-[11px] font-black text-text-muted hover:text-pink-500"
                               >
                                 {c.likes.length} lượt thích
                               </button>
@@ -268,7 +268,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                                 const dropdownId = `c-${c.id}`;
                                 setActiveDropdown(activeDropdown === dropdownId ? null : dropdownId);
                               }}
-                              className={`p-1 text-gray-400 hover:text-gray-900 transition-all rounded-full hover:bg-gray-100 flex items-center justify-center ${activeDropdown === `c-${c.id}` ? 'opacity-100' : 'md:opacity-0 group-hover/comment:opacity-100 opacity-100'}`}
+                              className={`p-1 text-text-muted hover:text-text-primary transition-all rounded-full hover:bg-bg-primary flex items-center justify-center ${activeDropdown === `c-${c.id}` ? 'opacity-100' : 'md:opacity-0 group-hover/comment:opacity-100 opacity-100'}`}
                             >
                               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                 <circle cx="12" cy="12" r="1"></circle>
@@ -281,14 +281,14 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                             {activeDropdown === `c-${c.id}` && (
                               <div
                                 ref={dropdownRef}
-                                className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-gray-100 p-1.5 z-[200] min-w-[120px] animate-fade-in"
+                                className="absolute right-0 top-full mt-1 bg-bg-secondary rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-border-primary/50 p-1.5 z-[200] min-w-[120px] animate-fade-in"
                               >
                                 <button
                                   onClick={() => {
                                     setCommentToDelete({ item: c, parentId: null });
                                     setActiveDropdown(null);
                                   }}
-                                  className="w-full flex items-center gap-3 px-3 py-2 text-[13px] font-black text-rose-500 hover:bg-rose-50 rounded-lg transition-colors group/delete"
+                                  className="w-full flex items-center gap-3 px-3 py-2 text-[13px] font-black text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors group/delete"
                                 >
                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="group-hover/delete:scale-110 transition-transform">
                                     <polyline points="3 6 5 6 21 6"></polyline>
@@ -304,7 +304,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
 
                       {/* Replies List */}
                       {c.replies?.length > 0 && (
-                        <div className="ml-10 space-y-4 border-l-2 border-gray-50 pl-4 mt-2">
+                        <div className="ml-10 space-y-4 border-l-2 border-border-primary pl-4 mt-2">
                           {c.replies.map((reply, ridx) => {
                             const rDropdownId = `r-${c.id}-${reply.id}`;
                             return (
@@ -314,8 +314,8 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                                 </div>
                                 <div className="flex-1 min-w-0 pr-6">
                                   <div className="text-[13px] leading-relaxed">
-                                    <span className="font-black text-gray-900 mr-2">{reply.username}</span>
-                                    <span className="text-gray-700 font-medium break-words">
+                                    <span className="font-black text-text-primary mr-2">{reply.username}</span>
+                                    <span className="text-text-secondary font-medium break-words">
                                       {reply.content.split(/(@\w+)/g).map((part, i) =>
                                         part.startsWith('@') ? <span key={i} className="text-pink-500 font-black">{part}</span> : part
                                       )}
@@ -324,7 +324,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
 
                                   {/* Reply Actions */}
                                   <div className="flex items-center gap-4 mt-1">
-                                    <span className="text-[10px] text-gray-400 font-bold">
+                                    <span className="text-[10px] text-text-muted font-bold">
                                       {new Date(reply.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                                     </span>
 
@@ -340,7 +340,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                                         const updatedReplies = c.replies.map(r => r.id === reply.id ? { ...r, likes: newLikes } : r);
                                         onComment(item.id, null, { ...c, replies: updatedReplies }, true);
                                       }}
-                                      className={`text-[10px] font-black transition-colors ${reply.likes?.includes(user?.uid) ? 'text-pink-500' : 'text-gray-400 hover:text-gray-600'}`}
+                                      className={`text-[10px] font-black transition-colors ${reply.likes?.includes(user?.uid) ? 'text-pink-500' : 'text-text-muted hover:text-text-secondary'}`}
                                     >
                                       Thích
                                     </button>
@@ -351,7 +351,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                                         setReplyText(`@${reply.username} `);
                                         setReplyTargetUser({ userId: reply.userId, username: reply.username });
                                       }}
-                                      className="text-[10px] font-black text-gray-400 hover:text-gray-600"
+                                      className="text-[10px] font-black text-text-muted hover:text-text-secondary"
                                     >
                                       Trả lời
                                     </button>
@@ -362,7 +362,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                                           const likeUsers = allPossibleMembers.filter(m => reply.likes.includes(m.uid));
                                           setShowLikesModal({ title: "Lượt thích phản hồi", users: likeUsers });
                                         }}
-                                        className="text-[10px] font-black text-gray-400 hover:text-pink-500"
+                                        className="text-[10px] font-black text-text-muted hover:text-pink-500"
                                       >
                                         {reply.likes.length} lượt thích
                                       </button>
@@ -375,7 +375,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                                   <div className="absolute right-0 top-0">
                                     <button
                                       onClick={() => setActiveDropdown(activeDropdown === rDropdownId ? null : rDropdownId)}
-                                      className={`p-1 text-gray-400 hover:text-gray-900 transition-all rounded-full hover:bg-gray-100 flex items-center justify-center ${activeDropdown === rDropdownId ? 'opacity-100' : 'md:opacity-0 group-hover/reply:opacity-100 opacity-100'}`}
+                                      className={`p-1 text-text-muted hover:text-text-primary transition-all rounded-full hover:bg-bg-primary flex items-center justify-center ${activeDropdown === rDropdownId ? 'opacity-100' : 'md:opacity-0 group-hover/reply:opacity-100 opacity-100'}`}
                                     >
                                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                                         <circle cx="12" cy="12" r="1"></circle>
@@ -387,14 +387,14 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                                     {activeDropdown === rDropdownId && (
                                       <div
                                         ref={dropdownRef}
-                                        className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-gray-100 p-1 z-[200] min-w-[100px] animate-fade-in"
+                                        className="absolute right-0 top-full mt-1 bg-bg-secondary rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-border-primary/50 p-1 z-[200] min-w-[100px] animate-fade-in"
                                       >
                                         <button
                                           onClick={() => {
                                             setCommentToDelete({ item: reply, parentId: c.id });
                                             setActiveDropdown(null);
                                           }}
-                                          className="w-full flex items-center gap-2 px-3 py-1.5 text-[12px] font-black text-rose-500 hover:bg-rose-50 rounded-lg transition-colors group/delete"
+                                          className="w-full flex items-center gap-2 px-3 py-1.5 text-[12px] font-black text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors group/delete"
                                         >
                                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                             <polyline points="3 6 5 6 21 6"></polyline>
@@ -414,7 +414,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
 
                       {/* Reply Input */}
                       {replyingTo === c.id && (
-                        <div className="ml-10 mt-2 flex items-center gap-3 animate-fade-in bg-gray-50/50 p-2 rounded-xl">
+                        <div className="ml-10 mt-2 flex items-center gap-3 animate-fade-in bg-bg-primary/50 p-2 rounded-xl border border-border-primary/50">
                           <Avatar src={userProfile?.avatar} name={userProfile?.username} size="xs" className="w-6 h-6" />
                           <input
                             autoFocus
@@ -429,7 +429,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                               }
                             }}
                             placeholder={`Trả lời ${c.username}...`}
-                            className="flex-1 bg-transparent outline-none text-[13px] font-medium placeholder:text-gray-400"
+                            className="flex-1 bg-transparent outline-none text-[13px] font-medium placeholder:text-text-muted"
                           />
                           <button
                             disabled={!replyText.trim()}
@@ -452,7 +452,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
             </div>
 
             {/* FOOTER: ACTIONS & INPUT */}
-            <div className="shrink-0 border-t border-gray-100 bg-white">
+            <div className="shrink-0 border-t border-border-primary/50 bg-bg-secondary">
 
               {/* LIKE & STATS */}
               <div className="p-4 flex flex-col gap-2">
@@ -460,23 +460,23 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                   <div className="flex items-center gap-4">
                     <button
                       onClick={() => {
-                        onLike(item.id, likes);
                         if (!isLiked) setIsAnimatingLike(true);
+                        onLike(item.id, likes);
                         setTimeout(() => setIsAnimatingLike(false), 450);
                       }}
-                      className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 bg-gray-50 hover:bg-rose-50 active:scale-90 ${isLiked ? 'text-rose-500 bg-rose-50' : 'text-gray-900'} ${isAnimatingLike ? 'animate-like-pop' : ''}`}
+                      className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 bg-bg-primary hover:bg-rose-500/10 active:scale-90 ${isLiked ? 'text-rose-500 bg-rose-500/10' : 'text-text-primary'} ${isAnimatingLike ? 'animate-like-pop' : ''}`}
                     >
                       <svg
                         width="24" height="24" viewBox="0 0 24 24"
                         fill={isLiked ? "currentColor" : "none"}
-                        stroke={isLiked ? "currentColor" : "#262626"}
+                        stroke={isLiked ? "currentColor" : "var(--text-primary)"}
                         strokeWidth="2.5"
                         className="block"
                       >
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.02 1.06L12 21.23l8.84-8.84 1.06-1.06a5.5 5.5 0 0 0 0-5.78z"></path>
                       </svg>
                     </button>
-                    <button className="w-11 h-11 rounded-full flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-900 transition-all active:scale-95">
+                    <button className="w-11 h-11 rounded-full flex items-center justify-center bg-bg-primary hover:bg-bg-secondary hover:border-border-primary border border-transparent text-text-primary transition-all active:scale-95">
                       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="block">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                       </svg>
@@ -485,16 +485,16 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                 </div>
 
                 <div className="relative group/likes w-fit">
-                  <span className="text-[14px] font-black text-gray-900 cursor-default">
+                  <span className="text-[14px] font-black text-text-primary cursor-default">
                     {likes.length.toLocaleString('vi-VN')} lượt thích
                   </span>
 
                   {/* LIKE TOOLTIP */}
                   {likes.length > 0 && (
                     <div className="absolute bottom-full left-0 mb-2 hidden group-hover/likes:block z-50 animate-slide-up">
-                      <div className="bg-gray-900/95 backdrop-blur-md text-white p-3 rounded-2xl shadow-2xl min-w-[150px] max-w-[250px] border border-white/10">
-                        <p className="text-[10px] font-black uppercase tracking-widest mb-3 opacity-60">Được thích bởi</p>
-                        <div className="space-y-2 max-h-[160px] overflow-y-auto custom-scrollbar-white">
+                      <div className="bg-bg-secondary backdrop-blur-md text-text-primary p-3 rounded-2xl shadow-2xl min-w-[150px] max-w-[250px] border border-border-primary">
+                        <p className="text-[10px] font-black uppercase tracking-widest mb-3 text-text-muted">Được thích bởi</p>
+                        <div className="space-y-2 max-h-[160px] overflow-y-auto custom-scrollbar">
                           {likes.map((l, idx) => (
                             <div key={idx} className="flex items-center gap-2">
                               <Avatar src={typeof l === 'string' ? null : l.avatar} name={typeof l === 'string' ? "Ẩn danh" : l.username} size="xs" className="w-5 h-5" />
@@ -505,18 +505,18 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                           ))}
                         </div>
                       </div>
-                      <div className="w-3 h-3 bg-gray-900 rotate-45 -mt-1.5 ml-4 border-r border-b border-white/10"></div>
+                      <div className="w-3 h-3 bg-bg-secondary rotate-45 -mt-1.5 ml-4 border-r border-b border-border-primary"></div>
                     </div>
                   )}
                 </div>
               </div>
 
               {/* COMMENT INPUT */}
-              <div className="p-4 border-t border-gray-50 relative">
+              <div className="p-4 border-t border-border-primary/50 relative">
                 {/* Mentions Popup */}
                 {showMentions && members.length > 0 && (
-                  <div className="absolute bottom-full left-0 w-full bg-white border-t border-gray-100 shadow-2xl p-2 z-[100] max-h-[200px] overflow-y-auto custom-scrollbar animate-slide-up">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest p-2 mb-1">Nhắc tên thành viên</p>
+                  <div className="absolute bottom-full left-0 w-full bg-bg-secondary border-t border-border-primary shadow-2xl p-2 z-[100] max-h-[200px] overflow-y-auto custom-scrollbar animate-slide-up">
+                    <p className="text-[10px] font-black text-text-muted uppercase tracking-widest p-2 mb-1">Nhắc tên thành viên</p>
                     {members.filter(m => m.username.toLowerCase().includes(mentionFilter.toLowerCase())).map(m => (
                       <button
                         key={m.uid}
@@ -526,12 +526,12 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                           setComment(before + '@' + m.username + ' ');
                           setShowMentions(false);
                         }}
-                        className="w-full flex items-center gap-3 p-2.5 hover:bg-pink-50 rounded-xl transition-all group"
+                        className="w-full flex items-center gap-3 p-2.5 hover:bg-bg-primary rounded-xl transition-all group"
                       >
                         <Avatar src={m.avatar} name={m.username} size="sm" className="group-hover:scale-105 transition-transform" />
                         <div className="flex flex-col items-start">
-                          <span className="text-[13px] font-black text-gray-800">@{m.username}</span>
-                          <span className="text-[11px] text-gray-400 font-bold">{m.displayName || m.username}</span>
+                          <span className="text-[13px] font-black text-text-primary">@{m.username}</span>
+                          <span className="text-[11px] text-text-muted font-bold">{m.displayName || m.username}</span>
                         </div>
                       </button>
                     ))}
@@ -540,12 +540,12 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
 
                 {/* Emoji Picker Popup */}
                 {showEmojiPicker && (
-                  <div ref={emojiPickerRef} className="absolute bottom-full left-4 mb-2 bg-white rounded-2xl shadow-2xl border border-gray-100 p-3 z-[101] grid grid-cols-4 gap-2 animate-slide-up">
+                  <div ref={emojiPickerRef} className="absolute bottom-full left-4 mb-2 bg-bg-secondary rounded-2xl shadow-2xl border border-border-primary p-3 z-[101] grid grid-cols-4 gap-2 animate-slide-up">
                     {COMMON_EMOJIS.map(emoji => (
                       <button
                         key={emoji}
                         onClick={() => handleEmojiSelect(emoji)}
-                        className="w-10 h-10 flex items-center justify-center text-xl hover:bg-pink-50 rounded-xl transition-colors active:scale-90"
+                        className="w-10 h-10 flex items-center justify-center text-xl hover:bg-bg-primary rounded-xl transition-colors active:scale-90"
                       >
                         {emoji}
                       </button>
@@ -597,7 +597,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                         }
                       }}
                       placeholder="Thêm bình luận..."
-                      className="w-full bg-transparent outline-none text-[14px] font-medium placeholder:text-gray-400 placeholder:font-bold py-1.5 resize-none max-h-32 custom-scrollbar"
+                      className="w-full bg-transparent outline-none text-[14px] font-medium text-text-primary placeholder:text-text-muted placeholder:font-bold py-1.5 resize-none max-h-32 custom-scrollbar"
                     />
                   </div>
                   <button
@@ -636,12 +636,12 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
           onClick={() => setShowLikesModal(null)}
         >
           <div
-            className="bg-white w-full max-w-[360px] rounded-[32px] overflow-hidden shadow-2xl animate-slide-up"
+            className="bg-bg-secondary w-full max-w-[360px] rounded-[32px] overflow-hidden shadow-2xl animate-slide-up border border-border-primary"
             onClick={e => e.stopPropagation()}
           >
-            <div className="p-6 border-b border-gray-50 flex items-center justify-between">
-              <h3 className="text-[16px] font-black text-gray-900 tracking-tight">{showLikesModal.title}</h3>
-              <button onClick={() => setShowLikesModal(null)} className="text-gray-400 hover:text-gray-900 transition-colors">
+            <div className="p-6 border-b border-border-primary/50 flex items-center justify-between">
+              <h3 className="text-[16px] font-black text-text-primary tracking-tight">{showLikesModal.title}</h3>
+              <button onClick={() => setShowLikesModal(null)} className="text-text-muted hover:text-text-primary transition-colors">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -655,11 +655,11 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                 </div>
               ) : (
                 showLikesModal.users.map((u, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-2xl transition-all">
+                  <div key={i} className="flex items-center gap-3 p-3 hover:bg-bg-primary rounded-2xl transition-all">
                     <Avatar src={u.avatar} name={u.username} size="md" className="w-10 h-10 shadow-sm" />
                     <div className="flex flex-col">
-                      <span className="text-[14px] font-black text-gray-800">{u.username}</span>
-                      <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">{u.displayName || u.username}</span>
+                      <span className="text-[14px] font-black text-text-primary">{u.username}</span>
+                      <span className="text-[11px] text-text-muted font-bold uppercase tracking-wider">{u.displayName || u.username}</span>
                     </div>
                   </div>
                 ))
