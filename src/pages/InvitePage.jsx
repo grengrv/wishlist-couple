@@ -53,18 +53,18 @@ export default function InvitePage({ user }) {
   return (
     <div className="py-20 flex flex-col items-center max-w-[400px] mx-auto text-center px-5">
       {status === "loading" && <p className="text-pink-brand animate-pulse font-medium">Đang định vị lời mời...</p>}
-      {status === "not_found" && <p className="text-[15px] text-pink-brand font-medium bg-red-50 p-4 rounded-2xl border border-red-100">Nhóm không tồn tại hoặc đã bị giải tán mất rồi.</p>}
+      {status === "not_found" && <p className="text-[15px] text-pink-500 font-medium bg-red-500/10 p-4 rounded-2xl border border-red-500/20">Nhóm không tồn tại hoặc đã bị giải tán mất rồi.</p>}
 
       {status === "ready" && group && (
-        <div className="bg-white p-8 rounded-[32px] border border-pink-border w-full flex flex-col items-center shadow-[0_20px_50px_rgba(194,24,91,0.1)] animate-slide-up">
-          <div className="w-20 h-20 rounded-3xl bg-pink-faint flex items-center justify-center text-pink-brand text-3xl mb-6 shadow-sm border border-pink-border/30">✨</div>
-          <h2 className="text-2xl font-black text-text-base mb-2">Lời mời tham dự</h2>
-          <p className="text-sm text-text-sub mb-4 font-medium opacity-80">Bạn vừa được gửi một vé tham gia không gian:</p>
-          <h3 className="text-xl font-black text-pink-brand mb-8 px-4 py-2 bg-pink-faint/30 rounded-xl inline-block">"{group.name}"</h3>
+        <div className="bg-bg-secondary p-8 rounded-[32px] border border-border-primary w-full flex flex-col items-center shadow-[0_20px_50px_rgba(0,0,0,0.05)] animate-slide-up">
+          <div className="w-20 h-20 rounded-3xl bg-pink-500/10 flex items-center justify-center text-pink-500 text-3xl mb-6 shadow-sm border border-pink-500/10">✨</div>
+          <h2 className="text-2xl font-black text-text-primary mb-2">Lời mời tham dự</h2>
+          <p className="text-sm text-text-muted mb-4 font-medium opacity-80">Bạn vừa được gửi một vé tham gia không gian:</p>
+          <h3 className="text-xl font-black text-pink-500 mb-8 px-4 py-2 bg-pink-500/5 rounded-xl inline-block">"{group.name}"</h3>
 
           <div className="w-full flex flex-col gap-4 mb-8">
             <div className="flex flex-col gap-2 text-left">
-              <label className="text-[11px] font-bold uppercase tracking-widest text-pink-muted ml-1">Nhập Mã Mời (6 ký tự)</label>
+              <label className="text-[11px] font-bold uppercase tracking-widest text-text-muted ml-1">Nhập Mã Mời (6 ký tự)</label>
               <Input
                 value={inviteCodeInput}
                 onChange={e => setInviteCodeInput(e.target.value.slice(0, 6))}

@@ -13,7 +13,7 @@ export default function WishList({ items, onSelectItem, user }) {
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {items.length === 0 && (
-          <p className="col-span-full text-center text-pink-muted text-sm py-12 px-4 bg-white rounded-2xl border border-dashed border-pink-border">
+          <p className="col-span-full text-center text-text-muted text-sm py-12 px-4 bg-bg-secondary/50 rounded-2xl border border-dashed border-border-primary">
             Chưa có điều ước nào.<br />Hãy thêm điều đầu tiên nhé ♥
           </p>
         )}

@@ -128,7 +128,7 @@ export default function AddForm({
           <Input
             as="textarea"
             value={ghiChu}
-            onChange={e => setghiChu(e.target.value)}
+            onChange={e => setGhiChu(e.target.value)}
             onFocus={() => setFocusField("note")}
             onBlur={() => setFocusField(null)}
             maxLength={100}

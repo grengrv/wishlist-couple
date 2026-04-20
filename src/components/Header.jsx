@@ -104,7 +104,7 @@ export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
                     {/* Text Section - Căn chỉnh lại để không đè nhau */}
                     <div className="flex flex-col justify-center gap-0.5">
                       <span className="text-[16px] font-bold text-text-primary leading-tight">
-                        {user.isAnonymous ? "Khách ẩn danh" : (userProfile?.displayName || userProfile?.username || user.email?.split("@")[0])}
+                        {userProfile?.displayName || userProfile?.username || user.email?.split("@")[0]}
                       </span>
                       {/* Status text */}
                       <span className="text-[11px] text-text-muted font-bold tracking-[1px] uppercase">

@@ -83,7 +83,7 @@ function App() {
   // ── Cấu trúc Web Component ──
   return (
     <ConfirmProvider>
-      <div className="min-h-screen flex flex-col bg-body-bg relative">
+      <div className="min-h-screen flex flex-col bg-bg-primary relative">
         <AppToast />
         <Header
           user={user}

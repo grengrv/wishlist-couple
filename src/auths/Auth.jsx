@@ -1,26 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { auth, db } from "../firebase";
 import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
-    signInAnonymously,
     updateProfile
 } from "firebase/auth";
 import { doc, setDoc, query, collection, where, getDocs } from "firebase/firestore";
-import { useEffect, useCallback } from "react";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import { notifyDangNhap, notifyDangKy, notifyError } from "../utils/notify";
 
 export default function Auth() {
-    const [mode, setMode] = useState("login");
+    const [mode, setMode] = useState("login"); // "login" | "register"
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [username, setUsername] = useState("");
-    const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
-
-    const [usernameStatus, setUsernameStatus] = useState({ state: "idle", message: "" }); // idle, checking, valid, invalid
+    const [usernameStatus, setUsernameStatus] = useState({ state: "idle", message: "" });
+    const [activeTooltip, setActiveTooltip] = useState(null);
 
     // Helper: Validate Email
     const validateEmail = (email) => {
@@ -74,9 +71,6 @@ export default function Auth() {
     }, [username, mode]);
 
     async function handleSubmit() {
-        setError("");
-
-        // Validation Checks for Register
         if (mode === "register") {
             if (!validateUsernameFormat(username)) {
                 notifyError("Username không hợp lệ (3-20 ký tự, chữ/số/_)");
@@ -108,11 +102,7 @@ export default function Auth() {
                     return;
                 }
                 const result = await createUserWithEmailAndPassword(auth, email, password);
-
-                // Lưu displayName vào Firebase Auth
                 await updateProfile(result.user, { displayName: username });
-
-                // Lưu thông tin user vào Firestore
                 await setDoc(doc(db, "users", result.user.uid), {
                     username: username,
                     email: email,
@@ -131,126 +121,155 @@ export default function Auth() {
         setLoading(false);
     }
 
-    async function handleAnonymous() {
-        setError("");
-        setLoading(true);
-        try {
-            await signInAnonymously(auth);
-            notifyDangNhap();
-        } catch (err) {
-            notifyError("Không thể đăng nhập ẩn danh, thử lại nhé");
-        }
-        setLoading(false);
-    }
+    const toggleMode = () => {
+        setMode(prev => prev === "login" ? "register" : "login");
+        // Reset fields when switching
+        setUsername("");
+        setEmail("");
+        setPassword("");
+        setUsernameStatus({ state: "idle", message: "" });
+    };
 
     return (
-        <div className="flex items-center justify-center p-6 py-10">
-            <div className="bg-white rounded-[20px] border border-pink-border p-8 w-full max-w-[400px] shadow-[0_4px_24px_rgba(194,24,91,0.06)]">
-                <div className="text-center mb-6">
-                    <h1 className="text-2xl font-bold text-deep-red">Wishlist của chúng mình <span className="inline-block text-pink-hot animate-beat">♥</span></h1>
-                    <p className="text-[13px] text-pink-soft mt-1">Những điều mơ ước cùng nhau</p>
+        <div className="flex-1 flex items-center justify-center p-6 min-h-[70vh]">
+            <div key={mode} className="bg-bg-secondary w-full max-w-[420px] p-8 md:p-10 rounded-[32px] border border-border-primary shadow-[0_20px_50px_rgba(0,0,0,0.05)] animate-slide-up relative overflow-hidden group">
+                
+                {/* Decorative element */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/5 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-700"></div>
+
+                {/* Logo / Title */}
+                <div className="text-center mb-10 relative z-10">
+                    <div className="w-16 h-16 bg-pink-500/10 text-pink-500 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-6 shadow-sm border border-pink-500/10">
+                        <span className="animate-beat">♥</span>
+                    </div>
+                    <h1 className="text-3xl font-black text-text-primary tracking-tight">
+                        {mode === "login" ? "Chào mừng trở lại" : "Tạo tài khoản mới"}
+                    </h1>
+                    <p className="text-text-muted font-bold mt-2 text-sm leading-relaxed">
+                        {mode === "login" 
+                            ? "Cùng nhau lưu giữ những điều ước ngọt ngào." 
+                            : "Bắt đầu hành trình cùng người thương ngay hôm nay."}
+                    </p>
                 </div>
 
-                <div className="flex border border-pink-border rounded-xl overflow-hidden mb-5">
-                    <button
-                        className={`flex-1 p-2.5 border-none bg-white text-sm cursor-pointer transition-all duration-150 ${mode === "login" ? "bg-pink-pale text-pink-brand font-semibold" : "text-pink-soft font-medium"}`}
-                        onClick={() => { setMode("login"); setError(""); }}
-                    >
-                        Đăng nhập
-                    </button>
-                    <button
-                        className={`flex-1 p-2.5 border-none bg-white text-sm cursor-pointer transition-all duration-150 ${mode === "register" ? "bg-pink-pale text-pink-brand font-semibold" : "text-pink-soft font-medium"}`}
-                        onClick={() => { setMode("register"); setError(""); }}
-                    >
-                        Đăng ký
-                    </button>
-                </div>
-
-                <div className="flex flex-col gap-3">
+                {/* Form Fields */}
+                <div className="flex flex-col gap-5 relative z-10">
                     {mode === "register" && (
-                        <div className="relative group/field h-[46px]">
+                        <div className="space-y-2">
+                            <label className="text-[11px] font-black uppercase tracking-widest text-text-muted ml-1 flex justify-between items-center">
+                                <span>Username</span>
+                                <InfoIcon 
+                                    id="username"
+                                    activeTooltip={activeTooltip}
+                                    setActiveTooltip={setActiveTooltip}
+                                    text="3-20 ký tự. Chỉ dùng chữ cái, số và dấu gạch dưới (_)." 
+                                />
+                            </label>
                             <Input
                                 type="text"
-                                placeholder="Username (3-20 ký tự)"
+                                placeholder="Tên hiển thị của bạn..."
                                 value={username}
                                 onChange={e => setUsername(e.target.value)}
-                                className={`h-full ${usernameStatus.state === 'invalid' ? 'border-red-400 focus:border-red-500' : ''}`}
+                                className={`!rounded-2xl !bg-bg-primary/50 !border-border-primary !h-12 !font-bold transition-all focus:!bg-bg-secondary ${usernameStatus.state === 'invalid' ? '!border-red-400 focus:!ring-red-400/10' : ''}`}
                             />
-                            <div className="absolute right-3.5 inset-y-0 flex items-center gap-2 pointer-events-none">
-                                <div className="flex items-center gap-1.5 pointer-events-auto">
-                                    {usernameStatus.state === 'checking' && <div className="w-3.5 h-3.5 border-2 border-pink-light border-t-pink-brand rounded-full animate-spin"></div>}
-                                    {usernameStatus.state === 'valid' && (
-                                        <div className="w-4 h-4 flex items-center justify-center text-green-500 text-[11px] font-bold">✓</div>
-                                    )}
-                                    {usernameStatus.state === 'invalid' && (
-                                        <div className="w-4 h-4 flex items-center justify-center text-red-500 text-[10px] font-bold">✕</div>
-                                    )}
-                                    <InfoTooltip text="3-20 ký tự. Chỉ dùng chữ cái, số và dấu gạch dưới (_). Không dùng khoảng trắng." />
-                                </div>
-                            </div>
                             {usernameStatus.message && (
-                                <p className={`absolute top-full left-2 text-[10px] mt-0.5 font-medium ${usernameStatus.state === 'invalid' ? 'text-red-500' : 'text-green-600'}`}>
-                                    {usernameStatus.message}
+                                <p className={`text-[10px] font-bold ml-1 flex items-center gap-1 ${usernameStatus.state === 'invalid' ? 'text-red-500' : 'text-green-500'}`}>
+                                    <span className="text-[12px]">{usernameStatus.state === 'invalid' ? '✕' : '✓'}</span> {usernameStatus.message}
                                 </p>
                             )}
                         </div>
                     )}
 
-                    <div className="relative group/field h-[46px] mt-1">
+                    <div className="space-y-2">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-text-muted ml-1 flex justify-between items-center">
+                            <span>Email</span>
+                            <InfoIcon 
+                                id="email"
+                                activeTooltip={activeTooltip}
+                                setActiveTooltip={setActiveTooltip}
+                                text="Dùng email thật để không quên mật khẩu nhé!" 
+                            />
+                        </label>
                         <Input
                             type="email"
-                            placeholder="Email"
+                            placeholder="username@example.com"
                             value={email}
                             onChange={e => setEmail(e.target.value)}
                             onKeyDown={e => e.key === "Enter" && handleSubmit()}
-                            className="h-full"
+                            className="!rounded-2xl !bg-bg-primary/50 !border-border-primary !h-12 !font-bold transition-all focus:!bg-bg-secondary"
                         />
-                        <div className="absolute right-3.5 inset-y-0 flex items-center">
-                            <InfoTooltip text="Email hợp lệ (VD: example@mail.com)" />
-                        </div>
                     </div>
 
-                    <div className="relative group/field h-[46px]">
+                    <div className="space-y-2">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-text-muted ml-1 flex justify-between items-center">
+                            <span>Mật khẩu</span>
+                            <InfoIcon 
+                                id="password"
+                                activeTooltip={activeTooltip}
+                                setActiveTooltip={setActiveTooltip}
+                                text="Tối thiểu 8 ký tự, 1 chữ hoa và 1 chữ số." 
+                            />
+                        </label>
                         <Input
                             type="password"
-                            placeholder="Mật khẩu"
+                            placeholder="••••••••"
                             value={password}
                             onChange={e => setPassword(e.target.value)}
                             onKeyDown={e => e.key === "Enter" && handleSubmit()}
-                            className="h-full"
+                            className="!rounded-2xl !bg-bg-primary/50 !border-border-primary !h-12 !font-bold transition-all focus:!bg-bg-secondary"
                         />
-                        <div className="absolute right-3.5 inset-y-0 flex items-center">
-                            <InfoTooltip text="Tối thiểu 8 ký tự. Bao gồm ít nhất 1 chữ hoa và 1 chữ số." />
-                        </div>
                     </div>
 
-
-
-                    <Button onClick={handleSubmit} disabled={loading || (mode === 'register' && usernameStatus.state === 'invalid')}>
+                    <Button 
+                        onClick={handleSubmit} 
+                        disabled={loading || (mode === 'register' && usernameStatus.state === 'invalid')}
+                        className="!rounded-2xl !py-4 bg-text-primary text-bg-primary font-black text-xs uppercase tracking-widest hover:bg-pink-600 transition-all mt-4 shadow-none active:scale-95"
+                    >
                         {loading ? "Đang xử lý..." : mode === "login" ? "Đăng nhập" : "Đăng ký"}
                     </Button>
 
-                    <div className="flex items-center gap-2.5 text-pink-muted text-[13px] auth-divider-line py-1"><span>hoặc</span></div>
-
-                    <Button variant="ghost" onClick={handleAnonymous} disabled={loading}>
-                        Dùng thử không cần đăng ký
-                    </Button>
+                    {/* Switch Mode Link */}
+                    <div className="text-center mt-8 pt-8 border-t border-border-primary/50">
+                        <button 
+                            onClick={toggleMode}
+                            className="group text-[14px] font-bold text-text-muted hover:text-text-primary transition-colors inline-flex flex-col items-center gap-1"
+                        >
+                            {mode === "login" ? (
+                                <>
+                                    <span>Chưa có tài khoản?</span>
+                                    <span className="text-pink-500 font-black uppercase tracking-widest text-[11px] group-hover:scale-105 transition-transform">Hãy đăng ký ngay</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span>Đã có tài khoản?</span>
+                                    <span className="text-pink-500 font-black uppercase tracking-widest text-[11px] group-hover:scale-105 transition-transform">Quay lại đăng nhập</span>
+                                </>
+                            )}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     );
 }
 
-// Sub-component: Info Icon with Tooltip
-function InfoTooltip({ text }) {
+function InfoIcon({ id, text, activeTooltip, setActiveTooltip }) {
+    const isVisible = activeTooltip === id;
+    
     return (
-        <div className="relative group">
-            <div className="w-4 h-4 rounded-full border border-pink-border flex items-center justify-center text-[10px] text-pink-soft cursor-help hover:bg-pink-faint transition-colors">i</div>
-            <div className="absolute bottom-full right-0 mb-2 w-48 p-2.5 bg-gray-800 text-white text-[11px] leading-relaxed rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[100] shadow-xl pointer-events-none">
-                <div className="font-bold border-b border-white/20 pb-1 mb-1 text-pink-light">Yêu cầu:</div>
+        <div 
+            className="relative cursor-help"
+            onMouseEnter={() => setActiveTooltip(id)}
+            onMouseLeave={() => setActiveTooltip(null)}
+        >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`transition-colors ${isVisible ? 'text-pink-500' : 'text-text-muted/40 hover:text-pink-500'}`}>
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <div className={`absolute bottom-full right-0 mb-2 w-48 p-3 bg-text-primary text-bg-primary text-[10px] leading-relaxed rounded-2xl transition-all duration-300 z-[100] shadow-2xl pointer-events-none ${isVisible ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-1'}`}>
                 {text}
-                {/* Tooltip Arrow - Overlapped to fix gap */}
-                <div className="absolute -bottom-[7px] right-2 border-8 border-transparent border-t-gray-800"></div>
+                <div className="absolute -bottom-1 right-2 w-2 h-2 bg-text-primary rotate-45"></div>
             </div>
         </div>
     );

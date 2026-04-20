@@ -31,7 +31,7 @@ export default function ConfirmModal({
     >
       <div
         onClick={e => e.stopPropagation()}
-        className="bg-white rounded-[32px] w-full max-w-[400px] p-8 shadow-2xl animate-slide-up flex flex-col gap-6 relative overflow-hidden text-center"
+        className="bg-bg-secondary rounded-[32px] w-full max-w-[400px] p-8 shadow-2xl animate-slide-up flex flex-col gap-6 relative overflow-hidden text-center border border-border-primary"
       >
         {/* Decoration */}
         <div className={`absolute top-0 left-0 w-full h-1.5 ${variant === 'danger' ? 'bg-red-500' : 'bg-pink-brand'}`}></div>
@@ -60,7 +60,7 @@ export default function ConfirmModal({
           </button>
           <button
             onClick={onCancel}
-            className="w-full h-12 rounded-2xl font-bold text-pink-muted hover:bg-pink-faint hover:text-pink-brand transition-all active:scale-95 text-sm"
+            className="w-full h-12 rounded-2xl font-bold text-text-muted hover:bg-bg-primary hover:text-text-primary transition-all active:scale-95 text-sm"
           >
             {cancelText}
           </button>
