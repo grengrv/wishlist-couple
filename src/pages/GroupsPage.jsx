@@ -8,8 +8,8 @@ import { useGroups } from "../hooks/useGroups";
 import { useConfirm } from "../context/ConfirmContext";
 import { notifyTaoNhom, notifyXoaNhom, notifyThamGiaNhom, notifyLuuNhom, notifyError } from "../utils/notify";
 
-export default function GroupsPage({ user }) {
-  const { groups, taoNhom, suaNhom, xoaNhom, thamGiaBangMa } = useGroups(user);
+export default function GroupsPage({ user, userProfile }) {
+  const { groups, taoNhom, suaNhom, xoaNhom, thamGiaBangMa } = useGroups(user, userProfile);
   const navigate = useNavigate();
   const confirm = useConfirm();
   const [showCreate, setShowCreate] = useState(false);

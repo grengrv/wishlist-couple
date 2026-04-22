@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { db } from "../firebase";
 import {
   collection, addDoc, getDocs, onSnapshot,
-  deleteDoc, doc, orderBy, query, updateDoc, arrayUnion, arrayRemove, getDoc
+  deleteDoc, doc, orderBy, query, updateDoc, arrayUnion, arrayRemove, getDoc,
+  increment, where
 } from "firebase/firestore";
 import { ADMIN_EMAIL } from "../constants";
 import { notifyError } from "../utils/notify";
@@ -25,20 +26,21 @@ export function useWishlist(user, userProfile, groupId = null) {
   const [ghiChu, setGhiChu] = useState("");
   const [anhBase64, setAnhBase64] = useState(null);
   const [previewAnh, setPreviewAnh] = useState(null);
+  const [userLikes, setUserLikes] = useState(new Set());
   const [dangTai, setDangTai] = useState(false);
   const [keoVao, setKeoVao] = useState(false);
   const [formError, setFormError] = useState("");
   const [isImageTooLarge, setIsImageTooLarge] = useState(false);
   const [pendingFile, setPendingFile] = useState(null);
-
+ 
   // Lấy danh sách & đăng ký paste listener khi user đăng nhập
   useEffect(() => {
     if (!user) return;
-
+ 
     const q = query(collection(db, "wishlist"), orderBy("taoLuc", "desc"));
     const unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
       let data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-
+ 
       // Phân tách Wish theo Nhóm hoặc Cá nhân
       if (groupId) {
         data = data.filter(i => i.groupId === groupId);
@@ -46,10 +48,17 @@ export function useWishlist(user, userProfile, groupId = null) {
         // Không gian cá nhân -> Chỉ lấy wish của chính user này tạo ra và không thuộc nhóm nào
         data = data.filter(i => !i.groupId && i.uid === user.uid);
       }
-
+ 
       setItems(data);
     });
 
+    // Listen for current user's likes
+    const likesQ = query(collection(db, "likes"), where("userId", "==", user.uid));
+    const unsubscribeLikes = onSnapshot(likesQ, (snap) => {
+        const likedIds = new Set(snap.docs.map(d => d.data().wishId).filter(Boolean));
+        setUserLikes(likedIds);
+    });
+ 
     const handlePaste = (e) => {
       const file = [...e.clipboardData.items]
         .find(i => i.type.startsWith("image/"))
@@ -57,12 +66,19 @@ export function useWishlist(user, userProfile, groupId = null) {
       if (file) chonAnh(file);
     };
     window.addEventListener("paste", handlePaste);
-
+ 
     return () => {
       unsubscribeSnapshot();
+      unsubscribeLikes();
       window.removeEventListener("paste", handlePaste);
     };
-  }, [user]);
+  }, [user, groupId]);
+
+  // Decorate items with isLiked state
+  const enrichedItems = useMemo(() => items.map(item => ({
+    ...item,
+    isLiked: userLikes.has(item.id)
+  })), [items, userLikes]);
 
   /** Đọc file ảnh và lưu dưới dạng base64 */
   function chonAnh(file) {
@@ -201,6 +217,18 @@ export function useWishlist(user, userProfile, groupId = null) {
                 createdAt: new Date()
               });
             }
+
+            // LOG ACTIVITY
+            await addDoc(collection(db, "activity_logs"), {
+              roomId: groupId,
+              actorId: user.uid,
+              actorName: userProfile?.username || user.displayName || user.email,
+              actorAvatar: userProfile?.avatar || null,
+              action: "create_wish",
+              targetId: docRef.id,
+              targetName: tenMon,
+              createdAt: new Date()
+            });
           }
         } catch (e) {
           console.error("Error sending group post notification:", e);
@@ -242,54 +270,44 @@ export function useWishlist(user, userProfile, groupId = null) {
     }
   }
 
+  const getTargetRoute = (item) => {
+    return item.groupId ? `/groups/${item.groupId}` : "/personal";
+  };
+
   /** Thích / Bỏ thích */
   async function thichMon(item) {
     if (!user || !item) return;
     
     const wishId = item.id;
-    const currentLikes = item.likes || [];
     
-    // Find if already liked (handle both string IDs for legacy and objects for new structure)
-    const existingLike = currentLikes.find(l => 
-      typeof l === 'string' ? l === user.uid : l.id === user.uid
-    );
-    const isLiked = !!existingLike;
-    const wishRef = doc(db, "wishlist", wishId);
-    
-    const likeObj = {
-      id: user.uid,
-      username: userProfile?.username || user.displayName || user.email || "Bạn nhỏ",
-      avatar: userProfile?.avatar || null
-    };
-
-    // OPTIMISTIC UPDATE
-    const previousItems = [...items];
-    setItems(prev => prev.map(i => {
-      if (i.id === wishId) {
-        const newLikes = isLiked 
-          ? (i.likes || []).filter(l => (typeof l === 'string' ? l !== user.uid : l.id !== user.uid))
-          : [...(i.likes || []), likeObj];
-        return { ...i, likes: newLikes };
-      }
-      return i;
-    }));
+    // Check if user already liked
+    const likesQ = query(collection(db, "likes"), where("wishId", "==", wishId), where("userId", "==", user.uid));
+    const likesSnap = await getDocs(likesQ);
+    const isLiked = !likesSnap.empty;
 
     toastStore.show(isLiked ? "Đã bỏ thích" : "Đã thích");
 
     try {
       if (isLiked) {
-        await updateDoc(wishRef, { 
-          likes: arrayRemove(existingLike) 
-        });
+        // Remove likes
+        const deletePromises = likesSnap.docs.map(d => deleteDoc(d.ref));
+        await Promise.all(deletePromises);
+        await updateDoc(doc(db, "wishlist", wishId), { likeCount: increment(-1) });
       } else {
-        await updateDoc(wishRef, { 
-          likes: arrayUnion(likeObj) 
+        // Add like
+        await addDoc(collection(db, "likes"), {
+          wishId: wishId,
+          userId: user.uid,
+          username: userProfile?.username || user.displayName || user.email || "Bạn nhỏ",
+          avatar: userProfile?.avatar || null,
+          createdAt: new Date()
         });
+        await updateDoc(doc(db, "wishlist", wishId), { likeCount: increment(1) });
 
         // TRIGGER NOTIFICATION
         if (item.uid !== user.uid) {
           await addDoc(collection(db, "notifications"), {
-            userId: item.uid, // Receiver
+            userId: item.uid,
             senderId: user.uid,
             senderName: userProfile?.username || user.displayName || user.email || "Someone",
             senderAvatar: userProfile?.avatar || null,
@@ -297,6 +315,7 @@ export function useWishlist(user, userProfile, groupId = null) {
             wishId: wishId,
             wishTitle: item.ten,
             groupId: item.groupId || null,
+            targetRoute: getTargetRoute(item),
             isRead: false,
             createdAt: new Date()
           });
@@ -305,169 +324,211 @@ export function useWishlist(user, userProfile, groupId = null) {
       return true;
     } catch (err) {
       console.error(err);
-      setItems(previousItems); // Rollback
-      notifyError("Lỗi khi cập nhật lượt thích. Vui lòng thử lại!");
+      notifyError("Lỗi khi cập nhật lượt thích.");
       return false;
     }
   }
 
   /** Thêm bình luận hoặc Trả lời / Like bình luận */
-  async function binhLuanMon(wishId, content, targetComment = null, isSpecial = false, replyTarget = null) {
-    if (!user) return;
+  async function binhLuanMon(wishId, content, targetCommentId = null, isReply = false, replyTarget = null) {
+    if (!user || !content?.trim()) return;
 
-    const wishRef = doc(db, "wishlist", wishId);
     const item = items.find(i => i.id === wishId);
     if (!item) return;
 
-    let updatedComments = [...(item.comments || [])];
-
-    if (isSpecial) {
-      // TRƯỜNG HỢP 1: CẬP NHẬT LIKE BÌNH LUẬN (Content là null)
-      if (content === null && targetComment) {
-        updatedComments = updatedComments.map(c => {
-          const isMatch = (c.id && c.id === targetComment.id) ||
-            (c.createdAt === targetComment.createdAt && c.userId === targetComment.userId);
-          return isMatch ? targetComment : c;
-        });
-        toastStore.show(targetComment.likes?.includes(user.uid) ? "Đã thích" : "Đã bỏ thích");
-      }
-      // TRƯỜNG HỢP 2: TRẢ LỜI BÌNH LUẬN
-      else if (content && targetComment) {
+    try {
+      if (isReply && targetCommentId) {
+        // ADD REPLY
         const reply = {
-          id: Math.random().toString(36).substr(2, 9),
+          wishId: wishId,
+          commentId: targetCommentId, // Parent comment
           userId: user.uid,
           username: userProfile?.username || user.displayName || user.email || "Khách",
           avatar: userProfile?.avatar || null,
           content: content.trim(),
-          createdAt: new Date().toISOString(),
-          likes: [],
+          createdAt: new Date(),
           replyTo: replyTarget ? { userId: replyTarget.userId, username: replyTarget.username } : null
         };
 
-        updatedComments = updatedComments.map(c => {
-          const isMatch = (c.id && c.id === targetComment.id) || 
-                          (c.createdAt === targetComment.createdAt && c.userId === targetComment.userId);
-          if (isMatch) {
-            return { ...c, replies: [...(c.replies || []), reply] };
-          }
-          return c;
-        });
+        const docRef = await addDoc(collection(db, "replies"), reply);
         toastStore.show("Đã trả lời");
+        await updateDoc(doc(db, "wishlist", wishId), { commentCount: increment(1) });
 
-        // TRIGGER NOTIFICATION for Reply
-        if (targetComment.userId !== user.uid) {
+        // NOTIFY Parent Comment Owner
+        if (replyTarget && replyTarget.userId !== user.uid) {
+           await addDoc(collection(db, "notifications"), {
+              userId: replyTarget.userId,
+              senderId: user.uid,
+              senderName: userProfile?.username || user.displayName || user.email || "Someone",
+              senderAvatar: userProfile?.avatar || null,
+              type: "reply",
+              wishId: wishId,
+              wishTitle: item.ten,
+              commentId: targetCommentId, // Navigate to parent comment
+              groupId: item.groupId || null,
+              targetRoute: getTargetRoute(item),
+              isRead: false,
+              createdAt: new Date()
+            });
+        }
+
+        // NOTIFY Mentioned Users (@username) in Replies
+        const mentions = content.match(/@(\w+)/g);
+        if (mentions) {
+          for (const mention of mentions) {
+            const mentionedUsername = mention.substring(1);
+            if (mentionedUsername === (userProfile?.username)) continue; // Don't notify self
+
+            // Find user by username
+            const userQ = query(collection(db, "users"), where("username", "==", mentionedUsername));
+            const userSnap = await getDocs(userQ);
+            if (!userSnap.empty) {
+                const targetUid = userSnap.docs[0].id;
+                if (targetUid === (replyTarget?.userId)) continue; // Already notified as reply target
+
+                await addDoc(collection(db, "notifications"), {
+                    userId: targetUid,
+                    senderId: user.uid,
+                    senderName: userProfile?.username || user.displayName || user.email || "Someone",
+                    senderAvatar: userProfile?.avatar || null,
+                    type: "tag",
+                    wishId: wishId,
+                    wishTitle: item.ten,
+                    commentId: docRef.id,
+                    groupId: item.groupId || null,
+                    targetRoute: getTargetRoute(item),
+                    isRead: false,
+                    createdAt: new Date()
+                });
+            }
+          }
+        }
+      } else {
+        // ADD TOP-LEVEL COMMENT
+        if (content.length > 200) { notifyError("Bình luận tối đa 200 ký tự."); return; }
+
+        const comment = {
+          wishId: wishId,
+          userId: user.uid,
+          username: userProfile?.username || user.displayName || user.email || "Khách",
+          avatar: userProfile?.avatar || null,
+          content: content.trim(),
+          createdAt: new Date()
+        };
+
+        const docRef = await addDoc(collection(db, "comments"), comment);
+        toastStore.show("Đã thêm bình luận");
+        await updateDoc(doc(db, "wishlist", wishId), { commentCount: increment(1) });
+
+        // NOTIFY Wish Owner
+        if (item.uid !== user.uid) {
           await addDoc(collection(db, "notifications"), {
-            userId: targetComment.userId,
+            userId: item.uid,
             senderId: user.uid,
             senderName: userProfile?.username || user.displayName || user.email || "Someone",
             senderAvatar: userProfile?.avatar || null,
-            type: "reply",
+            type: "comment",
             wishId: wishId,
             wishTitle: item.ten,
-            commentId: targetComment.id,
+            commentId: docRef.id,
             groupId: item.groupId || null,
+            targetRoute: getTargetRoute(item),
             isRead: false,
             createdAt: new Date()
           });
         }
+
+        // NOTIFY Mentioned Users (@username)
+        const mentions = content.match(/@(\w+)/g);
+        if (mentions) {
+          for (const mention of mentions) {
+            const mentionedUsername = mention.substring(1);
+            if (mentionedUsername === (userProfile?.username)) continue; // Don't notify self
+
+            // Find user by username
+            const userQ = query(collection(db, "users"), where("username", "==", mentionedUsername));
+            const userSnap = await getDocs(userQ);
+            if (!userSnap.empty) {
+                const targetUid = userSnap.docs[0].id;
+                if (targetUid === item.uid) continue; // Already notified as owner
+
+                await addDoc(collection(db, "notifications"), {
+                    userId: targetUid,
+                    senderId: user.uid,
+                    senderName: userProfile?.username || user.displayName || user.email || "Someone",
+                    senderAvatar: userProfile?.avatar || null,
+                    type: "tag",
+                    wishId: wishId,
+                    wishTitle: item.ten,
+                    commentId: docRef.id,
+                    groupId: item.groupId || null,
+                    targetRoute: getTargetRoute(item),
+                    isRead: false,
+                    createdAt: new Date()
+                });
+            }
+          }
+        }
       }
-    } else {
-      // TRƯỜNG HỢP 3: BÌNH LUẬN MỚI (TOP-LEVEL)
-      if (!content.trim()) return;
-      if (content.length > 200) { notifyError("Bình luận tối đa 200 ký tự."); return; }
-
-      const comment = {
-        id: Math.random().toString(36).substr(2, 9),
-        userId: user.uid,
-        username: userProfile?.username || user.displayName || user.email || "Khách",
-        avatar: userProfile?.avatar || null,
-        content: content.trim(),
-        createdAt: new Date().toISOString(),
-        likes: [],
-        replies: []
-      };
-      updatedComments.push(comment);
-      toastStore.show("Đã thêm bình luận");
-
-      // TRIGGER NOTIFICATION
-      if (item.uid !== user.uid) {
-        await addDoc(collection(db, "notifications"), {
-          userId: item.uid,
-          senderId: user.uid,
-          senderName: userProfile?.username || user.displayName || user.email || "Someone",
-          senderAvatar: userProfile?.avatar || null,
-          type: "comment",
-          wishId: wishId,
-          wishTitle: item.ten,
-          commentId: comment.id,
-          groupId: item.groupId || null,
-          isRead: false,
-          createdAt: new Date()
-        });
-      }
-    }
-
-    // OPTIMISTIC UPDATE
-    const previousItems = [...items];
-    setItems(prev => prev.map(i => i.id === wishId ? { ...i, comments: updatedComments } : i));
-
-    try {
-      await updateDoc(wishRef, { comments: updatedComments });
       return true;
     } catch (err) {
       console.error(err);
-      setItems(previousItems);
-      notifyError("Lỗi khi cập nhật bình luận.");
+      notifyError("Lỗi khi gửi bình luận.");
       return false;
     }
   }
 
   /** Xóa bình luận hoặc Phản hồi */
-  async function xoaBinhLuan(wishId, comment, parentId = null) {
-    if (!user || !comment) return;
-    const wishRef = doc(db, "wishlist", wishId);
-    const item = items.find(i => i.id === wishId);
-    if (!item) return;
-
-    let updatedComments = [...(item.comments || [])];
-
-    if (parentId) {
-      // XÓA PHẢN HỒI
-      updatedComments = updatedComments.map(c => {
-        if (c.id === parentId) {
-          return { ...c, replies: (c.replies || []).filter(r => r.id !== comment.id) };
-        }
-        return c;
-      });
-      toastStore.show("Đã xóa phản hồi");
-    } else {
-      // XÓA BÌNH LUẬN TOP-LEVEL
-      updatedComments = updatedComments.filter(c => {
-        const isMatch = (c.id && c.id === comment.id) ||
-          (c.createdAt === comment.createdAt && c.userId === comment.userId);
-        return !isMatch;
-      });
-      toastStore.show("Đã xóa bình luận");
-    }
-
-    // OPTIMISTIC UPDATE
-    const previousItems = [...items];
-    setItems(prev => prev.map(i => i.id === wishId ? { ...i, comments: updatedComments } : i));
-
+  async function xoaBinhLuan(wishId, id, isReply = false) {
+    if (!user || !id) return;
     try {
-      await updateDoc(wishRef, { comments: updatedComments });
+      if (isReply) {
+        await deleteDoc(doc(db, "replies", id));
+        toastStore.show("Đã xóa phản hồi");
+      } else {
+        await deleteDoc(doc(db, "comments", id));
+        // Also delete associated replies (could be a Cloud Function, but for now just leave them orphaned or do batch)
+        toastStore.show("Đã xóa bình luận");
+      }
+      await updateDoc(doc(db, "wishlist", wishId), { commentCount: increment(-1) });
       return true;
     } catch (err) {
       console.error(err);
-      setItems(previousItems); // Rollback
-      notifyError("Lỗi khi xóa bình luận.");
+      notifyError("Lỗi khi xóa.");
+      return false;
+    }
+  }
+
+  /** Thích bình luận (mới) */
+  async function thichBinhLuan(targetId, type = "comment") {
+    if (!user) return;
+    
+    const likesQ = query(collection(db, "likes"), where("targetId", "==", targetId), where("userId", "==", user.uid));
+    const likesSnap = await getDocs(likesQ);
+    const isLiked = !likesSnap.empty;
+
+    try {
+      if (isLiked) {
+        const deletePromises = likesSnap.docs.map(d => deleteDoc(d.ref));
+        await Promise.all(deletePromises);
+      } else {
+        await addDoc(collection(db, "likes"), {
+          targetId: targetId,
+          type: type, // comment | reply
+          userId: user.uid,
+          username: userProfile?.username || user.displayName || user.email || "Khách",
+          createdAt: new Date()
+        });
+      }
+      return true;
+    } catch (err) {
       return false;
     }
   }
 
   return {
     // Dữ liệu
-    items,
+    items: enrichedItems,
     // Form state
     tenMon, setTenMon,
     ghiChu, setGhiChu,
@@ -486,5 +547,6 @@ export function useWishlist(user, userProfile, groupId = null) {
     thichMon,
     binhLuanMon,
     xoaBinhLuan,
+    thichBinhLuan,
   };
 }

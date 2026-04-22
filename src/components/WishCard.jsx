@@ -7,9 +7,9 @@ import Avatar from "./ui/Avatar";
  * @param {Function} onClick - Mở modal xem chi tiết
  */
 export default function WishCard({ item, onClick, user }) {
-  const likeCount = item.likes?.length || 0;
-  const commentCount = item.comments?.length || 0;
-  const isLiked = item.likes?.some(l => typeof l === 'string' ? l === user?.uid : l.id === user?.uid);
+  const likeCount = item.likeCount || 0;
+  const commentCount = item.commentCount || 0;
+  const isLiked = item.isLiked;
 
   return (
     <div className="bg-card-bg rounded-2xl border border-border-primary overflow-hidden flex items-stretch relative cursor-pointer transition-all duration-200 hover:bg-card-hover hover:-translate-y-1 hover:shadow-lg" onClick={() => onClick(item)}>

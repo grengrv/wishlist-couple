@@ -27,30 +27,7 @@ const DEFAULT_THEME = {
 export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = false }) {
     const confirm = useConfirm();
     const [mode, setMode] = useState("view"); // "view" | "edit"
-
-    // Debugging
-    useEffect(() => {
-        console.log("Profile Component - userProfile:", userProfile);
-    }, [userProfile]);
-
-    // Safety check: ensure profile is always an object
-    const profile = userProfile || {};
-
-    // RENDER GUARD: Show loading if data is missing
-    if (!userProfile) {
-        return (
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[9999] p-4 animate-fade-in" onClick={onClose}>
-                <div className="bg-card-bg backdrop-blur-3xl p-10 rounded-[40px] shadow-2xl flex flex-col items-center gap-6 border border-border-primary">
-                    <div className="w-12 h-12 border-[5px] border-pink-500 border-t-transparent rounded-full animate-spin" />
-                    <div className="flex flex-col items-center gap-1">
-                        <p className="text-text-primary font-black text-lg">Đang tải hồ sơ...</p>
-                        <p className="text-text-muted font-bold text-xs uppercase tracking-widest">Vui lòng đợi trong giây lát</p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
+    
     // Form state
     const [displayName, setDisplayName] = useState(userProfile?.displayName || userProfile?.username || "");
     const [username, setUsername] = useState(userProfile?.username || "");
@@ -87,7 +64,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
 
     // Sync state when userProfile changes (Real-time updates)
     useEffect(() => {
-        if (mode === "view") {
+        if (mode === "view" && userProfile) {
             setDisplayName(userProfile?.displayName || userProfile?.username || "");
             setUsername(userProfile?.username || "");
             setBio(userProfile?.bio || "");
@@ -102,6 +79,18 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
             });
         }
     }, [userProfile, mode]);
+
+    // Debugging
+    useEffect(() => {
+        if (userProfile) {
+            console.log("Profile Component - userProfile:", userProfile);
+        }
+    }, [userProfile]);
+
+    // Safety check: ensure profile is always an object
+    const profile = userProfile || {};
+
+    // RENDER GUARD was here, moved down
 
     // Status colors
     const statusColors = {
@@ -124,7 +113,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
     const isActiveAction = loading || mode === "edit";
 
     const handleRequestClose = useCallback(async () => {
-        if (loading) return; // Completely disable closing while uploading
+        if (loading) return; 
 
         if (mode === "edit" && hasUnsavedChanges) {
             const ok = await confirm({
@@ -140,7 +129,6 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
         onClose();
     }, [loading, mode, hasUnsavedChanges, confirm, onClose]);
 
-    // ESC Key handling
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.key === "Escape") {
@@ -161,6 +149,22 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
             window.removeEventListener("mousedown", handleClickOutside);
         };
     }, [handleRequestClose]);
+
+    // RENDER GUARD: Show loading if data is missing
+    if (!userProfile) {
+        return (
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[9999] p-4 animate-fade-in" onClick={onClose}>
+                <div className="bg-card-bg backdrop-blur-3xl p-10 rounded-[40px] shadow-2xl flex flex-col items-center gap-6 border border-border-primary">
+                    <div className="w-12 h-12 border-[5px] border-pink-500 border-t-transparent rounded-full animate-spin" />
+                    <div className="flex flex-col items-center gap-1">
+                        <p className="text-text-primary font-black text-lg">Đang tải hồ sơ...</p>
+                        <p className="text-text-muted font-bold text-xs uppercase tracking-widest">Vui lòng đợi trong giây lát</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
 
     const openStatusSelector = (e) => {
         e.stopPropagation();

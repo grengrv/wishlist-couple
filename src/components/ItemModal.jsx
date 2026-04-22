@@ -1,49 +1,97 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useSearchParams, useLocation } from "react-router-dom";
 import { formatNgay } from "../utils/formatDate";
 import Avatar from "./ui/Avatar";
 import { notifyError } from "../utils/notify";
 import ConfirmModal from "./ui/ConfirmModal";
+import { db } from "../firebase";
+import { 
+  collection, query, where, orderBy, onSnapshot, doc, getDocs, deleteDoc 
+} from "firebase/firestore";
 
 const COMMON_EMOJIS = [
   "❤️", "✨", "🔥", "🎁", "🍰", "🎈", "🌸", "⭐",
   "😊", "😍", "🥰", "🥳", "🙌", "👍", "🍕", "🍔"
 ];
 
-export default function ItemModal({ item, onClose, onDelete, user, userProfile, adminEmail, onLike, onComment, onDeleteComment, members = [] }) {
+export default function ItemModal({ item, onClose, onDelete, user, userProfile, adminEmail, onLike, onComment, onDeleteComment, onLikeComment, members = [] }) {
   const [comment, setComment] = useState("");
   const [showMentions, setShowMentions] = useState(false);
   const [mentionFilter, setMentionFilter] = useState("");
   const [isAnimatingLike, setIsAnimatingLike] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [commentToDelete, setCommentToDelete] = useState(null); // { item: obj, parentId: string|null }
+  const [commentToDelete, setCommentToDelete] = useState(null); // { id: string, isReply: bool }
   const [activeDropdown, setActiveDropdown] = useState(null); // unique ID string
   const [replyingTo, setReplyingTo] = useState(null); // ID of the comment being replied to
   const [replyText, setReplyText] = useState("");
   const [replyTargetUser, setReplyTargetUser] = useState(null); // { userId, username }
   const [showLikesModal, setShowLikesModal] = useState(null); // { title: string, users: array }
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const [highlightedCommentId, setHighlightedCommentId] = useState(null);
 
+  // REAL-TIME SOCIAL DATA
+  const [likes, setLikes] = useState([]);
+  const [comments, setComments] = useState([]);
+  const [replies, setReplies] = useState([]);
+  const [socialLikes, setSocialLikes] = useState([]); // Likes for comments/replies
+
+  useEffect(() => {
+    if (!item?.id) return;
+
+    // 1. Listen for Item Likes
+    const likesQ = query(collection(db, "likes"), where("wishId", "==", item.id));
+    const unsubscribeLikes = onSnapshot(likesQ, (snap) => {
+      setLikes(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    // 2. Listen for Comments
+    const commentsQ = query(collection(db, "comments"), where("wishId", "==", item.id), orderBy("createdAt", "asc"));
+    const unsubscribeComments = onSnapshot(commentsQ, (snap) => {
+      setComments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    // 3. Listen for Replies
+    const repliesQ = query(collection(db, "replies"), where("wishId", "==", item.id), orderBy("createdAt", "asc"));
+    const unsubscribeReplies = onSnapshot(repliesQ, (snap) => {
+      setReplies(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    // 4. Listen for Social Likes (on comments/replies)
+    const socialLikesQ = query(collection(db, "likes"), where("type", "in", ["comment", "reply"]));
+    const unsubscribeSocialLikes = onSnapshot(socialLikesQ, (snap) => {
+      // Filter manually because "in" query might be broad or we might want to restrict to current wish context
+      setSocialLikes(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    return () => {
+      unsubscribeLikes();
+      unsubscribeComments();
+      unsubscribeReplies();
+      unsubscribeSocialLikes();
+    };
+  }, [item?.id]);
+
   // Merge members with current user's profile to ensure we can always identify them in likes
-  const allPossibleMembers = [...members];
-  const userInMembers = members.some(m => m.uid === user?.uid);
-  if (!userInMembers && userProfile && user) {
-    allPossibleMembers.push({ uid: user.uid, ...userProfile });
-  }
+  const allPossibleMembers = useMemo(() => {
+    const list = [...members];
+    const userInMembers = members.some(m => m.uid === user?.uid);
+    if (!userInMembers && userProfile && user) {
+      list.push({ uid: user.uid, ...userProfile });
+    }
+    return list;
+  }, [members, userProfile, user]);
 
   const scrollRef = useRef(null);
   const emojiPickerRef = useRef(null);
   const dropdownRef = useRef(null);
 
-  const likes = item?.likes || [];
-  const comments = item?.comments || [];
-  const isLiked = likes.some(l => typeof l === 'string' ? l === user?.uid : l.id === user?.uid);
+  const isLiked = likes.some(l => l.userId === user?.uid);
 
   // Auto-scroll to bottom or specific comment
   useEffect(() => {
-    const commentId = searchParams.get("commentId");
-    if (commentId && comments.length > 0) {
+    const commentId = searchParams.get("commentId") || location.state?.commentId;
+    if (commentId && (comments.length > 0 || replies.length > 0)) {
       setTimeout(() => {
         const el = document.getElementById(`comment-${commentId}`);
         if (el) {
@@ -52,10 +100,10 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
           setTimeout(() => setHighlightedCommentId(null), 3000);
         }
       }, 500);
-    } else if (scrollRef.current) {
+    } else if (scrollRef.current && comments.length > 0) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [comments, item, searchParams]);
+  }, [comments.length, replies.length, searchParams, location.state]);
 
   // Handle ESC and body scroll lock
   useEffect(() => {
@@ -88,9 +136,13 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  if (!item) return null;
+  // Handlers (Defined after hooks)
+  const isAuthorOrAdmin = useMemo(() => {
+    if (!item) return false;
+    return !item.uid || item.uid === user?.uid || user?.email === adminEmail;
+  }, [item, user, adminEmail]);
 
-  const isAuthorOrAdmin = !item.uid || item.uid === user?.uid || user?.email === adminEmail;
+  if (!item) return null;
 
   const handleEmojiSelect = (emoji) => {
     setComment(prev => prev + emoji);
@@ -99,10 +151,12 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
 
   const confirmDeleteComment = () => {
     if (commentToDelete) {
-      onDeleteComment(item.id, commentToDelete.item, commentToDelete.parentId);
+      onDeleteComment(item.id, commentToDelete.id, commentToDelete.isReply);
       setCommentToDelete(null);
     }
   };
+
+  const getLikesForTarget = (targetId) => socialLikes.filter(l => l.targetId === targetId);
 
   return (
     <>
@@ -209,261 +263,249 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                     <p className="text-xs font-black uppercase tracking-widest text-center">Hãy là người đầu tiên<br />bình luận...</p>
                   </div>
                 ) : (
-                  comments.map((c, idx) => (
-                    <div 
-                      key={idx} 
-                      id={`comment-${c.id}`}
-                      className={`space-y-4 transition-all duration-700 rounded-2xl ${highlightedCommentId === c.id ? 'bg-pink-500/10 shadow-[0_0_20px_rgba(233,30,140,0.1)] ring-1 ring-pink-500/20 p-2 -m-2' : ''}`}
-                    >
-                      {/* Main Comment */}
-                      <div className="flex gap-3 group/comment items-start relative">
-                        <div className="shrink-0">
-                          <Avatar src={c.avatar} name={c.username} size="sm" />
-                        </div>
-                        <div className="flex-1 min-w-0 pr-6">
-                          <div className="flex items-baseline gap-2 flex-wrap">
-                            <span className="text-[13px] font-black text-text-primary">{c.username}</span>
-                            <div className="text-[14px] text-text-secondary font-medium leading-relaxed break-words">
-                              {c.content.split(/(@\w+)/g).map((part, i) =>
-                                part.startsWith('@') ? <span key={i} className="text-pink-500 font-black cursor-pointer hover:underline">{part}</span> : part
+                  comments.map((c, idx) => {
+                    const commentLikes = getLikesForTarget(c.id);
+                    const hasLikedComment = commentLikes.some(l => l.userId === user?.uid);
+                    const commentReplies = replies.filter(r => r.commentId === c.id);
+
+                    return (
+                      <div 
+                        key={c.id} 
+                        id={`comment-${c.id}`}
+                        className={`space-y-4 transition-all duration-700 rounded-2xl ${highlightedCommentId === c.id ? 'bg-pink-500/10 shadow-[0_0_20px_rgba(233,30,140,0.1)] ring-1 ring-pink-500/20 p-2 -m-2' : ''}`}
+                      >
+                        {/* Main Comment */}
+                        <div className="flex gap-3 group/comment items-start relative">
+                          <div className="shrink-0">
+                            <Avatar src={c.avatar} name={c.username} size="sm" />
+                          </div>
+                          <div className="flex-1 min-w-0 pr-6">
+                            <div className="flex items-baseline gap-2 flex-wrap">
+                              <span className="text-[13px] font-black text-text-primary">{c.username}</span>
+                              <div className="text-[14px] text-text-secondary font-medium leading-relaxed break-words">
+                                {c.content.split(/(@\w+)/g).map((part, i) =>
+                                  part.startsWith('@') ? <span key={i} className="text-pink-500 font-black cursor-pointer hover:underline">{part}</span> : part
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Comment Actions */}
+                            <div className="flex items-center gap-4 mt-1.5">
+                              <span className="text-[10px] text-text-muted font-bold">
+                                {c.createdAt?.toDate ? c.createdAt.toDate().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : "..."}
+                              </span>
+
+                              <button
+                                onClick={() => onLikeComment(c.id, "comment")}
+                                className={`text-[11px] font-black transition-colors ${hasLikedComment ? 'text-pink-500' : 'text-text-muted hover:text-text-secondary'}`}
+                              >
+                                Thích
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  setReplyingTo(replyingTo === c.id ? null : c.id);
+                                  setReplyText("");
+                                  setReplyTargetUser(null);
+                                }}
+                                className="text-[11px] font-black text-text-muted hover:text-text-secondary"
+                              >
+                                Trả lời
+                              </button>
+
+                              {commentLikes.length > 0 && (
+                                <button
+                                  onClick={() => {
+                                    setShowLikesModal({ title: "Lượt thích bình luận", users: commentLikes });
+                                  }}
+                                  className="text-[11px] font-black text-text-muted hover:text-pink-500"
+                                >
+                                  {commentLikes.length} lượt thích
+                                </button>
                               )}
                             </div>
                           </div>
 
-                          {/* Comment Actions */}
-                          <div className="flex items-center gap-4 mt-1.5">
-                            <span className="text-[10px] text-text-muted font-bold">
-                              {new Date(c.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-
-                            <button
-                              onClick={() => {
-                                const currentLikes = c.likes || [];
-                                const hasLiked = currentLikes.includes(user?.uid);
-                                const newLikes = hasLiked
-                                  ? currentLikes.filter(id => id !== user?.uid)
-                                  : [...currentLikes, user?.uid];
-
-                                // Call parent onComment with updated data (assuming backend handles nested updates)
-                                onComment(item.id, null, { ...c, likes: newLikes }, true);
-                              }}
-                              className={`text-[11px] font-black transition-colors ${c.likes?.includes(user?.uid) ? 'text-pink-500' : 'text-text-muted hover:text-text-secondary'}`}
-                            >
-                              Thích
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                setReplyingTo(replyingTo === c.id ? null : c.id);
-                                setReplyText("");
-                                setReplyTargetUser(null);
-                              }}
-                              className="text-[11px] font-black text-text-muted hover:text-text-secondary"
-                            >
-                              Trả lời
-                            </button>
-
-                            {c.likes?.length > 0 && (
+                          {/* Comment Options Button */}
+                          {(c.userId === user?.uid || user?.email === adminEmail) && (
+                            <div className="absolute right-0 top-0">
                               <button
                                 onClick={() => {
-                                  const likeUsers = allPossibleMembers.filter(m => c.likes.includes(m.uid));
-                                  setShowLikesModal({ title: "Lượt thích bình luận", users: likeUsers });
+                                  const dropdownId = `c-${c.id}`;
+                                  setActiveDropdown(activeDropdown === dropdownId ? null : dropdownId);
                                 }}
-                                className="text-[11px] font-black text-text-muted hover:text-pink-500"
+                                className={`p-1 text-text-muted hover:text-text-primary transition-all rounded-full hover:bg-bg-primary flex items-center justify-center ${activeDropdown === `c-${c.id}` ? 'opacity-100' : 'md:opacity-0 group-hover/comment:opacity-100 opacity-100'}`}
                               >
-                                {c.likes.length} lượt thích
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                  <circle cx="12" cy="12" r="1"></circle>
+                                  <circle cx="19" cy="12" r="1"></circle>
+                                  <circle cx="5" cy="12" r="1"></circle>
+                                </svg>
                               </button>
-                            )}
-                          </div>
+
+                              {/* Dropdown Menu */}
+                              {activeDropdown === `c-${c.id}` && (
+                                <div
+                                  ref={dropdownRef}
+                                  className="absolute right-0 top-full mt-1 bg-bg-secondary rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-border-primary/50 p-1.5 z-[200] min-w-[120px] animate-fade-in"
+                                >
+                                  <button
+                                    onClick={() => {
+                                      setCommentToDelete({ id: c.id, isReply: false });
+                                      setActiveDropdown(null);
+                                    }}
+                                    className="w-full flex items-center gap-3 px-3 py-2 text-[13px] font-black text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors group/delete"
+                                  >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="group-hover/delete:scale-110 transition-transform">
+                                      <polyline points="3 6 5 6 21 6"></polyline>
+                                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    </svg>
+                                    Xóa
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
 
-                        {/* Comment Options Button */}
-                        {(c.userId === user?.uid || user?.email === adminEmail) && (
-                          <div className="absolute right-0 top-0">
-                            <button
-                              onClick={() => {
-                                const dropdownId = `c-${c.id}`;
-                                setActiveDropdown(activeDropdown === dropdownId ? null : dropdownId);
-                              }}
-                              className={`p-1 text-text-muted hover:text-text-primary transition-all rounded-full hover:bg-bg-primary flex items-center justify-center ${activeDropdown === `c-${c.id}` ? 'opacity-100' : 'md:opacity-0 group-hover/comment:opacity-100 opacity-100'}`}
-                            >
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <circle cx="12" cy="12" r="1"></circle>
-                                <circle cx="19" cy="12" r="1"></circle>
-                                <circle cx="5" cy="12" r="1"></circle>
-                              </svg>
-                            </button>
+                        {/* Replies List */}
+                        {commentReplies.length > 0 && (
+                          <div className="ml-10 space-y-4 border-l-2 border-border-primary pl-4 mt-2">
+                            {commentReplies.map((reply) => {
+                              const rDropdownId = `r-${reply.id}`;
+                              const replyLikes = getLikesForTarget(reply.id);
+                              const hasLikedReply = replyLikes.some(l => l.userId === user?.uid);
 
-                            {/* Dropdown Menu */}
-                            {activeDropdown === `c-${c.id}` && (
-                              <div
-                                ref={dropdownRef}
-                                className="absolute right-0 top-full mt-1 bg-bg-secondary rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-border-primary/50 p-1.5 z-[200] min-w-[120px] animate-fade-in"
-                              >
-                                <button
-                                  onClick={() => {
-                                    setCommentToDelete({ item: c, parentId: null });
-                                    setActiveDropdown(null);
-                                  }}
-                                  className="w-full flex items-center gap-3 px-3 py-2 text-[13px] font-black text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors group/delete"
-                                >
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="group-hover/delete:scale-110 transition-transform">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                  </svg>
-                                  Xóa
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Replies List */}
-                      {c.replies?.length > 0 && (
-                        <div className="ml-10 space-y-4 border-l-2 border-border-primary pl-4 mt-2">
-                          {c.replies.map((reply, ridx) => {
-                            const rDropdownId = `r-${c.id}-${reply.id}`;
-                            return (
-                              <div key={ridx} className="flex gap-3 items-start group/reply relative">
-                                <div className="shrink-0">
-                                  <Avatar src={reply.avatar} name={reply.username} size="xs" className="w-6 h-6" />
-                                </div>
-                                <div className="flex-1 min-w-0 pr-6">
-                                  <div className="text-[13px] leading-relaxed">
-                                    <span className="font-black text-text-primary mr-2">{reply.username}</span>
-                                    <span className="text-text-secondary font-medium break-words">
-                                      {reply.content.split(/(@\w+)/g).map((part, i) =>
-                                        part.startsWith('@') ? <span key={i} className="text-pink-500 font-black">{part}</span> : part
-                                      )}
-                                    </span>
+                              return (
+                                <div key={reply.id} id={`comment-${reply.id}`} className={`flex gap-3 items-start group/reply relative transition-all duration-700 rounded-xl ${highlightedCommentId === reply.id ? 'bg-pink-500/10 shadow-[0_0_15px_rgba(233,30,140,0.1)] ring-1 ring-pink-500/20 p-1 -m-1' : ''}`}>
+                                  <div className="shrink-0">
+                                    <Avatar src={reply.avatar} name={reply.username} size="xs" className="w-6 h-6" />
                                   </div>
+                                  <div className="flex-1 min-w-0 pr-6">
+                                    <div className="text-[13px] leading-relaxed">
+                                      <span className="font-black text-text-primary mr-2">{reply.username}</span>
+                                      <span className="text-text-secondary font-medium break-words">
+                                        {reply.content.split(/(@\w+)/g).map((part, i) =>
+                                          part.startsWith('@') ? <span key={i} className="text-pink-500 font-black">{part}</span> : part
+                                        )}
+                                      </span>
+                                    </div>
 
-                                  {/* Reply Actions */}
-                                  <div className="flex items-center gap-4 mt-1">
-                                    <span className="text-[10px] text-text-muted font-bold">
-                                      {new Date(reply.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
+                                    {/* Reply Actions */}
+                                    <div className="flex items-center gap-4 mt-1">
+                                      <span className="text-[10px] text-text-muted font-bold">
+                                        {reply.createdAt?.toDate ? reply.createdAt.toDate().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : "..."}
+                                      </span>
 
-                                    <button
-                                      onClick={() => {
-                                        const currentLikes = reply.likes || [];
-                                        const hasLiked = currentLikes.includes(user?.uid);
-                                        const newLikes = hasLiked
-                                          ? currentLikes.filter(id => id !== user?.uid)
-                                          : [...currentLikes, user?.uid];
+                                      <button
+                                        onClick={() => onLikeComment(reply.id, "reply")}
+                                        className={`text-[10px] font-black transition-colors ${hasLikedReply ? 'text-pink-500' : 'text-text-muted hover:text-text-secondary'}`}
+                                      >
+                                        Thích
+                                      </button>
 
-                                        // Update reply inside parent comment
-                                        const updatedReplies = c.replies.map(r => r.id === reply.id ? { ...r, likes: newLikes } : r);
-                                        onComment(item.id, null, { ...c, replies: updatedReplies }, true);
-                                      }}
-                                      className={`text-[10px] font-black transition-colors ${reply.likes?.includes(user?.uid) ? 'text-pink-500' : 'text-text-muted hover:text-text-secondary'}`}
-                                    >
-                                      Thích
-                                    </button>
-
-                                    <button
-                                      onClick={() => {
-                                        setReplyingTo(c.id);
-                                        setReplyText(`@${reply.username} `);
-                                        setReplyTargetUser({ userId: reply.userId, username: reply.username });
-                                      }}
-                                      className="text-[10px] font-black text-text-muted hover:text-text-secondary"
-                                    >
-                                      Trả lời
-                                    </button>
-
-                                    {reply.likes?.length > 0 && (
                                       <button
                                         onClick={() => {
-                                          const likeUsers = allPossibleMembers.filter(m => reply.likes.includes(m.uid));
-                                          setShowLikesModal({ title: "Lượt thích phản hồi", users: likeUsers });
+                                          setReplyingTo(c.id);
+                                          setReplyText(`@${reply.username} `);
+                                          setReplyTargetUser({ userId: reply.userId, username: reply.username });
                                         }}
-                                        className="text-[10px] font-black text-text-muted hover:text-pink-500"
+                                        className="text-[10px] font-black text-text-muted hover:text-text-secondary"
                                       >
-                                        {reply.likes.length} lượt thích
+                                        Trả lời
                                       </button>
-                                    )}
-                                  </div>
-                                </div>
 
-                                {/* Reply Options */}
-                                {(reply.userId === user?.uid || user?.email === adminEmail) && (
-                                  <div className="absolute right-0 top-0">
-                                    <button
-                                      onClick={() => setActiveDropdown(activeDropdown === rDropdownId ? null : rDropdownId)}
-                                      className={`p-1 text-text-muted hover:text-text-primary transition-all rounded-full hover:bg-bg-primary flex items-center justify-center ${activeDropdown === rDropdownId ? 'opacity-100' : 'md:opacity-0 group-hover/reply:opacity-100 opacity-100'}`}
-                                    >
-                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                        <circle cx="12" cy="12" r="1"></circle>
-                                        <circle cx="19" cy="12" r="1"></circle>
-                                        <circle cx="5" cy="12" r="1"></circle>
-                                      </svg>
-                                    </button>
-
-                                    {activeDropdown === rDropdownId && (
-                                      <div
-                                        ref={dropdownRef}
-                                        className="absolute right-0 top-full mt-1 bg-bg-secondary rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-border-primary/50 p-1 z-[200] min-w-[100px] animate-fade-in"
-                                      >
+                                      {replyLikes.length > 0 && (
                                         <button
                                           onClick={() => {
-                                            setCommentToDelete({ item: reply, parentId: c.id });
-                                            setActiveDropdown(null);
+                                            setShowLikesModal({ title: "Lượt thích phản hồi", users: replyLikes });
                                           }}
-                                          className="w-full flex items-center gap-2 px-3 py-1.5 text-[12px] font-black text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors group/delete"
+                                          className="text-[10px] font-black text-text-muted hover:text-pink-500"
                                         >
-                                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                            <polyline points="3 6 5 6 21 6"></polyline>
-                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                          </svg>
-                                          Xóa
+                                          {replyLikes.length} lượt thích
                                         </button>
-                                      </div>
-                                    )}
+                                      )}
+                                    </div>
                                   </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
 
-                      {/* Reply Input */}
-                      {replyingTo === c.id && (
-                        <div className="ml-10 mt-2 flex items-center gap-3 animate-fade-in bg-bg-primary/50 p-2 rounded-xl border border-border-primary/50">
-                          <Avatar src={userProfile?.avatar} name={userProfile?.username} size="xs" className="w-6 h-6" />
-                          <input
-                            autoFocus
-                            value={replyText}
-                            onChange={(e) => setReplyText(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && replyText.trim()) {
-                                onComment(item.id, replyText, c, true, replyTargetUser);
+                                  {/* Reply Options */}
+                                  {(reply.userId === user?.uid || user?.email === adminEmail) && (
+                                    <div className="absolute right-0 top-0">
+                                      <button
+                                        onClick={() => setActiveDropdown(activeDropdown === rDropdownId ? null : rDropdownId)}
+                                        className={`p-1 text-text-muted hover:text-text-primary transition-all rounded-full hover:bg-bg-primary flex items-center justify-center ${activeDropdown === rDropdownId ? 'opacity-100' : 'md:opacity-0 group-hover/reply:opacity-100 opacity-100'}`}
+                                      >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                          <circle cx="12" cy="12" r="1"></circle>
+                                          <circle cx="19" cy="12" r="1"></circle>
+                                          <circle cx="5" cy="12" r="1"></circle>
+                                        </svg>
+                                      </button>
+
+                                      {activeDropdown === rDropdownId && (
+                                        <div
+                                          ref={dropdownRef}
+                                          className="absolute right-0 top-full mt-1 bg-bg-secondary rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-border-primary/50 p-1 z-[200] min-w-[100px] animate-fade-in"
+                                        >
+                                          <button
+                                            onClick={() => {
+                                              setCommentToDelete({ id: reply.id, isReply: true });
+                                              setActiveDropdown(null);
+                                            }}
+                                            className="w-full flex items-center gap-2 px-3 py-1.5 text-[12px] font-black text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors group/delete"
+                                          >
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                              <polyline points="3 6 5 6 21 6"></polyline>
+                                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            </svg>
+                                            Xóa
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* Reply Input */}
+                        {replyingTo === c.id && (
+                          <div className="ml-10 mt-2 flex items-center gap-3 animate-fade-in bg-bg-primary/50 p-2 rounded-xl border border-border-primary/50">
+                            <Avatar src={userProfile?.avatar} name={userProfile?.username} size="xs" className="w-6 h-6" />
+                            <input
+                              autoFocus
+                              value={replyText}
+                              onChange={(e) => setReplyText(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && replyText.trim()) {
+                                  onComment(item.id, replyText, c.id, true, replyTargetUser);
+                                  setReplyText("");
+                                  setReplyingTo(null);
+                                  setReplyTargetUser(null);
+                                }
+                              }}
+                              placeholder={`Trả lời ${c.username}...`}
+                              className="flex-1 bg-transparent outline-none text-[13px] font-medium placeholder:text-text-muted"
+                            />
+                            <button
+                              disabled={!replyText.trim()}
+                              onClick={() => {
+                                onComment(item.id, replyText, c.id, true, replyTargetUser);
                                 setReplyText("");
                                 setReplyingTo(null);
                                 setReplyTargetUser(null);
-                              }
-                            }}
-                            placeholder={`Trả lời ${c.username}...`}
-                            className="flex-1 bg-transparent outline-none text-[13px] font-medium placeholder:text-text-muted"
-                          />
-                          <button
-                            disabled={!replyText.trim()}
-                            onClick={() => {
-                              onComment(item.id, replyText, c, true, replyTargetUser);
-                              setReplyText("");
-                              setReplyingTo(null);
-                              setReplyTargetUser(null);
-                            }}
-                            className="text-[12px] font-black text-pink-500 disabled:opacity-30"
-                          >
-                            Gửi
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))
+                              }}
+                              className="text-[12px] font-black text-pink-500 disabled:opacity-30"
+                            >
+                              Gửi
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -514,9 +556,9 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                         <div className="space-y-2 max-h-[160px] overflow-y-auto custom-scrollbar">
                           {likes.map((l, idx) => (
                             <div key={idx} className="flex items-center gap-2">
-                              <Avatar src={typeof l === 'string' ? null : l.avatar} name={typeof l === 'string' ? "Ẩn danh" : l.username} size="xs" className="w-5 h-5" />
+                              <Avatar src={l.avatar} name={l.username} size="xs" className="w-5 h-5" />
                               <span className="text-[12px] font-bold truncate">
-                                {typeof l === 'string' ? "Thành viên" : l.username}
+                                {l.username}
                               </span>
                             </div>
                           ))}
@@ -608,7 +650,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault();
                           if (comment.trim()) {
-                            onComment(item.id, comment, comments[comments.length - 1]);
+                            onComment(item.id, comment);
                             setComment("");
                           }
                         }
@@ -620,7 +662,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                   <button
                     disabled={!comment.trim()}
                     onClick={() => {
-                      onComment(item.id, comment, comments[comments.length - 1]);
+                      onComment(item.id, comment);
                       setComment("");
                     }}
                     className="text-[14px] font-black text-pink-500 hover:text-pink-600 disabled:opacity-30 disabled:pointer-events-none transition-all"

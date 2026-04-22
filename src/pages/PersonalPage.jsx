@@ -11,14 +11,16 @@ import { notifyXoaWish } from "../utils/notify";
 export default function PersonalPage({ user, userProfile }) {
   const navigate = useNavigate();
   const [selectedItem, setSelectedItem] = useState(null);
-  const { items, xoaMon, thichMon, binhLuanMon, xoaBinhLuan } = useWishlist(user, userProfile, null);
+  const { items, xoaMon, thichMon, binhLuanMon, xoaBinhLuan, thichBinhLuan } = useWishlist(user, userProfile, null);
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     const wishId = searchParams.get("wishId");
     if (wishId && items.length > 0) {
       const item = items.find(i => i.id === wishId);
-      if (item) setSelectedItem(item);
+      if (item && selectedItem?.id !== item.id) {
+        setSelectedItem(item);
+      }
     }
   }, [searchParams, items]);
 
@@ -94,6 +96,7 @@ export default function PersonalPage({ user, userProfile }) {
         onLike={thichMon}
         onComment={binhLuanMon}
         onDeleteComment={xoaBinhLuan}
+        onLikeComment={thichBinhLuan}
       />
     </div>
   );

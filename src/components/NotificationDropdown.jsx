@@ -2,83 +2,101 @@ import { useNavigate } from "react-router-dom";
 import Avatar from "./ui/Avatar";
 
 export default function NotificationDropdown({ 
-  notifications, onMarkRead, onMarkAllRead, isMuted, onToggleMute, onClose 
+  notifications = [], onMarkRead, onMarkAllRead, isMuted, onToggleMute, onClose 
 }) {
   const navigate = useNavigate();
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const handleItemClick = (n) => {
     onMarkRead(n.ids);
     onClose();
 
-    if (n.type === "join_group") {
-        navigate(`/groups/${n.groupId}`);
+    // Use specific targetRoute if provided (new scalable system)
+    if (n.targetRoute) {
+        let url = n.targetRoute;
+        
+        // Append query params for deep linking
+        if (n.wishId) {
+            url += `${url.includes('?') ? '&' : '?'}wishId=${n.wishId}`;
+        }
+        if (n.commentId) {
+            url += `${url.includes('?') ? '&' : '?'}commentId=${n.commentId}`;
+        }
+
+        navigate(url, { state: { commentId: n.commentId } });
+        return;
+    }
+
+    // LEGACY Fallbacks (for older notifications)
+    if (n.type === "join_group" || n.type === "added_to_group") {
+        if (n.groupId) navigate(`/groups/${n.groupId}`);
+        else navigate("/groups");
         return;
     }
 
     if (n.wishId) {
-        let url = "";
-        if (n.groupId) {
-            url = `/groups/${n.groupId}?wishId=${n.wishId}`;
-        } else {
-            url = `/personal?wishId=${n.wishId}`;
-        }
-
-        if (n.commentId) {
-            url += `&commentId=${n.commentId}`;
-        }
-
+        let url = n.groupId ? `/groups/${n.groupId}?wishId=${n.wishId}` : `/personal?wishId=${n.wishId}`;
+        if (n.commentId) url += `&commentId=${n.commentId}`;
         navigate(url);
+        return;
     }
+
+    navigate("/");
   };
 
   const formatText = (n) => {
     const sender = n.senders[0];
-    const others = n.count - 1;
     let action = "";
-    if (n.type === "like") action = "liked your wish";
-    if (n.type === "comment") action = "commented on your wish";
-    if (n.type === "reply") action = "replied to your comment";
-    if (n.type === "join_group") action = `joined your group "${n.groupName}"`;
-    if (n.type === "post_group") action = `posted a new wish in "${n.groupName}"`;
+
+    if (n.type === "like") action = "đã thích điều ước của bạn";
+    if (n.type === "comment") action = "đã bình luận về điều ước của bạn";
+    if (n.type === "reply") action = "đã trả lời bình luận của bạn";
+    if (n.type === "join_group") action = `đã tham gia nhóm "${n.groupName}" của bạn`;
+    if (n.type === "post_group") action = `đã thêm điều ước mới trong "${n.groupName}"`;
+    if (n.type === "added_to_group") action = `đã thêm bạn vào nhóm "${n.groupName}"`;
+    if (n.type === "kicked") action = `đã mời bạn rời khỏi nhóm "${n.groupName}"`;
 
     if (n.count === 1) return <><span className="font-black text-text-primary">{sender}</span> {action}</>;
-    if (n.count === 2) return <><span className="font-black text-text-primary">{sender}</span> and <span className="font-black text-text-primary">{n.senders[1]}</span> {action}</>;
-    return <><span className="font-black text-text-primary">{sender}</span>, <span className="font-black text-text-primary">{n.senders[1]}</span> and <span className="font-black text-text-primary">{others - 1} others</span> {action}</>;
+    if (n.count === 2) return <><span className="font-black text-text-primary">{sender}</span> và <span className="font-black text-text-primary">{n.senders[1]}</span> {action}</>;
+    return (
+      <>
+        <span className="font-black text-text-primary">{sender}</span>, <span className="font-black text-text-primary">{n.senders[1]}</span> và <span className="font-bold text-pink-500">{n.count - 2} người khác</span> {action}
+      </>
+    );
   };
 
   const getTime = (date) => {
     if (!date) return "";
     const d = date.toDate ? date.toDate() : new Date(date);
     const diff = (new Date() - d) / 1000;
-    if (diff < 60) return "Just now";
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    if (diff < 60) return "Vừa xong";
+    if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
     return d.toLocaleDateString();
   };
 
   return (
-    <div className="absolute top-[calc(100%+12px)] right-0 w-[360px] max-md:fixed max-md:left-5 max-md:right-5 max-md:w-auto bg-bg-secondary/95 backdrop-blur-2xl border border-white/5 rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.4)] z-[200] overflow-hidden animate-slide-up origin-top-right">
+    <div className="absolute top-[calc(100%+12px)] right-0 w-[380px] max-md:fixed max-md:left-5 max-md:right-5 max-md:w-auto bg-bg-secondary/95 backdrop-blur-2xl border border-white/5 rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.4)] z-[200] overflow-hidden animate-slide-up origin-top-right">
       
       {/* Header */}
-      <div className="p-6 pb-4 flex items-center justify-between border-b border-white/5">
-        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-text-primary">Notifications</h3>
-        <div className="flex items-center gap-3">
+      <div className="px-6 py-5 border-b border-white/5 flex items-center justify-between bg-white/5">
+        <div className="flex flex-col">
+            <h3 className="text-sm font-black text-text-primary uppercase tracking-widest">Thông báo</h3>
+            <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider">{unreadCount} chưa đọc</span>
+        </div>
+        <div className="flex items-center gap-2">
           <button 
             onClick={onToggleMute}
-            className="text-text-muted hover:text-text-primary transition-colors"
-            title={isMuted ? "Unmute" : "Mute"}
+            className="p-2 hover:bg-white/5 rounded-xl transition-colors text-text-muted hover:text-pink-500"
+            title={isMuted ? "Bật âm thanh" : "Tắt âm thanh"}
           >
-            {isMuted ? (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 5L6 9H2v6h4l5 4V5zM23 9l-6 6M17 9l6 6"/></svg>
-            ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-            )}
+            {isMuted ? "🔇" : "🔔"}
           </button>
           <button 
             onClick={onMarkAllRead}
             className="text-[10px] font-black uppercase tracking-widest text-pink-hot hover:text-pink-deep transition-colors"
           >
-            Mark all read
+            Đọc tất cả
           </button>
         </div>
       </div>
@@ -90,7 +108,7 @@ export default function NotificationDropdown({
             <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-text-muted">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
             </div>
-            <p className="text-xs font-bold text-text-muted">No notifications yet. <br/> Quiet nights are cozy too.</p>
+            <p className="text-xs font-bold text-text-muted">Chưa có thông báo nào.<br/> Những đêm yên tĩnh cũng rất tuyệt vời.</p>
           </div>
         ) : (
           <div className="py-2">

@@ -111,9 +111,9 @@ function App() {
               <Routes>
                 <Route path="/" element={<HomePage user={user} userProfile={userProfile} />} />
                 <Route path="/personal" element={<PersonalPage user={user} userProfile={userProfile} />} />
-                <Route path="/groups" element={<GroupsPage user={user} />} />
+                <Route path="/groups" element={<GroupsPage user={user} userProfile={userProfile} />} />
                 <Route path="/groups/:id" element={<GroupDetailPage user={user} userProfile={userProfile} />} />
-                <Route path="/invite/:id" element={<InvitePage user={user} />} />
+                <Route path="/invite/:id" element={<InvitePage user={user} userProfile={userProfile} />} />
                 <Route path="/add" element={<AddWishPage user={user} userProfile={userProfile} />} />
                 <Route path="/add/:groupId" element={<AddWishPage user={user} userProfile={userProfile} />} />
               </Routes>

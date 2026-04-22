@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { db } from "../firebase";
 import {
   collection, addDoc, onSnapshot,
-  doc, query, where, updateDoc, arrayUnion, deleteDoc, getDocs, getDoc
+  doc, query, where, updateDoc, arrayUnion, arrayRemove, deleteDoc, getDocs, getDoc
 } from "firebase/firestore";
 
-export function useGroups(user) {
+export function useGroups(user, userProfile) {
   const [groups, setGroups] = useState([]);
 
   useEffect(() => {
@@ -55,6 +55,18 @@ export function useGroups(user) {
 
     await updateDoc(groupRef, {
       members: arrayUnion(user.uid)
+    });
+
+    // LOG ACTIVITY
+    await addDoc(collection(db, "activity_logs"), {
+      roomId: groupId,
+      actorId: user.uid,
+      actorName: userProfile?.username || user.displayName || user.email,
+      actorAvatar: userProfile?.avatar || null,
+      action: "add_member",
+      targetId: user.uid,
+      targetName: userProfile?.username || user.displayName || user.email,
+      createdAt: new Date()
     });
 
     // TRIGGER NOTIFICATION to Owner
@@ -110,5 +122,93 @@ export function useGroups(user) {
     await deleteDoc(groupRef);
   }
 
-  return { groups, taoNhom, thamGiaNhom, thamGiaBangMa, suaNhom, xoaNhom };
+  async function kickMember(groupId, memberUid, memberName) {
+    const groupRef = doc(db, "groups", groupId);
+    const groupSnap = await getDoc(groupRef);
+    if (!groupSnap.exists()) return;
+    const gData = groupSnap.data();
+
+    if (gData.ownerUid !== user.uid) return { error: "Bạn không có quyền thực hiện hành động này." };
+    
+    await updateDoc(groupRef, {
+      members: arrayRemove(memberUid)
+    });
+
+    // LOG ACTIVITY
+    await addDoc(collection(db, "activity_logs"), {
+      roomId: groupId,
+      actorId: user.uid,
+      actorName: userProfile?.username || user.displayName || user.email,
+      actorAvatar: userProfile?.avatar || null,
+      action: "kick_member",
+      targetId: memberUid,
+      targetName: memberName,
+      createdAt: new Date()
+    });
+
+    // NOTIFY USER
+    await addDoc(collection(db, "notifications"), {
+      userId: memberUid,
+      senderId: user.uid,
+      senderName: userProfile?.username || user.displayName || user.email,
+      senderAvatar: userProfile?.avatar || null,
+      type: "kicked",
+      groupId: groupId,
+      groupName: gData.name,
+      isRead: false,
+      createdAt: new Date()
+    });
+  }
+
+  async function addMemberByUsername(groupId, username) {
+    if (!username.trim()) return { error: "Vui lòng nhập tên người dùng." };
+    
+    // Find user by username
+    const q = query(collection(db, "users"), where("username", "==", username.trim()));
+    const snap = await getDocs(q);
+    
+    if (snap.empty) return { error: 404 }; // Not found
+    
+    const targetUser = snap.docs[0].data();
+    const targetUid = snap.docs[0].id;
+
+    const groupRef = doc(db, "groups", groupId);
+    const groupSnap = await getDoc(groupRef);
+    const currentGroup = groupSnap.data();
+
+    if (currentGroup.members.includes(targetUid)) return { error: 409 }; // Already member
+
+    await updateDoc(groupRef, {
+      members: arrayUnion(targetUid)
+    });
+
+    // LOG ACTIVITY
+    await addDoc(collection(db, "activity_logs"), {
+      roomId: groupId,
+      actorId: user.uid,
+      actorName: userProfile?.username || user.displayName || user.email,
+      actorAvatar: userProfile?.avatar || null,
+      action: "add_member",
+      targetId: targetUid,
+      targetName: username,
+      createdAt: new Date()
+    });
+
+    // NOTIFY USER
+    await addDoc(collection(db, "notifications"), {
+      userId: targetUid,
+      senderId: user.uid,
+      senderName: userProfile?.username || user.displayName || user.email,
+      senderAvatar: userProfile?.avatar || null,
+      type: "added_to_group",
+      groupId: groupId,
+      groupName: currentGroup.name,
+      isRead: false,
+      createdAt: new Date()
+    });
+
+    return { success: true };
+  }
+
+  return { groups, taoNhom, thamGiaNhom, thamGiaBangMa, suaNhom, xoaNhom, kickMember, addMemberByUsername };
 }

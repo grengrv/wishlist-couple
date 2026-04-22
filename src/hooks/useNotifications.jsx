@@ -53,11 +53,13 @@ export function useNotifications(user) {
                 <div className="flex flex-col gap-0.5 min-w-0">
                   <p className="text-xs text-text-primary font-bold">
                     {n.senderName} <span className="font-normal text-text-muted">
-                      {n.type === 'like' ? 'liked your wish' : 
-                       n.type === 'comment' ? 'commented on your wish' : 
-                       n.type === 'reply' ? 'replied to your comment' :
-                       n.type === 'join_group' ? `joined your group "${n.groupName}"` :
-                       n.type === 'post_group' ? `posted a new wish in "${n.groupName}"` : 'interacted with you'}
+                      {n.type === 'like' ? 'đã thích điều ước của bạn' : 
+                       n.type === 'comment' ? 'đã bình luận về điều ước của bạn' : 
+                       n.type === 'reply' ? 'đã trả lời bình luận của bạn' :
+                       n.type === 'join_group' ? `đã tham gia nhóm "${n.groupName}" của bạn` :
+                       n.type === 'post_group' ? `đã gửi điều ước mới trong "${n.groupName}"` : 
+                       n.type === 'added_to_group' ? `đã thêm bạn vào nhóm "${n.groupName}"` :
+                       n.type === 'kicked' ? `đã mời bạn rời khỏi nhóm "${n.groupName}"` : 'đã tương tác với bạn'}
                     </span>
                   </p>
                   {(n.wishTitle || n.groupName) && (

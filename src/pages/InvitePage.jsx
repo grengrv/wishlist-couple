@@ -6,10 +6,10 @@ import { useGroups } from "../hooks/useGroups";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 
-export default function InvitePage({ user }) {
+export default function InvitePage({ user, userProfile }) {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { thamGiaNhom } = useGroups(user);
+  const { thamGiaNhom } = useGroups(user, userProfile);
   const [group, setGroup] = useState(null);
   const [status, setStatus] = useState("loading");
   const [inviteCodeInput, setInviteCodeInput] = useState("");
