@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { db } from "../firebase";
 import {
   collection, addDoc, onSnapshot,
-  doc, query, where, updateDoc, arrayUnion, deleteDoc, getDocs
+  doc, query, where, updateDoc, arrayUnion, deleteDoc, getDocs, getDoc
 } from "firebase/firestore";
 
 export function useGroups(user) {
@@ -49,9 +49,28 @@ export function useGroups(user) {
 
   async function thamGiaNhom(groupId) {
     const groupRef = doc(db, "groups", groupId);
+    const groupSnap = await getDoc(groupRef);
+    if (!groupSnap.exists()) return;
+    const groupData = groupSnap.data();
+
     await updateDoc(groupRef, {
       members: arrayUnion(user.uid)
     });
+
+    // TRIGGER NOTIFICATION to Owner
+    if (groupData.ownerUid !== user.uid) {
+      await addDoc(collection(db, "notifications"), {
+        userId: groupData.ownerUid,
+        senderId: user.uid,
+        senderName: userProfile?.username || user.displayName || user.email || "Someone",
+        senderAvatar: userProfile?.avatar || null,
+        type: "join_group",
+        groupId: groupId,
+        groupName: groupData.name,
+        isRead: false,
+        createdAt: new Date()
+      });
+    }
   }
 
   async function thamGiaBangMa(maMoi) {

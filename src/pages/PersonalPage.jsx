@@ -2,8 +2,9 @@ import { useState } from "react";
 import Stats from "../components/Stats";
 import WishList from "../components/WishList";
 import ItemModal from "../components/ItemModal";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useWishlist } from "../hooks/useWishlist";
+import { useEffect } from "react";
 import { ADMIN_EMAIL } from "../constants";
 import { notifyXoaWish } from "../utils/notify";
 
@@ -11,12 +12,29 @@ export default function PersonalPage({ user, userProfile }) {
   const navigate = useNavigate();
   const [selectedItem, setSelectedItem] = useState(null);
   const { items, xoaMon, thichMon, binhLuanMon, xoaBinhLuan } = useWishlist(user, userProfile, null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    const wishId = searchParams.get("wishId");
+    if (wishId && items.length > 0) {
+      const item = items.find(i => i.id === wishId);
+      if (item) setSelectedItem(item);
+    }
+  }, [searchParams, items]);
 
   async function handleXoa(id) {
     if (selectedItem?.id === id) setSelectedItem(null);
     notifyXoaWish();
     await xoaMon(id);
   }
+
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+    if (searchParams.has("wishId")) {
+      searchParams.delete("wishId");
+      setSearchParams(searchParams);
+    }
+  };
 
   return (
     <div className="max-w-[1200px] mx-auto px-6 py-12 relative overflow-hidden">
@@ -68,7 +86,7 @@ export default function PersonalPage({ user, userProfile }) {
 
       <ItemModal
         item={items.find(i => i.id === selectedItem?.id) || selectedItem}
-        onClose={() => setSelectedItem(null)}
+        onClose={handleCloseModal}
         onDelete={handleXoa}
         user={user}
         userProfile={userProfile}

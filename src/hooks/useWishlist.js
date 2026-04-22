@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { db } from "../firebase";
 import {
   collection, addDoc, getDocs, onSnapshot,
-  deleteDoc, doc, orderBy, query, updateDoc, arrayUnion, arrayRemove
+  deleteDoc, doc, orderBy, query, updateDoc, arrayUnion, arrayRemove, getDoc
 } from "firebase/firestore";
 import { ADMIN_EMAIL } from "../constants";
 import { notifyError } from "../utils/notify";
@@ -57,7 +57,7 @@ export function useWishlist(user, userProfile, groupId = null) {
       if (file) chonAnh(file);
     };
     window.addEventListener("paste", handlePaste);
-    
+
     return () => {
       unsubscribeSnapshot();
       window.removeEventListener("paste", handlePaste);
@@ -175,10 +175,38 @@ export function useWishlist(user, userProfile, groupId = null) {
         avatarNguoiThem: userProfile?.avatar || null,
         groupId: groupId || null
       });
-      
+
       setTenMon("");
       setGhiChu("");
       xoaAnh();
+
+      // TRIGGER NOTIFICATION to Group Owner
+      if (groupId) {
+        try {
+          const groupSnap = await getDoc(doc(db, "groups", groupId));
+          if (groupSnap.exists()) {
+            const groupData = groupSnap.data();
+            if (groupData.ownerUid !== user.uid) {
+              await addDoc(collection(db, "notifications"), {
+                userId: groupData.ownerUid,
+                senderId: user.uid,
+                senderName: userProfile?.username || user.displayName || user.email || "Someone",
+                senderAvatar: userProfile?.avatar || null,
+                type: "post_group",
+                wishId: docRef.id,
+                wishTitle: tenMon,
+                groupId: groupId,
+                groupName: groupData.name,
+                isRead: false,
+                createdAt: new Date()
+              });
+            }
+          }
+        } catch (e) {
+          console.error("Error sending group post notification:", e);
+        }
+      }
+
       return true;
     } catch (err) {
       notifyError("Không thể thêm món này. Thử lại sau nhé!");
@@ -202,7 +230,7 @@ export function useWishlist(user, userProfile, groupId = null) {
     // OPTIMISTIC UPDATE
     const previousItems = [...items];
     setItems(prev => prev.filter(i => i.id !== id));
-    
+
     try {
       await deleteDoc(doc(db, "wishlist", id));
       return true;
@@ -215,8 +243,11 @@ export function useWishlist(user, userProfile, groupId = null) {
   }
 
   /** Thích / Bỏ thích */
-  async function thichMon(wishId, currentLikes = []) {
-    if (!user) return;
+  async function thichMon(item) {
+    if (!user || !item) return;
+    
+    const wishId = item.id;
+    const currentLikes = item.likes || [];
     
     // Find if already liked (handle both string IDs for legacy and objects for new structure)
     const existingLike = currentLikes.find(l => 
@@ -233,22 +264,20 @@ export function useWishlist(user, userProfile, groupId = null) {
 
     // OPTIMISTIC UPDATE
     const previousItems = [...items];
-    setItems(prev => prev.map(item => {
-      if (item.id === wishId) {
+    setItems(prev => prev.map(i => {
+      if (i.id === wishId) {
         const newLikes = isLiked 
-          ? (item.likes || []).filter(l => (typeof l === 'string' ? l !== user.uid : l.id !== user.uid))
-          : [...(item.likes || []), likeObj];
-        return { ...item, likes: newLikes };
+          ? (i.likes || []).filter(l => (typeof l === 'string' ? l !== user.uid : l.id !== user.uid))
+          : [...(i.likes || []), likeObj];
+        return { ...i, likes: newLikes };
       }
-      return item;
+      return i;
     }));
 
     toastStore.show(isLiked ? "Đã bỏ thích" : "Đã thích");
 
     try {
       if (isLiked) {
-        // Must remove the EXACT object match. 
-        // Note: this might fail for legacy string IDs unless handled.
         await updateDoc(wishRef, { 
           likes: arrayRemove(existingLike) 
         });
@@ -256,6 +285,22 @@ export function useWishlist(user, userProfile, groupId = null) {
         await updateDoc(wishRef, { 
           likes: arrayUnion(likeObj) 
         });
+
+        // TRIGGER NOTIFICATION
+        if (item.uid !== user.uid) {
+          await addDoc(collection(db, "notifications"), {
+            userId: item.uid, // Receiver
+            senderId: user.uid,
+            senderName: userProfile?.username || user.displayName || user.email || "Someone",
+            senderAvatar: userProfile?.avatar || null,
+            type: "like",
+            wishId: wishId,
+            wishTitle: item.ten,
+            groupId: item.groupId || null,
+            isRead: false,
+            createdAt: new Date()
+          });
+        }
       }
       return true;
     } catch (err) {
@@ -269,7 +314,7 @@ export function useWishlist(user, userProfile, groupId = null) {
   /** Thêm bình luận hoặc Trả lời / Like bình luận */
   async function binhLuanMon(wishId, content, targetComment = null, isSpecial = false, replyTarget = null) {
     if (!user) return;
-    
+
     const wishRef = doc(db, "wishlist", wishId);
     const item = items.find(i => i.id === wishId);
     if (!item) return;
@@ -280,12 +325,12 @@ export function useWishlist(user, userProfile, groupId = null) {
       // TRƯỜNG HỢP 1: CẬP NHẬT LIKE BÌNH LUẬN (Content là null)
       if (content === null && targetComment) {
         updatedComments = updatedComments.map(c => {
-          const isMatch = (c.id && c.id === targetComment.id) || 
-                          (c.createdAt === targetComment.createdAt && c.userId === targetComment.userId);
+          const isMatch = (c.id && c.id === targetComment.id) ||
+            (c.createdAt === targetComment.createdAt && c.userId === targetComment.userId);
           return isMatch ? targetComment : c;
         });
         toastStore.show(targetComment.likes?.includes(user.uid) ? "Đã thích" : "Đã bỏ thích");
-      } 
+      }
       // TRƯỜNG HỢP 2: TRẢ LỜI BÌNH LUẬN
       else if (content && targetComment) {
         const reply = {
@@ -308,12 +353,29 @@ export function useWishlist(user, userProfile, groupId = null) {
           return c;
         });
         toastStore.show("Đã trả lời");
+
+        // TRIGGER NOTIFICATION for Reply
+        if (targetComment.userId !== user.uid) {
+          await addDoc(collection(db, "notifications"), {
+            userId: targetComment.userId,
+            senderId: user.uid,
+            senderName: userProfile?.username || user.displayName || user.email || "Someone",
+            senderAvatar: userProfile?.avatar || null,
+            type: "reply",
+            wishId: wishId,
+            wishTitle: item.ten,
+            commentId: targetComment.id,
+            groupId: item.groupId || null,
+            isRead: false,
+            createdAt: new Date()
+          });
+        }
       }
     } else {
       // TRƯỜNG HỢP 3: BÌNH LUẬN MỚI (TOP-LEVEL)
       if (!content.trim()) return;
       if (content.length > 200) { notifyError("Bình luận tối đa 200 ký tự."); return; }
-      
+
       const comment = {
         id: Math.random().toString(36).substr(2, 9),
         userId: user.uid,
@@ -326,6 +388,23 @@ export function useWishlist(user, userProfile, groupId = null) {
       };
       updatedComments.push(comment);
       toastStore.show("Đã thêm bình luận");
+
+      // TRIGGER NOTIFICATION
+      if (item.uid !== user.uid) {
+        await addDoc(collection(db, "notifications"), {
+          userId: item.uid,
+          senderId: user.uid,
+          senderName: userProfile?.username || user.displayName || user.email || "Someone",
+          senderAvatar: userProfile?.avatar || null,
+          type: "comment",
+          wishId: wishId,
+          wishTitle: item.ten,
+          commentId: comment.id,
+          groupId: item.groupId || null,
+          isRead: false,
+          createdAt: new Date()
+        });
+      }
     }
 
     // OPTIMISTIC UPDATE
@@ -364,8 +443,8 @@ export function useWishlist(user, userProfile, groupId = null) {
     } else {
       // XÓA BÌNH LUẬN TOP-LEVEL
       updatedComments = updatedComments.filter(c => {
-        const isMatch = (c.id && c.id === comment.id) || 
-                        (c.createdAt === comment.createdAt && c.userId === comment.userId);
+        const isMatch = (c.id && c.id === comment.id) ||
+          (c.createdAt === comment.createdAt && c.userId === comment.userId);
         return !isMatch;
       });
       toastStore.show("Đã xóa bình luận");

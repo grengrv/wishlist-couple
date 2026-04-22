@@ -133,7 +133,7 @@ export default function Auth() {
     return (
         <div className="flex-1 flex items-center justify-center p-6 min-h-[70vh]">
             <div key={mode} className="bg-bg-secondary w-full max-w-[420px] p-8 md:p-10 rounded-[32px] border border-border-primary shadow-[0_20px_50px_rgba(0,0,0,0.05)] animate-slide-up relative overflow-hidden group">
-                
+
                 {/* Decorative element */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/5 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-700"></div>
 
@@ -146,8 +146,8 @@ export default function Auth() {
                         {mode === "login" ? "Chào mừng trở lại" : "Tạo tài khoản mới"}
                     </h1>
                     <p className="text-text-muted font-bold mt-2 text-sm leading-relaxed">
-                        {mode === "login" 
-                            ? "Cùng nhau lưu giữ những điều ước ngọt ngào." 
+                        {mode === "login"
+                            ? "Cùng nhau lưu giữ những điều ước ngọt ngào."
                             : "Bắt đầu hành trình cùng người thương ngay hôm nay."}
                     </p>
                 </div>
@@ -158,11 +158,11 @@ export default function Auth() {
                         <div className="space-y-2">
                             <label className="text-[11px] font-black uppercase tracking-widest text-text-muted ml-1 flex justify-between items-center">
                                 <span>Username</span>
-                                <InfoIcon 
+                                <InfoIcon
                                     id="username"
                                     activeTooltip={activeTooltip}
                                     setActiveTooltip={setActiveTooltip}
-                                    text="3-20 ký tự. Chỉ dùng chữ cái, số và dấu gạch dưới (_)." 
+                                    text="3-20 ký tự. Chỉ dùng chữ cái, số và dấu gạch dưới (_)."
                                 />
                             </label>
                             <Input
@@ -183,11 +183,11 @@ export default function Auth() {
                     <div className="space-y-2">
                         <label className="text-[11px] font-black uppercase tracking-widest text-text-muted ml-1 flex justify-between items-center">
                             <span>Email</span>
-                            <InfoIcon 
+                            <InfoIcon
                                 id="email"
                                 activeTooltip={activeTooltip}
                                 setActiveTooltip={setActiveTooltip}
-                                text="Dùng email thật để không quên mật khẩu nhé!" 
+                                text="Dùng email thật để không quên mật khẩu nhé!"
                             />
                         </label>
                         <Input
@@ -203,11 +203,11 @@ export default function Auth() {
                     <div className="space-y-2">
                         <label className="text-[11px] font-black uppercase tracking-widest text-text-muted ml-1 flex justify-between items-center">
                             <span>Mật khẩu</span>
-                            <InfoIcon 
+                            <InfoIcon
                                 id="password"
                                 activeTooltip={activeTooltip}
                                 setActiveTooltip={setActiveTooltip}
-                                text="Tối thiểu 8 ký tự, 1 chữ hoa và 1 chữ số." 
+                                text="Tối thiểu 8 ký tự, 1 chữ hoa và 1 chữ số."
                             />
                         </label>
                         <Input
@@ -220,8 +220,8 @@ export default function Auth() {
                         />
                     </div>
 
-                    <Button 
-                        onClick={handleSubmit} 
+                    <Button
+                        onClick={handleSubmit}
                         disabled={loading || (mode === 'register' && usernameStatus.state === 'invalid')}
                         className="!rounded-2xl !py-4 bg-text-primary text-bg-primary font-black text-xs uppercase tracking-widest hover:bg-pink-600 transition-all mt-4 shadow-none active:scale-95"
                     >
@@ -230,7 +230,7 @@ export default function Auth() {
 
                     {/* Switch Mode Link */}
                     <div className="text-center mt-8 pt-8 border-t border-border-primary/50">
-                        <button 
+                        <button
                             onClick={toggleMode}
                             className="group text-[14px] font-bold text-text-muted hover:text-text-primary transition-colors inline-flex flex-col items-center gap-1"
                         >
@@ -255,9 +255,9 @@ export default function Auth() {
 
 function InfoIcon({ id, text, activeTooltip, setActiveTooltip }) {
     const isVisible = activeTooltip === id;
-    
+
     return (
-        <div 
+        <div
             className="relative cursor-help"
             onMouseEnter={() => setActiveTooltip(id)}
             onMouseLeave={() => setActiveTooltip(null)}

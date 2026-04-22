@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { getDoc, doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
 import { useWishlist } from "../hooks/useWishlist";
@@ -39,9 +39,26 @@ export default function GroupDetailPage({ user, userProfile }) {
   const [showMembers, setShowMembers] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     items, xoaMon, thichMon, binhLuanMon, xoaBinhLuan
   } = useWishlist(user, userProfile, id);
+
+  useEffect(() => {
+    const wishId = searchParams.get("wishId");
+    if (wishId && items.length > 0) {
+      const item = items.find(i => i.id === wishId);
+      if (item) setSelectedItem(item);
+    }
+  }, [searchParams, items]);
+
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+    if (searchParams.has("wishId")) {
+      searchParams.delete("wishId");
+      setSearchParams(searchParams);
+    }
+  };
 
   const isEditingRef = useRef(false);
   useEffect(() => {
@@ -315,7 +332,7 @@ export default function GroupDetailPage({ user, userProfile }) {
 
         <ItemModal
           item={items.find(i => i.id === selectedItem?.id) || selectedItem}
-          onClose={() => setSelectedItem(null)}
+          onClose={handleCloseModal}
           onDelete={handleXoa}
           user={user}
           userProfile={userProfile}

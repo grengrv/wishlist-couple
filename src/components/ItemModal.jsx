@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { useSearchParams, useLocation } from "react-router-dom";
 import { formatNgay } from "../utils/formatDate";
 import Avatar from "./ui/Avatar";
 import { notifyError } from "../utils/notify";
@@ -21,6 +22,8 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
   const [replyText, setReplyText] = useState("");
   const [replyTargetUser, setReplyTargetUser] = useState(null); // { userId, username }
   const [showLikesModal, setShowLikesModal] = useState(null); // { title: string, users: array }
+  const [searchParams] = useSearchParams();
+  const [highlightedCommentId, setHighlightedCommentId] = useState(null);
 
   // Merge members with current user's profile to ensure we can always identify them in likes
   const allPossibleMembers = [...members];
@@ -37,12 +40,22 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
   const comments = item?.comments || [];
   const isLiked = likes.some(l => typeof l === 'string' ? l === user?.uid : l.id === user?.uid);
 
-  // Auto-scroll to bottom of comments
+  // Auto-scroll to bottom or specific comment
   useEffect(() => {
-    if (scrollRef.current) {
+    const commentId = searchParams.get("commentId");
+    if (commentId && comments.length > 0) {
+      setTimeout(() => {
+        const el = document.getElementById(`comment-${commentId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          setHighlightedCommentId(commentId);
+          setTimeout(() => setHighlightedCommentId(null), 3000);
+        }
+      }, 500);
+    } else if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [comments, item]);
+  }, [comments, item, searchParams]);
 
   // Handle ESC and body scroll lock
   useEffect(() => {
@@ -197,7 +210,11 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                   </div>
                 ) : (
                   comments.map((c, idx) => (
-                    <div key={idx} className="space-y-4">
+                    <div 
+                      key={idx} 
+                      id={`comment-${c.id}`}
+                      className={`space-y-4 transition-all duration-700 rounded-2xl ${highlightedCommentId === c.id ? 'bg-pink-500/10 shadow-[0_0_20px_rgba(233,30,140,0.1)] ring-1 ring-pink-500/20 p-2 -m-2' : ''}`}
+                    >
                       {/* Main Comment */}
                       <div className="flex gap-3 group/comment items-start relative">
                         <div className="shrink-0">
@@ -461,7 +478,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                     <button
                       onClick={() => {
                         if (!isLiked) setIsAnimatingLike(true);
-                        onLike(item.id, likes);
+                        onLike(item);
                         setTimeout(() => setIsAnimatingLike(false), 450);
                       }}
                       className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 bg-bg-primary hover:bg-rose-500/10 active:scale-90 ${isLiked ? 'text-rose-500 bg-rose-500/10' : 'text-text-primary'} ${isAnimatingLike ? 'animate-like-pop' : ''}`}

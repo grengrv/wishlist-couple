@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import Button from "./ui/Button";
 import Avatar from "./ui/Avatar";
 import ThemeToggle from "./ui/ThemeToggle";
+import NotificationBell from "./NotificationBell";
 
 export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -77,9 +78,13 @@ export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
                 <div />
               ) : (
                 <div className="flex items-center gap-4">
-                  {/* Cải tiến Profile: To hơn, lãng mạn hơn */}
+                  
+                  {/* Notification Bell */}
+                  <NotificationBell user={user} />
+
+                  {/* Profile Section */}
                   <div
-                    className="flex items-center gap-4 p-1.5 pr-6 rounded-full bg-glass-bg border border-border-primary/50 hover:border-pink-200 hover:bg-bg-secondary hover:shadow-[0_10px_30px_rgba(236,72,153,0.1)] transition-all duration-500 cursor-pointer group"
+                    className="flex items-center gap-4 p-1.5 pr-6 rounded-full bg-glass-bg border border-border-primary/50 hover:border-pink-200 hover:bg-bg-secondary hover:shadow-[0_10px_30px_rgba(233,30,140,0.1)] transition-all duration-500 cursor-pointer group"
                     onClick={onOpenProfile}
                   >
                     {/* Avatar Section - Phóng lớn hơn nữa */}
