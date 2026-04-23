@@ -3,6 +3,7 @@ import Button from "./ui/Button";
 import Input from "./ui/Input";
 import { useConfirm } from "../context/ConfirmContext";
 import { notifyThemWish, notifyError } from "../utils/notify";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function AddForm({
   tenMon, setTenMon,
@@ -22,6 +23,7 @@ export default function AddForm({
 }) {
   const [focusField, setFocusField] = useState(null);
   const confirm = useConfirm();
+  const { t } = useLanguage();
 
   const handleCloseError = () => setFormError("");
 
@@ -35,10 +37,10 @@ export default function AddForm({
 
     if (isDuplicate) {
       const isOk = await confirm({
-        title: "Trùng món rồi nhé! ✨",
-        message: `Bạn đã có món "${tenMon.trim()}" trong danh sách rồi, vẫn muốn thêm tiếp hả?`,
-        confirmText: "Vẫn thêm luôn",
-        cancelText: "Để tớ xem lại",
+        title: t("duplicate_title"),
+        message: t("duplicate_msg", { itemName: tenMon.trim() }),
+        confirmText: t("still_add"),
+        cancelText: t("review_again"),
       });
       if (!isOk) return;
     }
@@ -51,7 +53,7 @@ export default function AddForm({
       }
       // success === false hoặc undefined: lỗi đã được xử lý bên trong themMon (formError)
     } catch {
-      notifyError("Gửi điều ước thất bại. Vui lòng thử lại!");
+      notifyError(t("update_failed"));
     }
   };
 
@@ -85,7 +87,7 @@ export default function AddForm({
                 className="bg-bg-secondary text-text-primary px-6 py-2.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl transform translate-y-2 group-hover:translate-y-0 transition-all hover:bg-pink-500 hover:text-white"
                 onClick={e => { e.stopPropagation(); xoaAnh(); }}
               >
-                Thay đổi ảnh
+                {t("change_image")}
               </button>
             </div>
           </>
@@ -98,7 +100,7 @@ export default function AddForm({
                 <path d="M21 15l-5-5L5 21" />
               </svg>
             </div>
-            <p className="text-[11px] font-black text-text-muted uppercase tracking-[2px]">Thả hình ảnh vào đây</p>
+            <p className="text-[11px] font-black text-text-muted uppercase tracking-[2px]">{t("drop_image")}</p>
           </div>
         )}
         <input id="file-input" type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) { chonAnh(e.target.files[0]); e.target.value = ""; } }} />
@@ -114,7 +116,7 @@ export default function AddForm({
             onFocus={() => setFocusField("ten")}
             onBlur={() => setFocusField(null)}
             maxLength={40}
-            placeholder="Bạn đang mong muốn điều gì?..."
+            placeholder={t("wish_placeholder")}
             className={`!rounded-2xl !bg-bg-primary/50 !border-border-primary !h-14 !font-bold focus:!bg-bg-secondary focus:!ring-2 focus:!ring-pink-50 transition-all ${formError && tenMon.length < 2 ? "!border-red-300" : ""}`}
           />
           {focusField === "ten" && (
@@ -132,7 +134,7 @@ export default function AddForm({
             onFocus={() => setFocusField("note")}
             onBlur={() => setFocusField(null)}
             maxLength={100}
-            placeholder="Ghi chú thêm một chút chi tiết nhé..."
+            placeholder={t("note_placeholder")}
             rows={3}
             className="!rounded-2xl !bg-bg-primary/50 !border-border-primary !font-medium focus:!bg-bg-secondary focus:!ring-2 focus:!ring-pink-50 transition-all"
           />
@@ -148,12 +150,12 @@ export default function AddForm({
           disabled={dangTai || (isImageTooLarge && !previewAnh)}
           className="!rounded-2xl !py-4 bg-text-primary text-bg-primary font-black text-xs uppercase tracking-widest shadow-xl shadow-pink-500/5 hover:bg-pink-600 active:scale-95 transition-all mt-2"
         >
-          {dangTai ? "Đang gửi lên mây..." : "Gửi mong muốn ✦"}
+          {dangTai ? t("sending_to_cloud") : t("send_wish")}
         </Button>
       </div>
 
        {/* ERROR MODAL (CHỈ DÀNH CHO XỬ LÝ ẢNH QUÁ LỚN) */}
-      {(isImageTooLarge || formError === "Đang nén ảnh...") && (
+      {(isImageTooLarge || formError === t("optimizing_image")) && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[10000] p-6 animate-fade-in" onClick={handleCloseError}>
           <div
             className="bg-card-bg rounded-[40px] w-full max-w-[380px] p-10 shadow-2xl animate-slide-up relative flex flex-col items-center text-center gap-6 border border-border-primary"
@@ -168,7 +170,7 @@ export default function AddForm({
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-2xl font-black text-text-primary tracking-tight">Ối! Có lỗi nhỏ</h3>
+              <h3 className="text-2xl font-black text-text-primary tracking-tight">{t("oops_error")}</h3>
               <p className="text-sm text-text-muted font-bold leading-relaxed">{formError}</p>
             </div>
 
@@ -176,15 +178,15 @@ export default function AddForm({
               {isImageTooLarge ? (
                 <>
                   <button onClick={nenAnh} className="w-full py-4 bg-text-primary text-bg-primary font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-pink-600 transition-all shadow-xl shadow-pink-500/10">
-                    Nén ảnh giúp tớ
+                    {t("compress_for_me")}
                   </button>
                   <button onClick={() => { xoaAnh(); handleCloseError(); setTimeout(() => document.getElementById("file-input").click(), 0); }} className="w-full py-4 text-text-muted font-black text-xs uppercase tracking-widest hover:text-text-primary transition-all">
-                    Chọn ảnh khác
+                    {t("pick_another")}
                   </button>
                 </>
               ) : (
                 <button onClick={handleCloseError} className="w-full py-4 bg-text-primary text-bg-primary font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-pink-600 transition-all shadow-xl shadow-pink-500/10">
-                  Đã hiểu
+                  {t("got_it")}
                 </button>
               )}
             </div>

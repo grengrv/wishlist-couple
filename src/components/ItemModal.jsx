@@ -7,8 +7,8 @@ import ConfirmModal from "./ui/ConfirmModal";
 import MentionInput from "./MentionInput";
 import MentionText from "./MentionText";
 import { db } from "../firebase";
-import { 
-  collection, query, where, orderBy, onSnapshot, doc, getDocs, deleteDoc 
+import {
+  collection, query, where, orderBy, onSnapshot, doc, getDocs, deleteDoc
 } from "firebase/firestore";
 
 const COMMON_EMOJIS = [
@@ -269,8 +269,8 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                     const commentReplies = replies.filter(r => r.commentId === c.id);
 
                     return (
-                      <div 
-                        key={c.id} 
+                      <div
+                        key={c.id}
                         id={`comment-${c.id}`}
                         className={`space-y-4 transition-all duration-700 rounded-2xl ${highlightedCommentId === c.id ? 'bg-pink-500/10 shadow-[0_0_20px_rgba(233,30,140,0.1)] ring-1 ring-pink-500/20 p-2 -m-2' : ''}`}
                       >

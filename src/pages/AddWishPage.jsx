@@ -1,10 +1,12 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useWishlist } from "../hooks/useWishlist";
 import AddForm from "../components/AddForm";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function AddWishPage({ user, userProfile }) {
   const { groupId } = useParams();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const {
     tenMon, setTenMon, ghiChu, setGhiChu, previewAnh, dangTai, keoVao, setKeoVao, chonAnh, xoaAnh, themMon,
@@ -38,7 +40,7 @@ export default function AddWishPage({ user, userProfile }) {
               <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
           </div>
-          <span className="text-xs font-black uppercase tracking-widest">Quay lại</span>
+          <span className="text-xs font-black uppercase tracking-widest">{t("back")}</span>
         </button>
       </div>
 
@@ -46,11 +48,11 @@ export default function AddWishPage({ user, userProfile }) {
       <div className="mb-16 text-center">
         <div className="inline-block relative mb-4">
           <h2 className="text-4xl md:text-6xl font-black text-text-primary tracking-tighter leading-none">
-            {groupId ? "Thêm vào nhóm" : "Thêm điều ước"} <span className="text-pink-500">mới</span>
+            {groupId ? t("add_to_group") : t("add_wish")} <span className="text-pink-500">{t("new_suffix")}</span>
           </h2>
         </div>
         <p className="text-text-secondary font-bold text-lg mt-4 max-w-md mx-auto leading-relaxed">
-          Ghi lại những mơ ước và dự định <br className="hidden md:block" /> để chúng mình cùng nhau thực hiện.
+          {t("add_wish_subtitle")}
         </p>
       </div>
 

@@ -10,7 +10,10 @@ import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import { notifyDangNhap, notifyDangKy, notifyError } from "../utils/notify";
 
+import { useLanguage } from "../context/LanguageContext";
+
 export default function Auth() {
+    const { t } = useLanguage();
     const [mode, setMode] = useState("login"); // "login" | "register"
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -46,20 +49,20 @@ export default function Auth() {
         }
 
         if (!validateUsernameFormat(username)) {
-            setUsernameStatus({ state: "invalid", message: "3-20 ký tự, không dấu, không space" });
+            setUsernameStatus({ state: "invalid", message: t("username_invalid_format") });
             return;
         }
 
-        setUsernameStatus({ state: "checking", message: "Đang kiểm tra..." });
+        setUsernameStatus({ state: "checking", message: t("checking_username") });
 
         const timer = setTimeout(async () => {
             try {
                 const q = query(collection(db, "users"), where("username", "==", username.trim()));
                 const snap = await getDocs(q);
                 if (!snap.empty) {
-                    setUsernameStatus({ state: "invalid", message: "Username này đã có người dùng" });
+                    setUsernameStatus({ state: "invalid", message: t("username_taken") });
                 } else {
-                    setUsernameStatus({ state: "valid", message: "Username hợp lệ" });
+                    setUsernameStatus({ state: "valid", message: t("username_valid") });
                 }
             } catch (err) {
                 console.error(err);
@@ -73,7 +76,7 @@ export default function Auth() {
     async function handleSubmit() {
         if (mode === "register") {
             if (!validateUsernameFormat(username)) {
-                notifyError("Username không hợp lệ (3-20 ký tự, chữ/số/_)");
+                notifyError(t("username_invalid_tip"));
                 return;
             }
             if (usernameStatus.state === "invalid") {
@@ -81,11 +84,11 @@ export default function Auth() {
                 return;
             }
             if (!validateEmail(email)) {
-                notifyError("Email không đúng định dạng");
+                notifyError(t("email_format_error"));
                 return;
             }
             if (!validatePassword(password)) {
-                notifyError("Mật khẩu yếu: Cần ít nhất 8 ký tự, 1 chữ hoa và 1 chữ số");
+                notifyError(t("password_weak_error"));
                 return;
             }
         }
@@ -97,7 +100,7 @@ export default function Auth() {
                 notifyDangNhap();
             } else {
                 if (username.trim() === "") {
-                    notifyError("Vui lòng nhập username");
+                    notifyError(t("username_required"));
                     setLoading(false);
                     return;
                 }
@@ -112,11 +115,11 @@ export default function Auth() {
                 notifyDangKy();
             }
         } catch (err) {
-            if (err.code === "auth/invalid-credential") notifyError("Email hoặc mật khẩu không đúng");
-            else if (err.code === "auth/email-already-in-use") notifyError("Email đã được sử dụng");
-            else if (err.code === "auth/weak-password") notifyError("Mật khẩu phải ít nhất 6 ký tự");
-            else if (err.code === "auth/invalid-email") notifyError("Email không hợp lệ");
-            else notifyError("Có lỗi xảy ra, thử lại nhé");
+            if (err.code === "auth/invalid-credential") notifyError(t("login_invalid_error"));
+            else if (err.code === "auth/email-already-in-use") notifyError(t("email_in_use_error"));
+            else if (err.code === "auth/weak-password") notifyError(t("password_too_short_error"));
+            else if (err.code === "auth/invalid-email") notifyError(t("email_format_error"));
+            else notifyError(t("general_error"));
         }
         setLoading(false);
     }
@@ -143,12 +146,12 @@ export default function Auth() {
                         <span className="animate-beat">♥</span>
                     </div>
                     <h1 className="text-3xl font-black text-text-primary tracking-tight">
-                        {mode === "login" ? "Chào mừng trở lại" : "Tạo tài khoản mới"}
+                        {mode === "login" ? t("welcome_back") : t("create_account")}
                     </h1>
                     <p className="text-text-muted font-bold mt-2 text-sm leading-relaxed">
                         {mode === "login"
-                            ? "Cùng nhau lưu giữ những điều ước ngọt ngào."
-                            : "Bắt đầu hành trình cùng người thương ngay hôm nay."}
+                            ? t("login_subtitle")
+                            : t("register_subtitle")}
                     </p>
                 </div>
 
@@ -162,7 +165,7 @@ export default function Auth() {
                                     id="username"
                                     activeTooltip={activeTooltip}
                                     setActiveTooltip={setActiveTooltip}
-                                    text="3-20 ký tự. Chỉ dùng chữ cái, số và dấu gạch dưới (_)."
+                                    text={t("username_tip")}
                                 />
                             </label>
                             <Input
@@ -187,7 +190,7 @@ export default function Auth() {
                                 id="email"
                                 activeTooltip={activeTooltip}
                                 setActiveTooltip={setActiveTooltip}
-                                text="Dùng email thật để không quên mật khẩu nhé!"
+                                text={t("email_tip")}
                             />
                         </label>
                         <Input
@@ -202,12 +205,12 @@ export default function Auth() {
 
                     <div className="space-y-2">
                         <label className="text-[11px] font-black uppercase tracking-widest text-text-muted ml-1 flex justify-between items-center">
-                            <span>Mật khẩu</span>
+                            <span>{t("password")}</span>
                             <InfoIcon
                                 id="password"
                                 activeTooltip={activeTooltip}
                                 setActiveTooltip={setActiveTooltip}
-                                text="Tối thiểu 8 ký tự, 1 chữ hoa và 1 chữ số."
+                                text={t("password_tip")}
                             />
                         </label>
                         <Input
@@ -225,7 +228,7 @@ export default function Auth() {
                         disabled={loading || (mode === 'register' && usernameStatus.state === 'invalid')}
                         className="!rounded-2xl !py-4 bg-text-primary text-bg-primary font-black text-xs uppercase tracking-widest hover:bg-pink-600 transition-all mt-4 shadow-none active:scale-95"
                     >
-                        {loading ? "Đang xử lý..." : mode === "login" ? "Đăng nhập" : "Đăng ký"}
+                        {loading ? t("processing") : mode === "login" ? t("login") : t("register")}
                     </Button>
 
                     {/* Switch Mode Link */}
@@ -236,13 +239,13 @@ export default function Auth() {
                         >
                             {mode === "login" ? (
                                 <>
-                                    <span>Chưa có tài khoản?</span>
-                                    <span className="text-pink-500 font-black uppercase tracking-widest text-[11px] group-hover:scale-105 transition-transform">Hãy đăng ký ngay</span>
+                                    <span>{t("no_account")}</span>
+                                    <span className="text-pink-500 font-black uppercase tracking-widest text-[11px] group-hover:scale-105 transition-transform">{t("register_now")}</span>
                                 </>
                             ) : (
                                 <>
-                                    <span>Đã có tài khoản?</span>
-                                    <span className="text-pink-500 font-black uppercase tracking-widest text-[11px] group-hover:scale-105 transition-transform">Quay lại đăng nhập</span>
+                                    <span>{t("has_account")}</span>
+                                    <span className="text-pink-500 font-black uppercase tracking-widest text-[11px] group-hover:scale-105 transition-transform">{t("back_to_login")}</span>
                                 </>
                             )}
                         </button>

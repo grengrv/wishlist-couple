@@ -2,78 +2,78 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import Avatar from "./ui/Avatar";
-
-function formatDate(dateStr) {
-  if (!dateStr) return "Chưa xác định";
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return "Chưa xác định";
-  return d.toLocaleDateString("vi-VN");
-}
-
-function formatTime(timestamp) {
-  if (!timestamp) return "";
-  const d = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-  if (isNaN(d.getTime())) return "";
-  return d.toLocaleTimeString("vi-VN", {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-}
-
-function getDateLabel(dateStr) {
-  if (!dateStr) return "Chưa xác định";
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const d = new Date(dateStr);
-  d.setHours(0, 0, 0, 0);
-
-  const diffTime = today - d;
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) return "Hôm nay";
-  if (diffDays === 1) return "Hôm qua";
-
-  return formatDate(dateStr);
-}
-
-function groupLogs(logs) {
-  const groups = {};
-  logs.forEach(log => {
-    // Determine date to use: log.date (ISO) or extract from timestamp/createdAt
-    let dateStr = log.date;
-    if (!dateStr) {
-      const ts = log.timestamp || log.createdAt;
-      if (ts) {
-        const d = ts.toDate ? ts.toDate() : new Date(ts);
-        if (!isNaN(d.getTime())) {
-          dateStr = d.toISOString().split("T")[0];
-        }
-      }
-    }
-    const key = dateStr || "unknown";
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(log);
-  });
-  return groups;
-}
-
-import { createPortal } from "react-dom";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function ActivityLog({ logs }) {
+  const { t, lang } = useLanguage();
   const [filter, setFilter] = useState("all");
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0, width: 0 });
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return t("unknown_date");
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return t("unknown_date");
+    return d.toLocaleDateString(lang === "vi" ? "vi-VN" : "en-US");
+  };
+
+  const formatTime = (timestamp) => {
+    if (!timestamp) return "";
+    const d = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    if (isNaN(d.getTime())) return "";
+    return d.toLocaleTimeString(lang === "vi" ? "vi-VN" : "en-US", {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  };
+
+  const getDateLabel = (dateStr) => {
+    if (!dateStr) return t("unknown_date");
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const d = new Date(dateStr);
+    d.setHours(0, 0, 0, 0);
+
+    const diffTime = today - d;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return t("today");
+    if (diffDays === 1) return t("yesterday");
+
+    return formatDate(dateStr);
+  };
+
   const filterOptions = [
-    { id: "all", label: "Tất cả", icon: "📋" },
-    { id: "today", label: "Hôm nay", icon: "📅" },
-    { id: "yesterday", label: "Hôm qua", icon: "🗓️" },
-    { id: "7days", label: "7 ngày qua", icon: "📆" },
+    { id: "all", label: t("all_time"), icon: "📋" },
+    { id: "today", label: t("today"), icon: "📅" },
+    { id: "yesterday", label: t("yesterday"), icon: "🗓️" },
+    { id: "7days", label: t("last_7_days"), icon: "📆" },
   ];
+
+  // Grouping function moved inside to use translations if needed, though date keys are stable
+  const groupLogs = (logs) => {
+    const groups = {};
+    logs.forEach(log => {
+      let dateStr = log.date;
+      if (!dateStr) {
+        const ts = log.timestamp || log.createdAt;
+        if (ts) {
+          const d = ts.toDate ? ts.toDate() : new Date(ts);
+          if (!isNaN(d.getTime())) {
+            dateStr = d.toISOString().split("T")[0];
+          }
+        }
+      }
+      const key = dateStr || "unknown";
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(log);
+    });
+    return groups;
+  };
 
   // Handle dropdown positioning for Portal
   useEffect(() => {
@@ -101,7 +101,7 @@ export default function ActivityLog({ logs }) {
       }
     };
     window.addEventListener('resize', updatePosition);
-    window.addEventListener('scroll', updatePosition, true); // true for capturing all scroll events
+    window.addEventListener('scroll', updatePosition, true);
     return () => {
       window.removeEventListener('resize', updatePosition);
       window.removeEventListener('scroll', updatePosition, true);
@@ -168,13 +168,13 @@ export default function ActivityLog({ logs }) {
   const getActionText = (log) => {
     switch (log.action) {
       case "add_member":
-        return <>vừa thêm <span className="text-text-primary font-bold">{log.targetName}</span> vào nhóm</>;
+        return <>{lang === 'vi' ? 'vừa thêm ' : 'just added '} <span className="text-text-primary font-bold">{log.targetName}</span> {lang === 'vi' ? 'vào nhóm' : 'to the group'}</>;
       case "kick_member":
-        return <>đã mời <span className="text-rose-500 font-bold">{log.targetName}</span> rời khỏi nhóm</>;
+        return <>{lang === 'vi' ? 'đã mời ' : 'invited '} <span className="text-rose-500 font-bold">{log.targetName}</span> {lang === 'vi' ? 'rời khỏi nhóm' : 'to leave the group'}</>;
       case "create_wish":
-        return <>vừa gửi một điều ước mới: <span className="text-pink-500 font-bold">"{log.targetName}"</span></>;
+        return <>{lang === 'vi' ? 'vừa gửi một điều ước mới: ' : 'just sent a new wish: '} <span className="text-pink-500 font-bold">"{log.targetName}"</span></>;
       default:
-        return "đã thực hiện một hành động";
+        return t("unknown_action");
     }
   };
 
@@ -195,7 +195,7 @@ export default function ActivityLog({ logs }) {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex items-center justify-between px-4 mb-4 shrink-0 z-[10]">
-        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">Lịch sử hoạt động</h4>
+        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">{t("activity_history")}</h4>
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsOpen(!isOpen)}
@@ -254,7 +254,7 @@ export default function ActivityLog({ logs }) {
             <div className="flex flex-col items-center justify-center py-12 px-6 text-center opacity-30">
               <div className="text-3xl mb-2">📜</div>
               <p className="text-[11px] text-text-muted font-medium italic uppercase tracking-widest leading-relaxed">
-                Chưa có hoạt động nào trong mục này...
+                {t("no_activity")}
               </p>
             </div>
           ) : (
@@ -281,10 +281,10 @@ export default function ActivityLog({ logs }) {
                         </div>
                       </div>
                       <div className="flex-1 min-w-0 flex flex-col justify-center">
-                        <p className="text-[12px] text-text-secondary leading-relaxed">
+                        <div className="text-[12px] text-text-secondary leading-relaxed">
                           <span className="text-text-primary font-black mr-1">{log.actorName}</span>
                           {getActionText(log)}
-                        </p>
+                        </div>
                         <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest mt-1 block">
                           {formatTime(log.timestamp || log.createdAt)}
                         </span>
@@ -300,3 +300,5 @@ export default function ActivityLog({ logs }) {
     </div>
   );
 }
+
+import { createPortal } from "react-dom";

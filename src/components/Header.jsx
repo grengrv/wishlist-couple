@@ -4,11 +4,12 @@ import Button from "./ui/Button";
 import Avatar from "./ui/Avatar";
 import ThemeToggle from "./ui/ThemeToggle";
 import NotificationBell from "./NotificationBell";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { pathname } = useLocation();
+  const { lang, setLang, t } = useLanguage();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -19,9 +20,9 @@ export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
   }, []);
 
   const navLinks = [
-    { name: "Trang chủ", path: "/" },
-    { name: "Cá nhân", path: "/personal" },
-    { name: "Nhóm", path: "/groups" },
+    { name: t("home"), path: "/" },
+    { name: t("personal"), path: "/personal" },
+    { name: t("groups"), path: "/groups" },
   ];
 
   return (
@@ -73,6 +74,20 @@ export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
 
             {/* User Actions */}
             <div className="hidden md:flex items-center gap-5">
+              <div className="flex items-center bg-glass-bg border border-border-primary/50 rounded-xl p-1 gap-1">
+                <button
+                  onClick={() => setLang("vi")}
+                  className={`px-2 py-1 text-[10px] font-black rounded-lg transition-all ${lang === "vi" ? "bg-pink-hot text-white shadow-lg" : "text-text-muted hover:text-text-primary"}`}
+                >
+                  VI
+                </button>
+                <button
+                  onClick={() => setLang("en")}
+                  className={`px-2 py-1 text-[10px] font-black rounded-lg transition-all ${lang === "en" ? "bg-pink-hot text-white shadow-lg" : "text-text-muted hover:text-text-primary"}`}
+                >
+                  EN
+                </button>
+              </div>
               <ThemeToggle />
               {!user ? (
                 <div />
@@ -113,7 +128,7 @@ export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
                       </span>
                       {/* Status text */}
                       <span className="text-[11px] text-text-muted font-bold tracking-[1px] uppercase">
-                        {userProfile?.status || "online"}
+                        {t(userProfile?.status || "online")}
                       </span>
                     </div>
                   </div>
@@ -121,7 +136,7 @@ export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
                   <button
                     onClick={onLogout}
                     className="w-11 h-11 flex items-center justify-center text-text-secondary hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-2xl transition-all duration-300 group"
-                    title="Đăng xuất"
+                    title={t("logout")}
                   >
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-1 transition-transform">
                       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -133,57 +148,6 @@ export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
               )}
             </div>
 
-            {/* Mobile Toggle */}
-            <button
-              className="md:hidden w-12 h-12 flex items-center justify-center rounded-2xl bg-pink-50 text-pink-500"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              <div className="relative w-6 h-5">
-                <span className={`absolute h-0.5 w-full bg-current rounded-full transition-all duration-300 ${isMobileMenuOpen ? "rotate-45 top-2" : "top-0"}`} />
-                <span className={`absolute h-0.5 w-full bg-current rounded-full top-2 transition-all duration-300 ${isMobileMenuOpen ? "opacity-0" : "opacity-100"}`} />
-                <span className={`absolute h-0.5 w-full bg-current rounded-full transition-all duration-300 ${isMobileMenuOpen ? "-rotate-45 top-2" : "top-4"}`} />
-              </div>
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu - Glass Style */}
-        <div className={`md:hidden absolute top-[calc(100%+12px)] left-5 right-5 transition-all duration-500 ease-[cubic-bezier(0.17,0.67,0.83,0.67)] origin-top ${isMobileMenuOpen ? "scale-100 opacity-100" : "scale-95 opacity-0 pointer-events-none"}`}>
-          <div className="bg-bg-secondary/90 backdrop-blur-2xl rounded-[32px] border border-border-primary shadow-[0_20px_60px_rgba(236,72,153,0.15)] p-6">
-            <div className="flex items-center justify-between mb-6">
-              <span className="text-sm font-black text-text-muted uppercase tracking-widest">Menu</span>
-              <ThemeToggle />
-            </div>
-            {user && (
-              <div className="space-y-2 mb-4">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.path}
-                    to={link.path}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`flex items-center justify-between p-4 rounded-2xl font-black transition-all ${pathname === link.path
-                      ? "bg-gradient-to-r from-pink-500 to-rose-400 text-white shadow-lg"
-                      : "text-text-secondary hover:bg-pink-50 dark:hover:bg-pink-900/10"
-                      }`}
-                  >
-                    {link.name}
-                    <span>→</span>
-                  </Link>
-                ))}
-              </div>
-            )}
-
-            {user ? (
-              <div className="flex items-center justify-between bg-glass-bg p-4 rounded-[24px] border border-border-primary/50">
-                <div className="flex items-center gap-4" onClick={() => { onOpenProfile(); setIsMobileMenuOpen(false); }}>
-                  <Avatar src={userProfile?.avatar} name={userProfile?.username} size="md" className="w-12 h-12 shadow-md ring-2 ring-border-primary" />
-                  <span className="font-black text-text-primary">{userProfile?.username || "Tài khoản"}</span>
-                </div>
-                <button onClick={onLogout} className="text-rose-500 font-black p-2 bg-bg-secondary rounded-xl shadow-sm">Thoát</button>
-              </div>
-            ) : (
-              <Button className="w-full py-5 rounded-2xl bg-pink-500 text-white font-black shadow-xl">Đăng nhập ngay</Button>
-            )}
           </div>
         </div>
       </header>

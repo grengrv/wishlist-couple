@@ -24,20 +24,28 @@
  */
 
 import { toastStore } from "./toastStore";
+import { translations } from "./translations";
+
+const getLang = () => localStorage.getItem("lang") || "vi";
+
+function t(key) {
+  const lang = getLang();
+  return translations[lang]?.[key] || translations["en"]?.[key] || key;
+}
 
 // ── XÓA WISH (delete_wish) ────────────────────────────────────────────────────
 export function notifyXoaWish() {
-  toastStore.show("Xóa thành công");
+  toastStore.show(t("delete_success"));
 }
 
 // ── THÊM WISH CÁ NHÂN (add_personal_wish) ────────────────────────────────────
 export function notifyThemWishCaNhan() {
-  toastStore.show("Đã thêm vào danh sách của bạn");
+  toastStore.show(t("add_personal_success"));
 }
 
 // ── THÊM WISH NHÓM (add_group_wish) ──────────────────────────────────────────
 export function notifyThemWishNhom() {
-  toastStore.show("Đã thêm vào danh sách nhóm");
+  toastStore.show(t("add_group_success"));
 }
 
 /**
@@ -52,63 +60,61 @@ export function notifyThemWish(isGroup = false) {
   }
 }
 
-
-
 // ── CẬP NHẬT (update_wish / update_group / profile) ──────────────────────────
 export function notifyLuuNhom() {
-  toastStore.show("Cập nhật thành công");
+  toastStore.show(t("update_success"));
 }
 
 export function notifyCapNhatHoSo() {
-  toastStore.show("Cập nhật hồ sơ thành công");
+  toastStore.show(t("profile_update_success"));
 }
 
 export function notifyDoiAvatar() {
-  toastStore.show("Đổi ảnh đại diện thành công");
+  toastStore.show(t("avatar_update_success"));
 }
 
 export function notifyDoiBanner() {
-  toastStore.show("Đổi ảnh nền thành công");
+  toastStore.show(t("banner_update_success"));
 }
 
 export function notifyCompressing() {
-  toastStore.show("Đang tối ưu ảnh...");
+  toastStore.show(t("optimizing_image"));
 }
 
 // ── TẠO NHÓM (create_group) ──────────────────────────────────────────────────
 export function notifyTaoNhom() {
-  toastStore.show("Tạo nhóm thành công");
+  toastStore.show(t("create_group_success"));
 }
 
 // ── XÓA NHÓM (delete_group) ──────────────────────────────────────────────────
 export function notifyXoaNhom() {
-  toastStore.show("Xóa nhóm thành công");
+  toastStore.show(t("delete_group_success"));
 }
 
 // ── THAM GIA NHÓM (join_group) ───────────────────────────────────────────────
 export function notifyThamGiaNhom() {
-  toastStore.show("Tham gia nhóm thành công");
+  toastStore.show(t("join_group_success"));
 }
 
 // ── SAO CHÉP (copy) ───────────────────────────────────────────────────────────
 export function notifyCopied() {
-  toastStore.show("Lấy link mời tham gia thành công");
+  toastStore.show(t("copy_success"));
 }
 
 // ── ĐĂNG NHẬP / ĐĂNG KÝ / ĐĂNG XUẤT ──────────────────────────────────────────
 export function notifyDangNhap() {
-  toastStore.show("Đăng nhập thành công");
+  toastStore.show(t("login_success"));
 }
 
 export function notifyDangKy() {
-  toastStore.show("Đăng ký thành công");
+  toastStore.show(t("signup_success"));
 }
 
 export function notifyLogout() {
-  toastStore.show("Đăng xuất thành công");
+  toastStore.show(t("logout_success"));
 }
 
 // ── LỖI (error) ───────────────────────────────────────────────────────────────
-export function notifyError(message = "Cập nhật thất bại") {
+export function notifyError(message = t("update_failed")) {
   toastStore.show(message, "error");
 }

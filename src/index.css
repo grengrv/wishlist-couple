@@ -65,9 +65,14 @@ body {
   font-family: var(--font-sans);
   background-color: var(--bg-primary);
   color: var(--text-primary);
+  font-size: clamp(14px, 2vw, 18px);
   min-height: 100vh;
   overflow-x: hidden;
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body.modal-open {
+  overflow: hidden !important;
 }
 
 #root {
@@ -179,6 +184,37 @@ body {
 
   .animate-slide-up {
     animation: slideUp 0.25s ease;
+  }
+
+  @keyframes slideUpBottom {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .animate-slide-up-bottom {
+    animation: slideUpBottom 0.35s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+  }
+
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 16px);
+  }
+
+  .pt-safe {
+    padding-top: max(env(safe-area-inset-top), 16px);
+  }
+
+  .mt-safe {
+    margin-top: env(safe-area-inset-top);
+  }
+
+  .mb-safe {
+    margin-bottom: env(safe-area-inset-bottom);
   }
 
   /* Gradients (không thể dùng Tailwind thuần) */

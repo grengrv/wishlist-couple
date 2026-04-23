@@ -1,5 +1,6 @@
 import { formatNgay } from "../utils/formatDate";
 import Avatar from "./ui/Avatar";
+import { useLanguage } from "../context/LanguageContext";
 
 /**
  * WishCard component - Một item trong danh sách
@@ -7,6 +8,7 @@ import Avatar from "./ui/Avatar";
  * @param {Function} onClick - Mở modal xem chi tiết
  */
 export default function WishCard({ item, onClick, user }) {
+  const { t } = useLanguage();
   const likeCount = item.likeCount || 0;
   const commentCount = item.commentCount || 0;
   const isLiked = item.isLiked;
@@ -39,7 +41,7 @@ export default function WishCard({ item, onClick, user }) {
         {/* Avatar + username người thêm */}
         <div className="flex items-center gap-1.5 mt-2 min-w-0">
           <Avatar src={item.avatarNguoiThem} name={item.themBoi} size="sm" />
-          <span className="text-xs font-semibold text-pink-brand truncate">{item.themBoi || "Ẩn danh"}</span>
+          <span className="text-xs font-semibold text-pink-brand truncate">{item.themBoi || t("anonymous")}</span>
           <span className="text-[11px] text-text-muted ml-auto shrink-0">{formatNgay(item.taoLuc)}</span>
         </div>
       </div>

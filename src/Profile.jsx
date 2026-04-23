@@ -9,6 +9,7 @@ import Input from "./components/ui/Input";
 import ImageEditorModal from "./components/ImageEditorModal";
 import { notifyCapNhatHoSo, notifyDoiAvatar, notifyDoiBanner, notifyError, notifyCompressing } from "./utils/notify";
 import { useConfirm } from "./context/ConfirmContext";
+import { useLanguage } from "./context/LanguageContext";
 
 const PRESET_COLORS = [
     { name: "Hồng", value: "#ec4899" },
@@ -26,8 +27,9 @@ const DEFAULT_THEME = {
 
 export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = false }) {
     const confirm = useConfirm();
+    const { t, lang } = useLanguage();
     const [mode, setMode] = useState("view"); // "view" | "edit"
-    
+
     // Form state
     const [displayName, setDisplayName] = useState(userProfile?.displayName || userProfile?.username || "");
     const [username, setUsername] = useState(userProfile?.username || "");
@@ -80,18 +82,6 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
         }
     }, [userProfile, mode]);
 
-    // Debugging
-    useEffect(() => {
-        if (userProfile) {
-            console.log("Profile Component - userProfile:", userProfile);
-        }
-    }, [userProfile]);
-
-    // Safety check: ensure profile is always an object
-    const profile = userProfile || {};
-
-    // RENDER GUARD was here, moved down
-
     // Status colors
     const statusColors = {
         online: "#34d399", // emerald-400
@@ -113,21 +103,21 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
     const isActiveAction = loading || mode === "edit";
 
     const handleRequestClose = useCallback(async () => {
-        if (loading) return; 
+        if (loading) return;
 
         if (mode === "edit" && hasUnsavedChanges) {
             const ok = await confirm({
-                title: "Thoát mà không lưu?",
-                message: "Bạn đang thực hiện thao tác và có thay đổi chưa lưu. Bạn có chắc muốn thoát?",
-                confirmText: "Thoát",
-                cancelText: "Ở lại",
+                title: t("unsaved_exit_title"),
+                message: t("unsaved_exit_msg"),
+                confirmText: t("exit"),
+                cancelText: t("stay"),
                 variant: "danger"
             });
             if (!ok) return;
         }
 
         onClose();
-    }, [loading, mode, hasUnsavedChanges, confirm, onClose]);
+    }, [loading, mode, hasUnsavedChanges, confirm, onClose, t]);
 
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -157,8 +147,8 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                 <div className="bg-card-bg backdrop-blur-3xl p-10 rounded-[40px] shadow-2xl flex flex-col items-center gap-6 border border-border-primary">
                     <div className="w-12 h-12 border-[5px] border-pink-500 border-t-transparent rounded-full animate-spin" />
                     <div className="flex flex-col items-center gap-1">
-                        <p className="text-text-primary font-black text-lg">Đang tải hồ sơ...</p>
-                        <p className="text-text-muted font-bold text-xs uppercase tracking-widest">Vui lòng đợi trong giây lát</p>
+                        <p className="text-text-primary font-black text-lg">{t("loading_profile")}</p>
+                        <p className="text-text-muted font-bold text-xs uppercase tracking-widest">{t("wait_moment")}</p>
                     </div>
                 </div>
             </div>
@@ -180,24 +170,20 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
     function processImage(file, isBanner = false) {
         if (!file) return;
         if (!file.type.startsWith("image/")) {
-            notifyError("Chỉ chấp nhận file ảnh!");
+            notifyError(t("only_image_allowed"));
             return;
         }
 
         const isGif = file.type === "image/gif";
 
-        // Limits for initial selection (Strict for Base64 safety)
         if (isGif && file.size > 600 * 1024) {
-            notifyError("GIF quá nặng, vui lòng chọn file nhỏ hơn");
+            notifyError(t("gif_too_large"));
             return;
         } else if (!isGif && file.size > 8 * 1024 * 1024) {
-            notifyError("Ảnh quá lớn (tối đa 8MB)");
+            notifyError(t("image_too_large"));
             return;
         }
 
-        console.log(`Original file size: ${(file.size / 1024).toFixed(2)} KB`);
-
-        // Open editor immediately with blob URL (no heavy processing yet)
         const objectUrl = URL.createObjectURL(file);
         setEditorConfig({
             isOpen: true,
@@ -212,11 +198,11 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
         if (editorConfig.isBanner) {
             setBannerBase64(processedImage);
             setBannerPreview(processedImage);
-            toastStore.show("Đã áp dụng ảnh nền");
+            toastStore.show(t("banner_applied"));
         } else {
             setAvatarBase64(processedImage);
             setAvatarPreview(processedImage);
-            toastStore.show("Đã áp dụng ảnh đại diện");
+            toastStore.show(t("avatar_applied"));
         }
         if (editorConfig.imageSrc && editorConfig.imageSrc.startsWith('blob:')) {
             URL.revokeObjectURL(editorConfig.imageSrc);
@@ -227,10 +213,10 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
     const handleRemoveAvatar = async (e) => {
         e.stopPropagation();
         const ok = await confirm({
-            title: "Gỡ ảnh đại diện",
-            content: "Bạn có chắc muốn gỡ ảnh đại diện hiện tại?",
-            confirmText: "Gỡ bỏ",
-            cancelText: "Hủy"
+            title: t("remove_avatar_title"),
+            content: t("remove_avatar_msg"),
+            confirmText: t("remove"),
+            cancelText: t("cancel")
         });
         if (ok) {
             setAvatarPreview(null);
@@ -241,10 +227,10 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
     const handleRemoveBanner = async (e) => {
         e.stopPropagation();
         const ok = await confirm({
-            title: "Gỡ ảnh bìa",
-            content: "Bạn có chắc muốn gỡ ảnh bìa hiện tại?",
-            confirmText: "Gỡ bỏ",
-            cancelText: "Hủy"
+            title: t("remove_banner_title"),
+            content: t("remove_banner_msg"),
+            confirmText: t("remove"),
+            cancelText: t("cancel")
         });
         if (ok) {
             setBannerPreview(null);
@@ -253,22 +239,21 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
     };
 
     async function luuThongTin() {
-        const profile = userProfile || {};
         const trimmedUsername = username.trim();
         const trimmedDisplayName = displayName.trim() || trimmedUsername;
 
         if (trimmedUsername === "") {
-            notifyError("Username không được để trống.");
+            notifyError(t("username_empty"));
             return;
         }
         if (trimmedUsername.length < 3 || trimmedUsername.length > 20) {
-            notifyError("Username phải từ 3 đến 20 ký tự.");
+            notifyError(t("username_length"));
             return;
         }
 
         const regex = /^[a-zA-Z0-9\sÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔƠƯ_]+$/;
         if (!regex.test(trimmedUsername)) {
-            notifyError("Username không được chứa ký tự đặc biệt.");
+            notifyError(t("username_special"));
             return;
         }
 
@@ -279,15 +264,14 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                 displayName: trimmedDisplayName
             });
 
-            // Construct payload containing ONLY changed fields
             const payload = {};
-            const currentDisplayName = profile.displayName || profile.username || "";
-            const currentBio = profile.bio || "";
-            const currentStatus = profile.status || "online";
-            const currentCustomStatus = profile.customStatus || "";
-            const currentTheme = profile.theme || DEFAULT_THEME;
+            const currentDisplayName = userProfile?.displayName || userProfile?.username || "";
+            const currentBio = userProfile?.bio || "";
+            const currentStatus = userProfile?.status || "online";
+            const currentCustomStatus = userProfile?.customStatus || "";
+            const currentTheme = userProfile?.theme || DEFAULT_THEME;
 
-            if (trimmedUsername !== profile.username) payload.username = trimmedUsername;
+            if (trimmedUsername !== userProfile?.username) payload.username = trimmedUsername;
             if (trimmedDisplayName !== currentDisplayName) payload.displayName = trimmedDisplayName;
             if (bio.trim() !== currentBio) payload.bio = bio.trim();
             if (status !== currentStatus) payload.status = status;
@@ -302,7 +286,6 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                 return;
             }
 
-            // DEBUG & SIZE VALIDATION
             let totalB64Size = 0;
             if (payload.avatar) totalB64Size += payload.avatar.length;
             else if (userProfile?.avatar) totalB64Size += userProfile.avatar.length;
@@ -310,11 +293,8 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
             if (payload.banner) totalB64Size += payload.banner.length;
             else if (userProfile?.banner) totalB64Size += userProfile.banner.length;
 
-            console.log(`Estimated Base64 storage size: ${(totalB64Size / 1024).toFixed(2)} KB`);
-
-            // Safe threshold 900KB (Base64 length)
             if (totalB64Size > 900000) {
-                notifyError("Dữ liệu quá lớn (vượt giới hạn 900KB)");
+                notifyError(t("data_too_large"));
                 setLoading(false);
                 return;
             }
@@ -322,8 +302,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
             const userRef = doc(db, "users", auth.currentUser.uid);
             await setDoc(userRef, payload, { merge: true });
 
-            // SUCCESS
-            const fullUpdatedData = { ...profile, ...payload };
+            const fullUpdatedData = { ...userProfile, ...payload };
             if (onUpdate) onUpdate(fullUpdatedData);
 
             if (payload.avatar) notifyDoiAvatar();
@@ -334,15 +313,14 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
             setBannerBase64(null);
             setMode("view");
 
-            // 2. SIDE EFFECTS (Wishlist items update)
             try {
                 if (payload.username || payload.avatar) {
                     const q = query(collection(db, "wishlist"), where("uid", "==", auth.currentUser.uid));
                     const querySnapshot = await getDocs(q);
                     const updatePromises = querySnapshot.docs.map(wishDoc => {
                         return updateDoc(wishDoc.ref, {
-                            themBoi: payload.username || profile.username || auth.currentUser.displayName || auth.currentUser.email,
-                            avatarNguoiThem: payload.avatar || profile.avatar || null
+                            themBoi: payload.username || userProfile.username || auth.currentUser.displayName || auth.currentUser.email,
+                            avatarNguoiThem: payload.avatar || userProfile.avatar || null
                         });
                     });
                     await Promise.all(updatePromises);
@@ -352,7 +330,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
             }
 
         } catch (err) {
-            notifyError("Cập nhật thất bại");
+            notifyError(t("update_failed_profile"));
             console.error("Profile Save Error:", err);
         } finally {
             setLoading(false);
@@ -360,13 +338,13 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
     }
 
     const formatDate = (timestamp) => {
-        if (!timestamp) return "Mới tham gia";
+        if (!timestamp) return t("just_joined");
         try {
             const d = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-            if (isNaN(d.getTime())) return "Mới tham gia";
-            return d.toLocaleDateString("vi-VN", { month: 'short', year: 'numeric', day: 'numeric' });
+            if (isNaN(d.getTime())) return t("just_joined");
+            return d.toLocaleDateString(lang === "vi" ? "vi-VN" : "en-US", { month: 'short', year: 'numeric', day: 'numeric' });
         } catch (e) {
-            return "Mới tham gia";
+            return t("just_joined");
         }
     };
 
@@ -382,7 +360,6 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
 
                 {/* BANNER */}
                 <div className="relative w-full h-[140px] bg-gradient-to-br from-pink-300 via-purple-300 to-rose-300 group transition-all duration-500 overflow-hidden">
-                    {/* Decorative overlay for banner */}
                     <div className="absolute inset-0 bg-white/20 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity z-10" />
 
                     {bannerPreview && <img key={bannerPreview} src={bannerPreview} alt="banner" className="w-full h-full object-cover relative z-0" />}
@@ -393,7 +370,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                                 onClick={() => document.getElementById("banner-upload").click()}
                                 style={{ backgroundColor: `${activeTheme.color}90` }}
                                 className="w-10 h-10 rounded-full flex items-center justify-center text-white backdrop-blur-md hover:scale-105 active:scale-95 transition-all shadow-lg border border-white/20"
-                                title="Thay đổi ảnh bìa"
+                                title={t("change_banner")}
                             >
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
                             </button>
@@ -401,7 +378,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                                 <button
                                     onClick={handleRemoveBanner}
                                     className="w-10 h-10 rounded-full bg-red-500/80 hover:bg-red-500 flex items-center justify-center text-white backdrop-blur-md hover:scale-105 active:scale-95 transition-all shadow-lg border border-white/20"
-                                    title="Gỡ ảnh bìa"
+                                    title={t("remove_banner_title")}
                                 >
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
                                 </button>
@@ -410,15 +387,12 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                     )}
                     {!isReadOnly && <input id="banner-upload" type="file" accept="image/*" className="hidden" onChange={e => processImage(e.target.files[0], true)} />}
 
-                    {/* CLOSE BTN */}
                     <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center text-white backdrop-blur-md transition-all z-20" onClick={handleRequestClose}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                     </button>
                 </div>
 
-                {/* HEADER CONTENT: VERTICAL CENTERED LAYOUT */}
                 <div className="px-6 relative flex flex-col items-center text-center gap-3 pb-2 w-full">
-                    {/* AVATAR CENTERED */}
                     <div className="relative -mt-[60px] group z-30 shrink-0 border-1 border-white rounded-[100px]">
                         <div
                             className={`w-[120px] h-[120px] rounded-[100px] shadow-xl overflow-hidden relative ${!isReadOnly ? 'cursor-pointer' : ''} rotate-3 group-hover:rotate-0 transition-transform duration-500`}
@@ -436,7 +410,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                                 <img key={avatarPreview} src={avatarPreview} alt="avatar" className="w-full h-full object-cover" />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center text-4xl font-black text-white bg-gradient-to-br from-pink-400 to-rose-400">
-                                    {(profile?.displayName || profile?.username || "U")[0]?.toUpperCase() || "?"}
+                                    {(userProfile?.displayName || userProfile?.username || "U")[0]?.toUpperCase() || "?"}
                                 </div>
                             )}
 
@@ -462,7 +436,6 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                                 </div>
                             )}
                         </div>
-                        {/* Status Dot Trigger */}
                         <div
                             className={`absolute bottom-[-3px] left-[84px] w-5.5 h-5.5 rounded-full border-[3px] border-white flex items-center justify-center bg-white z-40 transition-all duration-300 ${!isReadOnly ? 'cursor-pointer hover:scale-110 active:scale-95' : ''}`}
                             onClick={openStatusSelector}
@@ -473,7 +446,6 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                         {!isReadOnly && <input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={e => processImage(e.target.files[0], false)} />}
                     </div>
 
-                    {/* USER INFO CENTERED */}
                     <div className="flex flex-col items-center text-center w-full min-w-0">
                         {mode === "view" ? (
                             <>
@@ -481,38 +453,37 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                                     style={{ color: activeTheme?.color }}
                                     className="text-[26px] font-black tracking-tight leading-tight mb-1 whitespace-normal break-words w-full px-2"
                                 >
-                                    {profile?.displayName || profile?.username || "Người dùng"}
+                                    {userProfile?.displayName || userProfile?.username || t("default_user")}
                                 </h2>
                                 <p
                                     style={{ color: activeTheme?.color }}
                                     className="text-[15px] font-bold mb-4 opacity-50"
                                 >
-                                    {profile?.username || "user"}
+                                    {userProfile?.username || "user"}
                                 </p>
 
-                                {profile?.customStatus && (
+                                {userProfile?.customStatus && (
                                     <div
                                         style={{ color: activeTheme.color, borderColor: `${activeTheme.color}20` }}
                                         className="font-bold px-5 py-2.5 flex items-center gap-2 mb-6 max-w-full"
                                     >
-                                        <span className="text-sm break-words">{profile.customStatus}</span>
+                                        <span className="text-sm break-words">{userProfile.customStatus}</span>
                                     </div>
                                 )}
                             </>
                         ) : (
                             <div className="w-full mt-2">
-                                <h3 className="text-lg font-black text-text-primary mb-1">Đang chỉnh sửa</h3>
-                                <p className="text-[11px] font-bold text-text-muted mb-4 uppercase tracking-widest">Cập nhật thông tin của bạn</p>
+                                <h3 className="text-lg font-black text-text-primary mb-1">{t("editing_profile")}</h3>
+                                <p className="text-[11px] font-bold text-text-muted mb-4 uppercase tracking-widest">{t("update_your_info")}</p>
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* CONTENT */}
                 <div className="px-6 pb-6">
                     {mode === "view" ? (
                         <>
-                            <div className="backdrop-blur-xl mb-10 flex items-center justify-center">
+                            <div className="backdrop-blur-xl mb-10 flex items-center justify-center text-center">
                                 {userProfile?.bio ? (
                                     <p
                                         style={{ color: activeTheme?.color }}
@@ -521,18 +492,18 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                                         {userProfile.bio}
                                     </p>
                                 ) : (
-                                    <p className="text-[14px] text-text-muted italic font-medium">Chưa có thông tin giới thiệu.</p>
+                                    <p className="text-[14px] text-text-muted italic font-medium">{t("no_bio")}</p>
                                 )}
                             </div>
 
                             <div className="flex items-center justify-center p-5">
                                 <div className="flex items-center gap-3">
-                                    <div>
+                                    <div className="text-center">
                                         <h3
                                             style={{ color: activeTheme?.color }}
                                             className="text-[11px] font-black uppercase tracking-widest mb-0.5 opacity-80"
                                         >
-                                            Thành viên từ
+                                            {t("member_since")}
                                         </h3>
                                         <p className="text-[14px] font-bold flex items-center justify-center">
                                             <span style={{ color: activeTheme?.color }}>
@@ -549,7 +520,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                                     style={{ backgroundColor: activeTheme.color }}
                                     className="w-full !rounded-[20px] !text-white hover:opacity-90 !py-4 transition-all font-black text-xs uppercase tracking-widest border-none"
                                 >
-                                    Chỉnh sửa hồ sơ
+                                    {t("edit_profile_btn")}
                                 </Button>
                             )}
                         </>
@@ -557,23 +528,23 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                         <div className="flex flex-col gap-4 max-h-[50vh] overflow-y-auto custom-scrollbar px-1 -mx-1">
                             <div className="space-y-4">
                                 <div>
-                                    <label className="text-[11px] font-black text-text-muted uppercase tracking-widest mb-2 block">Tên hiển thị</label>
+                                    <label className="text-[11px] font-black text-text-muted uppercase tracking-widest mb-2 block">{t("display_name")}</label>
                                     <Input value={displayName} onChange={e => setDisplayName(e.target.value)} className="!bg-bg-primary/50 !border-border-primary/50 !text-text-primary !h-12 !rounded-2xl focus:!bg-bg-secondary focus:!ring-2 focus:!ring-pink-100 font-bold" />
                                 </div>
                                 <div>
-                                    <label className="text-[11px] font-black text-text-muted uppercase tracking-widest mb-2 block">Tên đăng nhập (Username)</label>
+                                    <label className="text-[11px] font-black text-text-muted uppercase tracking-widest mb-2 block">{t("username_label")}</label>
                                     <Input value={username} onChange={e => setUsername(e.target.value)} className="!bg-bg-primary/50 !border-border-primary/50 !text-text-primary !h-12 !rounded-2xl focus:!bg-bg-secondary focus:!ring-2 focus:!ring-pink-100 font-bold" />
                                 </div>
                                 <div>
-                                    <label className="text-[11px] font-black text-text-muted uppercase tracking-widest mb-2 block">Đang làm gì thế?</label>
-                                    <Input value={customStatus} onChange={e => setCustomStatus(e.target.value)} placeholder="Suy nghĩ gì đó..." className="!bg-bg-primary/50 !border-border-primary/50 !text-text-primary !h-12 !rounded-2xl focus:!bg-bg-secondary focus:!ring-2 focus:!ring-pink-100 font-bold" />
+                                    <label className="text-[11px] font-black text-text-muted uppercase tracking-widest mb-2 block">{t("what_are_you_doing")}</label>
+                                    <Input value={customStatus} onChange={e => setCustomStatus(e.target.value)} placeholder={t("thinking_placeholder")} className="!bg-bg-primary/50 !border-border-primary/50 !text-text-primary !h-12 !rounded-2xl focus:!bg-bg-secondary focus:!ring-2 focus:!ring-pink-100 font-bold" />
                                 </div>
                                 <div>
-                                    <label className="text-[11px] font-black text-text-muted uppercase tracking-widest mb-2 block">Giới thiệu bản thân</label>
+                                    <label className="text-[11px] font-black text-text-muted uppercase tracking-widest mb-2 block">{t("bio_label")}</label>
                                     <Input as="textarea" rows={3} value={bio} onChange={e => setBio(e.target.value)} className="!bg-bg-primary/50 !border-border-primary/50 !text-text-primary !rounded-2xl focus:!bg-bg-secondary focus:!ring-2 focus:!ring-pink-100 font-medium" />
                                 </div>
                                 <div>
-                                    <label className="text-[11px] font-black text-text-muted uppercase tracking-widest mb-2 block">Trạng thái hoạt động</label>
+                                    <label className="text-[11px] font-black text-text-muted uppercase tracking-widest mb-2 block">{t("active_status")}</label>
                                     <button
                                         type="button"
                                         onClick={openStatusSelector}
@@ -582,24 +553,22 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                                         <div className="flex items-center gap-3">
                                             <div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: statusColors[status] || statusColors.online }}></div>
                                             <span>
-                                                {status === 'online' && 'Đang hoạt động'}
-                                                {status === 'idle' && 'Đang vắng mặt'}
-                                                {status === 'dnd' && 'Đừng làm phiền'}
-                                                {status === 'offline' && 'Ngoại tuyến (Ẩn)'}
+                                                {status === 'online' && t("status_online")}
+                                                {status === 'idle' && t("status_idle")}
+                                                {status === 'dnd' && t("status_dnd")}
+                                                {status === 'offline' && t("status_offline")}
                                             </span>
                                         </div>
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`text-text-muted transition-transform duration-300 ${selectorAnchor ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9" /></svg>
                                     </button>
                                 </div>
 
-                                {/* THEME SELECTION */}
                                 <div className="pt-2">
-                                    <label className="text-[11px] font-black text-text-muted uppercase tracking-widest mb-3 block">Giao diện hồ sơ</label>
+                                    <label className="text-[11px] font-black text-text-muted uppercase tracking-widest mb-3 block">{t("profile_theme")}</label>
 
                                     <div className="space-y-5">
-                                        {/* Background Color Picker */}
                                         <div className="flex flex-col gap-3">
-                                            <span className="text-[10px] font-bold text-text-muted uppercase">Màu nền hồ sơ</span>
+                                            <span className="text-[10px] font-bold text-text-muted uppercase">{t("bg_color_label")}</span>
                                             <div className="flex items-center gap-4 bg-bg-secondary/50 p-3 rounded-2xl border border-border-primary/50">
                                                 <div className="relative group">
                                                     <div
@@ -628,19 +597,17 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                                                             className="text-[10px] font-black text-pink-500 uppercase tracking-widest hover:opacity-70 transition-opacity"
                                                             onClick={() => setTheme({ ...theme, backgroundColor: "#ffffff" })}
                                                         >
-                                                            Mặc định
+                                                            {t("default")}
                                                         </button>
                                                     </div>
-                                                    <p className="text-[10px] font-bold text-text-muted mt-1 uppercase tracking-tighter">Chọn màu nền bất kỳ</p>
+                                                    <p className="text-[10px] font-bold text-text-muted mt-1 uppercase tracking-tighter">{t("any_bg_color")}</p>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        {/* Colors */}
                                         <div className="flex flex-col gap-3">
-                                            <span className="text-[10px] font-bold text-text-muted uppercase">Màu chủ đạo (Accent)</span>
+                                            <span className="text-[10px] font-bold text-text-muted uppercase">{t("accent_color_label")}</span>
                                             <div className="flex items-center gap-4 bg-bg-secondary/50 p-3 rounded-2xl border border-border-primary/50">
-                                                {/* Hidden Native Picker Trigger */}
                                                 <div className="relative group">
                                                     <div
                                                         style={{ backgroundColor: activeTheme.color }}
@@ -667,11 +634,10 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                                                             className="text-[10px] font-black text-pink-500 uppercase tracking-widest hover:opacity-70 transition-opacity"
                                                             onClick={() => setTheme({ ...theme, color: "#ec4899" })}
                                                         >
-                                                            Mặc định
+                                                            {t("default")}
                                                         </button>
                                                     </div>
 
-                                                    {/* Quick Presets for convenience */}
                                                     <div className="flex gap-1.5 mt-2 overflow-x-auto pb-1 no-scrollbar">
                                                         {PRESET_COLORS.slice(0, 6).map((c) => (
                                                             <button
@@ -701,7 +667,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                                     }}
                                     className="!bg-bg-primary/50 !text-text-secondary hover:!bg-bg-primary/80 !py-4 !rounded-[20px] font-black text-xs uppercase tracking-widest flex-1 border border-border-primary/50 shadow-none"
                                 >
-                                    Hủy
+                                    {t("cancel")}
                                 </Button>
                                 <Button
                                     onClick={luuThongTin}
@@ -709,7 +675,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                                     style={{ backgroundColor: activeTheme.color }}
                                     className="!text-white hover:opacity-90 !py-4 !rounded-[20px] font-black text-xs uppercase tracking-widest flex-[2] border-none shadow-none"
                                 >
-                                    {loading ? "Đang lưu..." : "Lưu thay đổi"}
+                                    {loading ? t("saving") : t("save_changes")}
                                 </Button>
                             </div>
                         </div>
@@ -717,7 +683,6 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                 </div>
             </div>
 
-            {/* IMAGE EDITOR MODAL */}
             <ImageEditorModal
                 isOpen={editorConfig.isOpen}
                 imageSrc={editorConfig.imageSrc}
@@ -728,7 +693,6 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                 onSave={handleSaveImage}
             />
 
-            {/* PORTAL FOR STATUS SELECTOR */}
             {!isReadOnly && selectorAnchor && createPortal(
                 <div className="fixed inset-0 z-[10001] md:bg-transparent bg-black/40 backdrop-blur-sm md:backdrop-blur-none flex items-end md:items-start transition-all" onClick={() => setSelectorAnchor(null)}>
                     <div
@@ -751,10 +715,10 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                                 <div className="w-12 h-1.5 bg-border-primary rounded-full mx-auto mt-2 mb-6" />
                             )}
                             {[
-                                { id: 'online', label: 'Trực tuyến', sub: 'Đang hoạt động', color: statusColors.online },
-                                { id: 'idle', label: 'Vắng mặt', sub: 'Đang bận xíu', color: statusColors.idle },
-                                { id: 'dnd', label: 'Đừng làm phiền', sub: 'Bận rộn', color: statusColors.dnd },
-                                { id: 'offline', label: 'Ngoại tuyến', sub: 'Đang ẩn mình', color: statusColors.offline }
+                                { id: 'online', label: t('online'), sub: t('online_sub'), color: statusColors.online },
+                                { id: 'idle', label: t('idle'), sub: t('idle_sub'), color: statusColors.idle },
+                                { id: 'dnd', label: t('dnd'), sub: t('dnd_sub'), color: statusColors.dnd },
+                                { id: 'offline', label: t('offline'), sub: t('offline_sub'), color: statusColors.offline }
                             ].map((opt) => (
                                 <button
                                     key={opt.id}

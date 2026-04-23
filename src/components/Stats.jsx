@@ -1,10 +1,13 @@
+import { useLanguage } from "../context/LanguageContext";
+
 /**
  * Stats component - Phiên bản "Soft Capsule" với Icon Tối giản (Outline)
  */
 export default function Stats({ items }) {
+  const { t } = useLanguage();
   const statsData = [
     {
-      label: "Tổng điều ước",
+      label: t("total_wishes"),
       value: items.length,
       textColor: "text-pink-600",
       icon: (
@@ -14,7 +17,7 @@ export default function Stats({ items }) {
       )
     },
     {
-      label: "Có hình ảnh",
+      label: t("with_images"),
       value: items.filter(i => i.anhUrl).length,
       textColor: "text-purple-600",
       icon: (
@@ -26,7 +29,7 @@ export default function Stats({ items }) {
       )
     },
     {
-      label: "Có ghi chú",
+      label: t("with_notes"),
       value: items.filter(i => i.ghiChu).length,
       textColor: "text-orange-600",
       icon: (

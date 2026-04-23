@@ -1,8 +1,11 @@
+import { useLanguage } from "../context/LanguageContext";
+
 /**
  * Footer Component
  * Chân trang với phong cách lãng mạn, hiện đại
  */
 export default function Footer() {
+  const { t } = useLanguage();
   return (
     <footer className="relative bg-bg-secondary/50 backdrop-blur-md border-t border-border-primary/50 py-16 mt-20 overflow-hidden">
       {/* Các đốm màu trang trí phía sau (Glow effect) */}
@@ -22,16 +25,16 @@ export default function Footer() {
             </h2>
           </div>
           <p className="text-[15px] text-text-muted leading-relaxed font-medium">
-            Nơi ghi giữ những điều mơ ước, cùng nhau chinh phục từng mục tiêu nhỏ để tạo nên một hành trình hạnh phúc lớn lao.
+            {t("about_wishlist")}
           </p>
         </div>
 
         {/* Links Groups */}
         <div className="flex flex-wrap gap-12 md:gap-24">
           <div>
-            <h3 className="text-xs uppercase tracking-[2px] font-black text-text-muted mb-6">Chuyên mục</h3>
+            <h3 className="text-xs uppercase tracking-[2px] font-black text-text-muted mb-6">{t("categories")}</h3>
             <ul className="flex flex-col gap-4">
-              {['Trang chủ', 'Khám phá', 'Hỗ trợ'].map((item) => (
+              {[t('home'), t('personal'), t('groups')].map((item) => (
                 <li key={item}>
                   <a href="#" className="text-[15px] font-bold text-text-secondary hover:text-pink-500 transition-all flex items-center group">
                     <span className="w-0 group-hover:w-2 h-[2px] bg-pink-400 mr-0 group-hover:mr-2 transition-all"></span>
@@ -43,9 +46,9 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="text-xs uppercase tracking-[2px] font-black text-text-muted mb-6">Pháp lý</h3>
+            <h3 className="text-xs uppercase tracking-[2px] font-black text-text-muted mb-6">{t("legal")}</h3>
             <ul className="flex flex-col gap-4">
-              {['Điều khoản', 'Bảo mật'].map((item) => (
+              {[t('terms'), t('privacy')].map((item) => (
                 <li key={item}>
                   <a href="#" className="text-[15px] font-bold text-text-secondary hover:text-pink-500 transition-all flex items-center group">
                     <span className="w-0 group-hover:w-2 h-[2px] bg-pink-400 mr-0 group-hover:mr-2 transition-all"></span>

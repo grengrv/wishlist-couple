@@ -1,7 +1,17 @@
 import { useState } from "react";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function AboutSection() {
   const [isOpen, setIsOpen] = useState(false);
+  const { t } = useLanguage();
+
+  const formatText = (text) => {
+    if (!text) return "";
+    // Simple markdown-like formatter for ** and *
+    return text
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.*?)\*/g, "<em>$1</em>");
+  };
 
   return (
     <section className="mb-12 relative overflow-hidden bg-bg-secondary/60 backdrop-blur-xl rounded-3xl border border-border-primary shadow-sm transition-all duration-300 hover:shadow-md group">
@@ -23,7 +33,7 @@ export default function AboutSection() {
 
           {/* Tiêu đề dùng gradient text */}
           <h3 className="text-lg sm:text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-600 to-rose-400 text-left">
-            Tại sao chúng ta cần một Wishlist?
+            {t("about_title")}
           </h3>
         </div>
 
@@ -44,15 +54,15 @@ export default function AboutSection() {
         <div className="overflow-hidden">
           <div className="px-6 pb-6 sm:px-8 sm:pb-8 pt-0">
             {/* Thanh line dọc bên trái giúp text gọn gàng hơn */}
-            <p
+            <div
               className={`text-[15px] sm:text-base leading-relaxed text-text-secondary border-l-[3px] border-border-primary pl-4 sm:pl-5 transition-all duration-500 delay-75 transform ${isOpen ? "translate-y-0 opacity-100" : "-translate-y-4 opacity-0"}`}
             >
-              Trong cuộc sống bộn bề, đôi khi chúng ta dễ dàng quên đi những mong muốn giản đơn giữa hai người. Một danh sách <strong>Wishlist</strong> sẽ như một <em>hòm thư nhỏ</em>, nơi cất giữ những ý tưởng quà tặng, những quán cà phê muốn ghé, hay những vùng đất mới chờ được khám phá.
-              <br /><br />
+              <p dangerouslySetInnerHTML={{ __html: formatText(t("about_desc_1")) }} />
+              <br />
               <span className="text-pink-600 font-medium tracking-wide">
-                Hãy để đây là nơi nuôi dưỡng tình yêu qua từng mục tiêu chung. ✨
+                {t("about_desc_2")}
               </span>
-            </p>
+            </div>
           </div>
         </div>
       </div>

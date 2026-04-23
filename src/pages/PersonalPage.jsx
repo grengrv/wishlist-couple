@@ -7,12 +7,14 @@ import { useWishlist } from "../hooks/useWishlist";
 import { useEffect } from "react";
 import { ADMIN_EMAIL } from "../constants";
 import { notifyXoaWish } from "../utils/notify";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function PersonalPage({ user, userProfile }) {
   const navigate = useNavigate();
   const [selectedItem, setSelectedItem] = useState(null);
   const { items, xoaMon, thichMon, binhLuanMon, xoaBinhLuan, thichBinhLuan } = useWishlist(user, userProfile, null);
   const [searchParams, setSearchParams] = useSearchParams();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const wishId = searchParams.get("wishId");
@@ -56,10 +58,10 @@ export default function PersonalPage({ user, userProfile }) {
 
         <div className="text-center md:text-left flex-1">
           <h2 className="text-3xl md:text-5xl font-black text-text-primary tracking-tight">
-            Chào, <span className="text-pink-500">{userProfile?.username || "Bạn nhỏ"}!</span>
+            {t("hello")}, <span className="text-pink-500">{userProfile?.username || t("default_friend")}!</span>
           </h2>
           <p className="text-text-secondary font-bold mt-2 text-lg">
-            Hôm nay chúng mình sẽ cùng thực hiện điều gì đây?
+            {t("personal_subtitle")}
           </p>
         </div>
 
@@ -76,7 +78,7 @@ export default function PersonalPage({ user, userProfile }) {
       <div className="mt-20">
         <div className="lg:col-span-2">
           <div className="flex items-center gap-4 mb-10 px-4">
-            <h3 className="text-2xl font-black text-text-primary tracking-tighter uppercase">Danh sách của bạn</h3>
+            <h3 className="text-2xl font-black text-text-primary tracking-tighter uppercase">{t("your_list")}</h3>
             <div className="h-[2px] flex-1 bg-gradient-to-r from-border-primary to-transparent"></div>
           </div>
 

@@ -13,6 +13,7 @@ import Footer from "./components/Footer";
 import Auth from "./auths/Auth";
 import Admin from "./Admin/Admin";
 import { ADMIN_EMAIL } from "./constants";
+import BottomNav from "./components/BottomNav";
 
 // Pages
 import HomePage from "./pages/HomePage";
@@ -22,7 +23,10 @@ import InvitePage from "./pages/InvitePage";
 import AddWishPage from "./pages/AddWishPage";
 import PersonalPage from "./pages/PersonalPage";
 
+import { useLanguage } from "./context/LanguageContext";
+
 function App() {
+  const { t } = useLanguage();
   const [userProfile, setUserProfile] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
   const [user, setUser] = useState(null);
@@ -34,7 +38,7 @@ function App() {
       await signOut(auth);
       notifyLogout();
     } catch (err) {
-      notifyError("Đăng xuất thất bại");
+      notifyError(t("logout_failed"));
     }
   };
 
@@ -75,7 +79,7 @@ function App() {
   if (checking) {
     return (
       <div className="auth-wrap">
-        <p style={{ color: "#c2185b" }}>Đang tải...</p>
+        <p style={{ color: "#c2185b" }}>{t("loading")}</p>
       </div>
     );
   }
@@ -83,7 +87,7 @@ function App() {
   // ── Cấu trúc Web Component ──
   return (
     <ConfirmProvider>
-      <div className="min-h-screen flex flex-col bg-bg-primary relative">
+      <div id="app-root" className="min-h-screen flex flex-col bg-bg-primary relative">
         <AppToast />
         <Header
           user={user}
@@ -121,6 +125,7 @@ function App() {
           )}
         </main>
 
+        <BottomNav user={user} onOpenProfile={() => setShowProfile(true)} />
         <Footer />
       </div>
     </ConfirmProvider>
