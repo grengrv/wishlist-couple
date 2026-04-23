@@ -11,7 +11,7 @@ export default function ThemeToggle() {
   const toggleTheme = () => {
     const newMode = !isDark;
     setIsDark(newMode);
-    
+
     if (newMode) {
       document.documentElement.classList.add("dark");
       localStorage.setItem("theme", "dark");
@@ -24,7 +24,9 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="w-10 h-10 rounded-2xl flex items-center justify-center bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-300 group"
+      className="w-10 h-10 rounded-2xl flex items-center 
+                justify-center bg-gray-200 dark:bg-gray-100 
+                hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-300 group"
       aria-label="Toggle theme"
     >
       {isDark ? (
@@ -59,7 +61,7 @@ export default function ThemeToggle() {
           strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="text-gray-600 group-hover:-rotate-12 transition-transform"
+          className="text-black group-hover:-rotate-12 transition-transform"
         >
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
         </svg>
