@@ -66,6 +66,9 @@ export function useGroups(user, userProfile) {
       action: "add_member",
       targetId: user.uid,
       targetName: userProfile?.username || user.displayName || user.email,
+      targetRoute: `/group/${groupId}`,
+      timestamp: new Date(),
+      date: new Date().toISOString().split("T")[0],
       createdAt: new Date()
     });
 
@@ -129,7 +132,7 @@ export function useGroups(user, userProfile) {
     const gData = groupSnap.data();
 
     if (gData.ownerUid !== user.uid) return { error: "Bạn không có quyền thực hiện hành động này." };
-    
+
     await updateDoc(groupRef, {
       members: arrayRemove(memberUid)
     });
@@ -143,6 +146,9 @@ export function useGroups(user, userProfile) {
       action: "kick_member",
       targetId: memberUid,
       targetName: memberName,
+      targetRoute: `/group/${groupId}`,
+      timestamp: new Date(),
+      date: new Date().toISOString().split("T")[0],
       createdAt: new Date()
     });
 
@@ -162,13 +168,13 @@ export function useGroups(user, userProfile) {
 
   async function addMemberByUsername(groupId, username) {
     if (!username.trim()) return { error: "Vui lòng nhập tên người dùng." };
-    
+
     // Find user by username
     const q = query(collection(db, "users"), where("username", "==", username.trim()));
     const snap = await getDocs(q);
-    
+
     if (snap.empty) return { error: 404 }; // Not found
-    
+
     const targetUser = snap.docs[0].data();
     const targetUid = snap.docs[0].id;
 
@@ -191,6 +197,9 @@ export function useGroups(user, userProfile) {
       action: "add_member",
       targetId: targetUid,
       targetName: username,
+      targetRoute: `/group/${groupId}`,
+      timestamp: new Date(),
+      date: new Date().toISOString().split("T")[0],
       createdAt: new Date()
     });
 

@@ -4,6 +4,8 @@ import { formatNgay } from "../utils/formatDate";
 import Avatar from "./ui/Avatar";
 import { notifyError } from "../utils/notify";
 import ConfirmModal from "./ui/ConfirmModal";
+import MentionInput from "./MentionInput";
+import MentionText from "./MentionText";
 import { db } from "../firebase";
 import { 
   collection, query, where, orderBy, onSnapshot, doc, getDocs, deleteDoc 
@@ -16,8 +18,6 @@ const COMMON_EMOJIS = [
 
 export default function ItemModal({ item, onClose, onDelete, user, userProfile, adminEmail, onLike, onComment, onDeleteComment, onLikeComment, members = [] }) {
   const [comment, setComment] = useState("");
-  const [showMentions, setShowMentions] = useState(false);
-  const [mentionFilter, setMentionFilter] = useState("");
   const [isAnimatingLike, setIsAnimatingLike] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState(null); // { id: string, isReply: bool }
@@ -283,9 +283,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                             <div className="flex items-baseline gap-2 flex-wrap">
                               <span className="text-[13px] font-black text-text-primary">{c.username}</span>
                               <div className="text-[14px] text-text-secondary font-medium leading-relaxed break-words">
-                                {c.content.split(/(@\w+)/g).map((part, i) =>
-                                  part.startsWith('@') ? <span key={i} className="text-pink-500 font-black cursor-pointer hover:underline">{part}</span> : part
-                                )}
+                                <MentionText content={c.content} />
                               </div>
                             </div>
 
@@ -385,9 +383,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                                     <div className="text-[13px] leading-relaxed">
                                       <span className="font-black text-text-primary mr-2">{reply.username}</span>
                                       <span className="text-text-secondary font-medium break-words">
-                                        {reply.content.split(/(@\w+)/g).map((part, i) =>
-                                          part.startsWith('@') ? <span key={i} className="text-pink-500 font-black">{part}</span> : part
-                                        )}
+                                        <MentionText content={reply.content} />
                                       </span>
                                     </div>
 
@@ -474,12 +470,11 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                         {replyingTo === c.id && (
                           <div className="ml-10 mt-2 flex items-center gap-3 animate-fade-in bg-bg-primary/50 p-2 rounded-xl border border-border-primary/50">
                             <Avatar src={userProfile?.avatar} name={userProfile?.username} size="xs" className="w-6 h-6" />
-                            <input
-                              autoFocus
+                            <MentionInput
                               value={replyText}
-                              onChange={(e) => setReplyText(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' && replyText.trim()) {
+                              onChange={setReplyText}
+                              onSubmit={() => {
+                                if (replyText.trim()) {
                                   onComment(item.id, replyText, c.id, true, replyTargetUser);
                                   setReplyText("");
                                   setReplyingTo(null);
@@ -487,7 +482,11 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                                 }
                               }}
                               placeholder={`Trả lời ${c.username}...`}
-                              className="flex-1 bg-transparent outline-none text-[13px] font-medium placeholder:text-text-muted"
+                              currentUsername={userProfile?.username}
+                              members={members}
+                              maxLength={200}
+                              autoFocus
+                              className="text-[13px]"
                             />
                             <button
                               disabled={!replyText.trim()}
@@ -497,7 +496,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                                 setReplyingTo(null);
                                 setReplyTargetUser(null);
                               }}
-                              className="text-[12px] font-black text-pink-500 disabled:opacity-30"
+                              className="text-[12px] font-black text-pink-500 disabled:opacity-30 shrink-0"
                             >
                               Gửi
                             </button>
@@ -572,30 +571,7 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
 
               {/* COMMENT INPUT */}
               <div className="p-4 border-t border-border-primary/50 relative">
-                {/* Mentions Popup */}
-                {showMentions && members.length > 0 && (
-                  <div className="absolute bottom-full left-0 w-full bg-bg-secondary border-t border-border-primary shadow-2xl p-2 z-[100] max-h-[200px] overflow-y-auto custom-scrollbar animate-slide-up">
-                    <p className="text-[10px] font-black text-text-muted uppercase tracking-widest p-2 mb-1">Nhắc tên thành viên</p>
-                    {members.filter(m => m.username.toLowerCase().includes(mentionFilter.toLowerCase())).map(m => (
-                      <button
-                        key={m.uid}
-                        onClick={() => {
-                          const lastAt = comment.lastIndexOf('@');
-                          const before = comment.substring(0, lastAt);
-                          setComment(before + '@' + m.username + ' ');
-                          setShowMentions(false);
-                        }}
-                        className="w-full flex items-center gap-3 p-2.5 hover:bg-bg-primary rounded-xl transition-all group"
-                      >
-                        <Avatar src={m.avatar} name={m.username} size="sm" className="group-hover:scale-105 transition-transform" />
-                        <div className="flex flex-col items-start">
-                          <span className="text-[13px] font-black text-text-primary">@{m.username}</span>
-                          <span className="text-[11px] text-text-muted font-bold">{m.displayName || m.username}</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
+
 
                 {/* Emoji Picker Popup */}
                 {showEmojiPicker && (
@@ -624,41 +600,20 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
                       <line x1="15" y1="9" x2="15.01" y2="9"></line>
                     </svg>
                   </button>
-                  <div className="flex-1">
-                    <textarea
-                      rows="1"
-                      value={comment}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val.length > 200) return;
-                        setComment(val);
-
-                        const lastAt = val.lastIndexOf('@');
-                        if (lastAt !== -1 && lastAt >= val.length - 20) {
-                          const textAfterAt = val.substring(lastAt + 1);
-                          if (!textAfterAt.includes(' ')) {
-                            setShowMentions(true);
-                            setMentionFilter(textAfterAt);
-                          } else {
-                            setShowMentions(false);
-                          }
-                        } else {
-                          setShowMentions(false);
-                        }
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          if (comment.trim()) {
-                            onComment(item.id, comment);
-                            setComment("");
-                          }
-                        }
-                      }}
-                      placeholder="Thêm bình luận..."
-                      className="w-full bg-transparent outline-none text-[14px] font-medium text-text-primary placeholder:text-text-muted placeholder:font-bold py-1.5 resize-none max-h-32 custom-scrollbar"
-                    />
-                  </div>
+                  <MentionInput
+                    value={comment}
+                    onChange={setComment}
+                    onSubmit={() => {
+                      if (comment.trim()) {
+                        onComment(item.id, comment);
+                        setComment("");
+                      }
+                    }}
+                    placeholder="Thêm bình luận..."
+                    currentUsername={userProfile?.username}
+                    members={members}
+                    maxLength={200}
+                  />
                   <button
                     disabled={!comment.trim()}
                     onClick={() => {

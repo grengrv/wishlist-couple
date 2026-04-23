@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { db } from "../firebase";
-import { 
-  collection, query, where, orderBy, onSnapshot, 
-  updateDoc, doc, writeBatch 
+import {
+  collection, query, where, orderBy, onSnapshot,
+  updateDoc, doc, writeBatch
 } from "firebase/firestore";
 import toast from "react-hot-toast";
 import Avatar from "../components/ui/Avatar";
@@ -28,20 +28,20 @@ export function useNotifications(user) {
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      
+
       // Update unread count
       setUnreadCount(data.filter(n => !n.isRead).length);
-      
+
       // Detect new notifications for sound
       const currentIds = new Set(data.map(n => n.id));
       if (!isFirstLoad.current) {
         const newItems = data.filter(n => !prevIds.current.has(n.id));
         if (newItems.length > 0) {
           const now = Date.now();
-          
+
           // Sound
           if (!isMuted && now - lastSoundTime.current > 2000) {
-            audioRef.current.play().catch(() => {});
+            audioRef.current.play().catch(() => { });
             lastSoundTime.current = now;
           }
 
@@ -53,13 +53,15 @@ export function useNotifications(user) {
                 <div className="flex flex-col gap-0.5 min-w-0">
                   <p className="text-xs text-text-primary font-bold">
                     {n.senderName} <span className="font-normal text-text-muted">
-                      {n.type === 'like' ? 'đã thích điều ước của bạn' : 
-                       n.type === 'comment' ? 'đã bình luận về điều ước của bạn' : 
-                       n.type === 'reply' ? 'đã trả lời bình luận của bạn' :
-                       n.type === 'join_group' ? `đã tham gia nhóm "${n.groupName}" của bạn` :
-                       n.type === 'post_group' ? `đã gửi điều ước mới trong "${n.groupName}"` : 
-                       n.type === 'added_to_group' ? `đã thêm bạn vào nhóm "${n.groupName}"` :
-                       n.type === 'kicked' ? `đã mời bạn rời khỏi nhóm "${n.groupName}"` : 'đã tương tác với bạn'}
+                      {n.type === 'like' ? 'đã thích điều ước của bạn' :
+                        n.type === 'comment' ? 'đã bình luận về điều ước của bạn' :
+                          n.type === 'reply' ? 'đã trả lời bình luận của bạn' :
+                            n.type === 'like_comment' ? 'đã thích bình luận của bạn' :
+                              n.type === 'tag' ? (n.replyId ? 'đã gắn thẻ bạn trong một phản hồi' : 'đã gắn thẻ bạn trong một bình luận') :
+                                n.type === 'join_group' ? `đã tham gia nhóm "${n.groupName}" của bạn` :
+                                  n.type === 'post_group' ? `đã gửi điều ước mới trong "${n.groupName}"` :
+                                    n.type === 'added_to_group' ? `đã thêm bạn vào nhóm "${n.groupName}"` :
+                                      n.type === 'kicked' ? `đã mời bạn rời khỏi nhóm "${n.groupName}"` : 'đã tương tác với bạn'}
                     </span>
                   </p>
                   {(n.wishTitle || n.groupName) && (
@@ -84,15 +86,17 @@ export function useNotifications(user) {
   }, [user, isMuted]);
 
   function groupNotifications(notifs) {
-    const groups = [];
     const groupMap = new Map();
 
     notifs.forEach(n => {
+      // Group by type + wishId (or groupId as fallback)
       const groupKey = n.wishId ? n.wishId : (n.groupId ? n.groupId : 'global');
       const key = `${n.type}-${groupKey}`;
+
       if (!groupMap.has(key)) {
         groupMap.set(key, {
           ...n,
+          senderIds: new Set([n.senderId]),   // track unique senderIds
           senders: [n.senderName],
           senderAvatars: [n.senderAvatar],
           ids: [n.id],
@@ -100,22 +104,26 @@ export function useNotifications(user) {
         });
       } else {
         const group = groupMap.get(key);
-        if (!group.senders.includes(n.senderName)) {
+        // Only add sender info if this is a NEW unique sender
+        if (!group.senderIds.has(n.senderId)) {
+          group.senderIds.add(n.senderId);
           group.senders.push(n.senderName);
           group.senderAvatars.push(n.senderAvatar);
+          group.count++;
         }
+        // Always collect raw doc IDs (for markAsRead batch)
         group.ids.push(n.id);
-        group.count++;
         // Keep the latest createdAt
         if (new Date(n.createdAt?.toDate?.() || n.createdAt) > new Date(group.createdAt?.toDate?.() || group.createdAt)) {
-            group.createdAt = n.createdAt;
+          group.createdAt = n.createdAt;
         }
-        // If any item is unread, the group is unread
+        // If any item is unread, mark the whole group unread
         if (!n.isRead) group.isRead = false;
       }
     });
 
-    return Array.from(groupMap.values());
+    // Strip the non-serialisable Set before returning
+    return Array.from(groupMap.values()).map(({ senderIds, ...rest }) => rest);
   }
 
   async function markAsRead(ids) {

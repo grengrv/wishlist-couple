@@ -227,6 +227,9 @@ export function useWishlist(user, userProfile, groupId = null) {
               action: "create_wish",
               targetId: docRef.id,
               targetName: tenMon,
+              targetRoute: `/group/${groupId}?wishId=${docRef.id}`,
+              timestamp: new Date(),
+              date: new Date().toISOString().split("T")[0],
               createdAt: new Date()
             });
           }
@@ -336,15 +339,61 @@ export function useWishlist(user, userProfile, groupId = null) {
     const item = items.find(i => i.id === wishId);
     if (!item) return;
 
+    const MAX_TAGS = 5;
+    const senderName   = userProfile?.username || user.displayName || user.email || "Someone";
+    const senderAvatar = userProfile?.avatar || null;
+    const targetRoute  = getTargetRoute(item);
+
+    /**
+     * Send "tag" notifications for every @mention in `text`.
+     * `alreadyNotified` – Set of UIDs that already received a notification
+     * in the same action, so we never double-ping.
+     */
+    async function sendTagNotifications(text, docId, replyId, alreadyNotified) {
+      const raw = text.match(/@(\w+)/g);
+      if (!raw) return;
+
+      // Deduplicate usernames inside this content (max MAX_TAGS unique)
+      const uniqueUsernames = [...new Set(raw.map(m => m.substring(1)))].slice(0, MAX_TAGS);
+
+      for (const mentionedUsername of uniqueUsernames) {
+        if (mentionedUsername.toLowerCase() === userProfile?.username?.toLowerCase()) continue; // self
+
+        const userQ = query(collection(db, "users"), where("username", "==", mentionedUsername));
+        const userSnap = await getDocs(userQ);
+        if (userSnap.empty) continue;
+
+        const targetUid = userSnap.docs[0].id;
+        if (alreadyNotified.has(targetUid)) continue; // already got a notification this action
+        alreadyNotified.add(targetUid);
+
+        await addDoc(collection(db, "notifications"), {
+          userId: targetUid,
+          senderId: user.uid,
+          senderName,
+          senderAvatar,
+          type: "tag",
+          wishId: wishId,
+          wishTitle: item.ten,
+          commentId: docId,
+          replyId: replyId || null,   // ← FIX: correctly set for replies
+          groupId: item.groupId || null,
+          targetRoute,
+          isRead: false,
+          createdAt: new Date()
+        });
+      }
+    }
+
     try {
       if (isReply && targetCommentId) {
-        // ADD REPLY
+        // ── ADD REPLY ────────────────────────────────────────────────
         const reply = {
           wishId: wishId,
-          commentId: targetCommentId, // Parent comment
+          commentId: targetCommentId,
           userId: user.uid,
           username: userProfile?.username || user.displayName || user.email || "Khách",
-          avatar: userProfile?.avatar || null,
+          avatar: senderAvatar,
           content: content.trim(),
           createdAt: new Date(),
           replyTo: replyTarget ? { userId: replyTarget.userId, username: replyTarget.username } : null
@@ -354,64 +403,41 @@ export function useWishlist(user, userProfile, groupId = null) {
         toastStore.show("Đã trả lời");
         await updateDoc(doc(db, "wishlist", wishId), { commentCount: increment(1) });
 
-        // NOTIFY Parent Comment Owner
-        if (replyTarget && replyTarget.userId !== user.uid) {
-           await addDoc(collection(db, "notifications"), {
-              userId: replyTarget.userId,
-              senderId: user.uid,
-              senderName: userProfile?.username || user.displayName || user.email || "Someone",
-              senderAvatar: userProfile?.avatar || null,
-              type: "reply",
-              wishId: wishId,
-              wishTitle: item.ten,
-              commentId: targetCommentId, // Navigate to parent comment
-              groupId: item.groupId || null,
-              targetRoute: getTargetRoute(item),
-              isRead: false,
-              createdAt: new Date()
-            });
+        // Track who already got notified this action
+        const alreadyNotified = new Set([user.uid]);
+
+        // Notify the reply target (original commenter / mentioned user)
+        if (replyTarget && replyTarget.userId && replyTarget.userId !== user.uid) {
+          alreadyNotified.add(replyTarget.userId);
+          await addDoc(collection(db, "notifications"), {
+            userId: replyTarget.userId,
+            senderId: user.uid,
+            senderName,
+            senderAvatar,
+            type: "reply",
+            wishId: wishId,
+            wishTitle: item.ten,
+            commentId: targetCommentId,
+            replyId: docRef.id,
+            groupId: item.groupId || null,
+            targetRoute,
+            isRead: false,
+            createdAt: new Date()
+          });
         }
 
-        // NOTIFY Mentioned Users (@username) in Replies
-        const mentions = content.match(/@(\w+)/g);
-        if (mentions) {
-          for (const mention of mentions) {
-            const mentionedUsername = mention.substring(1);
-            if (mentionedUsername === (userProfile?.username)) continue; // Don't notify self
+        // Send tag notifications for @mentions inside the reply
+        await sendTagNotifications(content, targetCommentId, docRef.id, alreadyNotified);
 
-            // Find user by username
-            const userQ = query(collection(db, "users"), where("username", "==", mentionedUsername));
-            const userSnap = await getDocs(userQ);
-            if (!userSnap.empty) {
-                const targetUid = userSnap.docs[0].id;
-                if (targetUid === (replyTarget?.userId)) continue; // Already notified as reply target
-
-                await addDoc(collection(db, "notifications"), {
-                    userId: targetUid,
-                    senderId: user.uid,
-                    senderName: userProfile?.username || user.displayName || user.email || "Someone",
-                    senderAvatar: userProfile?.avatar || null,
-                    type: "tag",
-                    wishId: wishId,
-                    wishTitle: item.ten,
-                    commentId: docRef.id,
-                    groupId: item.groupId || null,
-                    targetRoute: getTargetRoute(item),
-                    isRead: false,
-                    createdAt: new Date()
-                });
-            }
-          }
-        }
       } else {
-        // ADD TOP-LEVEL COMMENT
+        // ── ADD TOP-LEVEL COMMENT ────────────────────────────────────
         if (content.length > 200) { notifyError("Bình luận tối đa 200 ký tự."); return; }
 
         const comment = {
           wishId: wishId,
           userId: user.uid,
           username: userProfile?.username || user.displayName || user.email || "Khách",
-          avatar: userProfile?.avatar || null,
+          avatar: senderAvatar,
           content: content.trim(),
           createdAt: new Date()
         };
@@ -420,55 +446,29 @@ export function useWishlist(user, userProfile, groupId = null) {
         toastStore.show("Đã thêm bình luận");
         await updateDoc(doc(db, "wishlist", wishId), { commentCount: increment(1) });
 
-        // NOTIFY Wish Owner
-        if (item.uid !== user.uid) {
+        const alreadyNotified = new Set([user.uid]);
+
+        // Notify wish owner
+        if (item.uid && item.uid !== user.uid) {
+          alreadyNotified.add(item.uid);
           await addDoc(collection(db, "notifications"), {
             userId: item.uid,
             senderId: user.uid,
-            senderName: userProfile?.username || user.displayName || user.email || "Someone",
-            senderAvatar: userProfile?.avatar || null,
+            senderName,
+            senderAvatar,
             type: "comment",
             wishId: wishId,
             wishTitle: item.ten,
             commentId: docRef.id,
             groupId: item.groupId || null,
-            targetRoute: getTargetRoute(item),
+            targetRoute,
             isRead: false,
             createdAt: new Date()
           });
         }
 
-        // NOTIFY Mentioned Users (@username)
-        const mentions = content.match(/@(\w+)/g);
-        if (mentions) {
-          for (const mention of mentions) {
-            const mentionedUsername = mention.substring(1);
-            if (mentionedUsername === (userProfile?.username)) continue; // Don't notify self
-
-            // Find user by username
-            const userQ = query(collection(db, "users"), where("username", "==", mentionedUsername));
-            const userSnap = await getDocs(userQ);
-            if (!userSnap.empty) {
-                const targetUid = userSnap.docs[0].id;
-                if (targetUid === item.uid) continue; // Already notified as owner
-
-                await addDoc(collection(db, "notifications"), {
-                    userId: targetUid,
-                    senderId: user.uid,
-                    senderName: userProfile?.username || user.displayName || user.email || "Someone",
-                    senderAvatar: userProfile?.avatar || null,
-                    type: "tag",
-                    wishId: wishId,
-                    wishTitle: item.ten,
-                    commentId: docRef.id,
-                    groupId: item.groupId || null,
-                    targetRoute: getTargetRoute(item),
-                    isRead: false,
-                    createdAt: new Date()
-                });
-            }
-          }
-        }
+        // Send tag notifications for @mentions inside the comment
+        await sendTagNotifications(content, docRef.id, null, alreadyNotified);
       }
       return true;
     } catch (err) {
@@ -477,6 +477,7 @@ export function useWishlist(user, userProfile, groupId = null) {
       return false;
     }
   }
+
 
   /** Xóa bình luận hoặc Phản hồi */
   async function xoaBinhLuan(wishId, id, isReply = false) {
@@ -517,8 +518,61 @@ export function useWishlist(user, userProfile, groupId = null) {
           type: type, // comment | reply
           userId: user.uid,
           username: userProfile?.username || user.displayName || user.email || "Khách",
+          avatar: userProfile?.avatar || null,
           createdAt: new Date()
         });
+
+        // TRIGGER like_comment NOTIFICATION
+        try {
+          const collName = type === "reply" ? "replies" : "comments";
+          const targetDoc = await getDoc(doc(db, collName, targetId));
+
+          if (targetDoc.exists()) {
+            const targetData = targetDoc.data();
+            const ownerId = targetData.userId;
+
+            // Don't self-notify
+            if (ownerId && ownerId !== user.uid) {
+              // Prevent duplicate: check if we already sent like_comment for this target from this sender
+              const dupQ = query(
+                collection(db, "notifications"),
+                where("userId", "==", ownerId),
+                where("senderId", "==", user.uid),
+                where("type", "==", "like_comment"),
+                where("commentId", "==", targetId)
+              );
+              const dupSnap = await getDocs(dupQ);
+              if (dupSnap.empty) {
+                const wishId = targetData.wishId || null;
+                let targetRoute = "/personal";
+                if (wishId) {
+                  try {
+                    const wishDoc = await getDoc(doc(db, "wishlist", wishId));
+                    if (wishDoc.exists()) {
+                      const wishData = wishDoc.data();
+                      targetRoute = wishData.groupId ? `/groups/${wishData.groupId}` : "/personal";
+                    }
+                  } catch (_) {}
+                }
+
+                await addDoc(collection(db, "notifications"), {
+                  userId: ownerId,
+                  senderId: user.uid,
+                  senderName: userProfile?.username || user.displayName || user.email || "Someone",
+                  senderAvatar: userProfile?.avatar || null,
+                  type: "like_comment",
+                  wishId: wishId,
+                  commentId: targetId,
+                  targetRoute: targetRoute,
+                  isRead: false,
+                  createdAt: new Date()
+                });
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Error sending like_comment notification:", e);
+        }
       }
       return true;
     } catch (err) {

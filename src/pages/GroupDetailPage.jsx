@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { getDoc, doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
+import { motion, AnimatePresence } from "framer-motion";
 import { useWishlist } from "../hooks/useWishlist";
 import Stats from "../components/Stats";
 import AddForm from "../components/AddForm";
@@ -50,6 +51,13 @@ export default function GroupDetailPage({ user, userProfile }) {
     items, xoaMon, thichMon, binhLuanMon, xoaBinhLuan, thichBinhLuan
   } = useWishlist(user, userProfile, id);
 
+  const [filterUserId, setFilterUserId] = useState("all");
+
+  const filteredItems = React.useMemo(() => {
+    if (filterUserId === "all") return items;
+    return items.filter(item => item.uid === filterUserId);
+  }, [items, filterUserId]);
+
   useEffect(() => {
     const wishId = searchParams.get("wishId");
     if (wishId && items.length > 0) {
@@ -69,6 +77,7 @@ export default function GroupDetailPage({ user, userProfile }) {
   };
 
   const isEditingRef = useRef(false);
+  const kickedRef = useRef(false);
   useEffect(() => {
     isEditingRef.current = isEditing;
   }, [isEditing]);
@@ -84,6 +93,21 @@ export default function GroupDetailPage({ user, userProfile }) {
       }
 
       const gData = snap.data();
+
+      if (
+        user &&
+        gData.members &&
+        !gData.members.includes(user.uid) &&
+        user.email !== ADMIN_EMAIL &&
+        !kickedRef.current
+      ) {
+        kickedRef.current = true;
+        toast.error("Quyền truy cập của bạn đã thay đổi hoặc bạn không còn là thành viên nhóm này.");
+        setTimeout(() => {
+          navigate("/groups");
+        }, 1500);
+        return;
+      }
 
       // Tự động tạo inviteCode nếu nhóm cũ chưa có
       if (!gData.inviteCode) {
@@ -201,14 +225,14 @@ export default function GroupDetailPage({ user, userProfile }) {
     setIsAdding(true);
     const res = await addMemberByUsername(id, newUsername);
     setIsAdding(false);
-    
+
     if (res?.error === 404) toast.error("Không tìm thấy người dùng này.");
     else if (res?.error === 409) toast.error("Người dùng đã là thành viên.");
     else if (res?.success) {
-        toast.success(`Chào mừng ${newUsername} đến với nhóm!`);
-        setNewUsername("");
+      toast.success(`Chào mừng ${newUsername} đến với nhóm!`);
+      setNewUsername("");
     } else {
-        toast.error("Không thể thêm thành viên. Vui lòng thử lại.");
+      toast.error("Không thể thêm thành viên. Vui lòng thử lại.");
     }
   }
 
@@ -366,7 +390,43 @@ export default function GroupDetailPage({ user, userProfile }) {
 
         <Stats items={items} />
 
-        <WishList items={items} onSelectItem={setSelectedItem} />
+        {/* BỘ LỌC BÀI VIẾT THEO THÀNH VIÊN */}
+        {group?.memberProfiles?.length > 1 && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 flex gap-2 overflow-x-auto custom-scrollbar pb-2 px-1">
+            <button
+              onClick={() => setFilterUserId("all")}
+              className={`flex shrink-0 items-center gap-2 px-4 py-2 rounded-2xl whitespace-nowrap transition-all duration-300 ${filterUserId === "all" ? "bg-pink-hot text-white shadow-lg shadow-pink-hot/20" : "bg-card-bg border border-border-primary text-text-muted hover:border-pink-brand/30 hover:text-text-primary"}`}
+            >
+              <span className="font-bold text-xs uppercase tracking-widest">Tất cả</span>
+            </button>
+            
+            {group.memberProfiles.map(member => (
+              <button
+                key={member.uid}
+                onClick={() => setFilterUserId(member.uid)}
+                className={`flex shrink-0 items-center gap-2 px-3 py-1.5 rounded-2xl whitespace-nowrap transition-all duration-300 ${filterUserId === member.uid ? "bg-pink-hot text-white shadow-lg shadow-pink-hot/20" : "bg-card-bg border border-border-primary text-text-secondary hover:border-pink-brand/30 hover:text-text-primary"}`}
+              >
+                {member.avatar ? (
+                  <img src={member.avatar} alt="avatar" className="w-6 h-6 rounded-full object-cover" />
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-bg-secondary flex items-center justify-center text-[10px] font-bold text-pink-500">
+                    {(member.displayName || member.username || "?").charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="font-bold text-xs">{member.displayName || member.username}</span>
+              </button>
+            ))}
+          </motion.div>
+        )}
+
+        {filteredItems.length === 0 && filterUserId !== "all" ? (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-16 flex flex-col items-center justify-center text-center">
+            <div className="text-4xl mb-3 opacity-50">📭</div>
+            <p className="text-sm font-bold text-text-muted italic uppercase tracking-widest">Người này chưa đăng bài nào.</p>
+          </motion.div>
+        ) : (
+          <WishList items={filteredItems} onSelectItem={setSelectedItem} />
+        )}
 
         <ItemModal
           item={items.find(i => i.id === selectedItem?.id) || selectedItem}
@@ -414,24 +474,24 @@ export default function GroupDetailPage({ user, userProfile }) {
           </div>
 
           <div className="flex-1 flex flex-col min-h-0 bg-bg-primary/30">
-            
+
             {/* Top Section: Members */}
-            <div className="flex-1 flex flex-col min-h-0 border-b border-border-primary/50">
-              <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-6">
-                
-                {/* Add Member Section (Owner only) */}
-                {isOwner && (
-                  <div className="px-3 py-4 bg-white/5 rounded-3xl border border-white/5 mx-1">
+            <div className="flex-1 flex flex-col min-h-0 border-b border-border-primary/50 relative">
+
+              {/* Add Member Section (Owner only) - FIXED/STICKY */}
+              {isOwner && (
+                <div className="shrink-0 p-3 border-b border-border-primary/30 bg-card-bg/50 backdrop-blur-md z-10">
+                  <div className="px-3 py-4 bg-white/5 rounded-2xl border border-white/5">
                     <h4 className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-3 px-1">Thêm thành viên</h4>
                     <div className="flex items-center gap-2">
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={newUsername}
                         onChange={(e) => setNewUsername(e.target.value)}
                         placeholder="Nhập tên người dùng..."
                         className="flex-1 bg-bg-secondary/50 border border-white/5 rounded-xl px-3 py-2 text-xs outline-none focus:border-pink-500/50 transition-colors"
                       />
-                      <button 
+                      <button
                         onClick={handleAddMember}
                         disabled={isAdding || !newUsername.trim()}
                         className="w-10 h-10 bg-pink-hot text-white rounded-xl flex items-center justify-center shadow-lg shadow-pink-hot/20 disabled:opacity-30 active:scale-95 transition-all"
@@ -440,56 +500,68 @@ export default function GroupDetailPage({ user, userProfile }) {
                       </button>
                     </div>
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* Member List */}
+              {/* Member List - INDEPENDENT SCROLL */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-3">
                 <div className="space-y-1">
                   <h4 className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-3 px-4">Thành viên trong nhóm</h4>
-                  {group.memberProfiles?.map((member, idx) => {
-                    const statusColors = { online: "#34d399", idle: "#fbbf24", dnd: "#f43f5e", offline: "#9ca3af" };
-                    const isMemberOwner = member.uid === group.ownerUid;
-                    
-                    return (
-                      <div
-                        key={idx}
-                        className="flex items-center gap-3 p-3 hover:bg-card-bg rounded-2xl cursor-pointer transition-all duration-300 group/item hover:shadow-md border border-transparent hover:border-border-primary"
-                        onClick={() => setSelectedUser(member)}
-                      >
-                        <div className="relative shrink-0">
-                          {member.avatar ? (
-                            <img src={member.avatar} alt="avatar" className="w-[40px] h-[40px] rounded-[14px] object-cover shadow-sm group-hover/item:scale-105 transition-transform duration-300" />
-                          ) : (
-                            <div className="w-[40px] h-[40px] rounded-[14px] bg-gradient-to-br from-pink-400 to-rose-400 flex items-center justify-center text-white font-black text-lg shadow-sm group-hover/item:scale-105 transition-transform duration-300">
-                              {(member.displayName || member.username || "?").charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                          <div className="absolute -bottom-0.5 -right-0.5 w-[12px] h-[12px] rounded-full border-[2px] border-card-bg flex items-center justify-center bg-card-bg shadow-sm z-10 transition-colors">
-                            <div className="w-full h-full rounded-full" style={{ backgroundColor: statusColors[member.status || "online"] }}></div>
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <div className="font-bold text-[13px] text-text-primary truncate group-hover/item:text-pink-600 transition-colors">{member.displayName || member.username}</div>
-                            {isMemberOwner && <span className="text-[9px] font-black uppercase px-1.5 py-0.5 bg-pink-500/10 text-pink-500 rounded-md">Chủ phòng</span>}
-                          </div>
-                          <div className="text-[10px] text-text-muted font-medium truncate">@{member.username}</div>
-                        </div>
+                  {group.memberProfiles?.length === 0 ? (
+                    <p className="text-[11px] text-text-muted italic px-4">Chưa có thành viên nào.</p>
+                  ) : (
+                    <AnimatePresence initial={false}>
+                      {group.memberProfiles?.map((member, idx) => {
+                        const statusColors = { online: "#34d399", idle: "#fbbf24", dnd: "#f43f5e", offline: "#9ca3af" };
+                        const isMemberOwner = member.uid === group.ownerUid;
 
-                        {/* Kick Button (Only for owner, can't kick self) */}
-                        {isOwner && member.uid !== user.uid && (
-                          <button 
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleKick(member);
-                            }}
-                            className="opacity-0 group-hover/item:opacity-100 p-2 text-text-muted hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"
+                        return (
+                          <motion.div
+                            key={member.uid || idx}
+                            initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, x: -20 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex items-center gap-3 p-3 hover:bg-card-bg rounded-2xl cursor-pointer transition-colors duration-300 group/item hover:shadow-md border border-transparent hover:border-border-primary"
+                            onClick={() => setSelectedUser(member)}
                           >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
+                            <div className="relative shrink-0">
+                              {member.avatar ? (
+                                <img src={member.avatar} alt="avatar" className="w-[40px] h-[40px] rounded-[14px] object-cover shadow-sm group-hover/item:scale-105 transition-transform duration-300" />
+                              ) : (
+                                <div className="w-[40px] h-[40px] rounded-[14px] bg-gradient-to-br from-pink-400 to-rose-400 flex items-center justify-center text-white font-black text-lg shadow-sm group-hover/item:scale-105 transition-transform duration-300">
+                                  {(member.displayName || member.username || "?").charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <div className="absolute -bottom-0.5 -right-0.5 w-[12px] h-[12px] rounded-full border-[2px] border-card-bg flex items-center justify-center bg-card-bg shadow-sm z-10 transition-colors">
+                                <div className="w-full h-full rounded-full" style={{ backgroundColor: statusColors[member.status || "online"] }}></div>
+                              </div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <div className="font-bold text-[13px] text-text-primary truncate group-hover/item:text-pink-600 transition-colors">{member.displayName || member.username}</div>
+                                {isMemberOwner && <span className="text-[9px] font-black uppercase px-1.5 py-0.5 bg-pink-500/10 text-pink-500 rounded-md">Chủ phòng</span>}
+                              </div>
+                              <div className="text-[10px] text-text-muted font-medium truncate">@{member.username}</div>
+                            </div>
+
+                            {/* Kick Button (Only for owner, can't kick self) */}
+                            {isOwner && member.uid !== user.uid && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleKick(member);
+                                }}
+                                className="opacity-0 group-hover/item:opacity-100 p-2 text-text-muted hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                              </button>
+                            )}
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
+                  )}
                 </div>
               </div>
             </div>
