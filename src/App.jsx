@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { requestNotificationPermission } from "./utils/pushNotification";
 import { Routes, Route } from "react-router-dom";
 import { auth, db } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -14,6 +15,8 @@ import Auth from "./auths/Auth";
 import Admin from "./Admin/Admin";
 import { ADMIN_EMAIL } from "./constants";
 import BottomNav from "./components/BottomNav";
+import PWAUpdatePrompt from './components/PWAUpdatePrompt'
+import PWAUpdater from './components/PWAUpdater'
 
 // Pages
 import HomePage from "./pages/HomePage";
@@ -50,6 +53,9 @@ function App() {
       setChecking(false);
 
       if (u && !u.isAnonymous) {
+        // Request notification permission and save token
+        requestNotificationPermission(u.uid);
+
         // Load profile từ Firestore real-time
         unsubProfile = onSnapshot(doc(db, "users", u.uid), (docSnap) => {
           if (docSnap.exists()) {
@@ -128,6 +134,7 @@ function App() {
         <BottomNav user={user} onOpenProfile={() => setShowProfile(true)} />
         <Footer />
       </div>
+      <PWAUpdater />
     </ConfirmProvider>
   );
 }
