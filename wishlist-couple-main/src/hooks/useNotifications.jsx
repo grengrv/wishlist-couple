@@ -6,8 +6,10 @@ import {
 } from "firebase/firestore";
 import toast from "react-hot-toast";
 import Avatar from "../components/ui/Avatar";
+import { useLanguage } from "../context/LanguageContext";
 
 export function useNotifications(user) {
+  const { t } = useLanguage();
   const [notifications, setNotifications] = useState([]);
   const [groupedNotifications, setGroupedNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -53,15 +55,16 @@ export function useNotifications(user) {
                 <div className="flex flex-col gap-0.5 min-w-0">
                   <p className="text-xs text-text-primary font-bold">
                     {n.senderName} <span className="font-normal text-text-muted">
-                      {n.type === 'like' ? 'đã thích điều ước của bạn' :
-                        n.type === 'comment' ? 'đã bình luận về điều ước của bạn' :
-                          n.type === 'reply' ? 'đã trả lời bình luận của bạn' :
-                            n.type === 'like_comment' ? 'đã thích bình luận của bạn' :
-                              n.type === 'tag' ? (n.replyId ? 'đã gắn thẻ bạn trong một phản hồi' : 'đã gắn thẻ bạn trong một bình luận') :
-                                n.type === 'join_group' ? `đã tham gia nhóm "${n.groupName}" của bạn` :
-                                  n.type === 'post_group' ? `đã gửi điều ước mới trong "${n.groupName}"` :
-                                    n.type === 'added_to_group' ? `đã thêm bạn vào nhóm "${n.groupName}"` :
-                                      n.type === 'kicked' ? `đã mời bạn rời khỏi nhóm "${n.groupName}"` : 'đã tương tác với bạn'}
+                      {n.type === 'like' ? t('liked_your_wish').replace('{{name}}', '').trim() :
+                        n.type === 'comment' ? t('commented_on_wish').replace('{{name}}', '').trim() :
+                          n.type === 'reply' ? t('replied_to_comment').replace('{{name}}', '').trim() :
+                            n.type === 'like_comment' ? t('liked_your_comment').replace('{{name}}', '').trim() :
+                              n.type === 'tag' ? (n.replyId ? t('tagged_in_reply').replace('{{name}}', '').trim() : t('tagged_in_wish').replace('{{name}}', '').trim()) :
+                                n.type === 'join_group' ? t('joined_your_group', { groupName: n.groupName }).replace(n.senderName, '').trim() :
+                                  n.type === 'post_group' ? t('added_wish_in_group', { groupName: n.groupName }).replace(n.senderName, '').trim() :
+                                    n.type === 'added_to_group' ? t('added_you_to_group', { groupName: n.groupName }).replace(n.senderName, '').trim() :
+                                      n.type === 'kicked' ? t('kicked_you_from_group', { groupName: n.groupName }).replace(n.senderName, '').trim() : 
+                                        n.type === 'pin' ? t('pinnedYourWish') : t('unknown_action')}
                     </span>
                   </p>
                   {(n.wishTitle || n.groupName) && (

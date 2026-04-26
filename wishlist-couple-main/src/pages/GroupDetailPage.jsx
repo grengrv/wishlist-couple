@@ -60,7 +60,7 @@ export default function GroupDetailPage({ user, userProfile }) {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const {
-    items, xoaMon, thichMon, binhLuanMon, xoaBinhLuan, thichBinhLuan
+    items, xoaMon, thichMon, binhLuanMon, xoaBinhLuan, thichBinhLuan, toggleFavorite
   } = useWishlist(user, userProfile, id);
 
   const [filterUserId, setFilterUserId] = useState("all");
@@ -437,8 +437,8 @@ export default function GroupDetailPage({ user, userProfile }) {
             <p className="text-sm font-bold text-text-muted italic uppercase tracking-widest">{t("no_posts_yet")}</p>
           </motion.div>
         ) : (
-          <div className="w-full">
-            <WishList items={filteredItems} onSelectItem={setSelectedItem} />
+          <div className="w-full mt-4">
+            <WishList items={filteredItems} onSelectItem={setSelectedItem} onToggleFavorite={toggleFavorite} />
           </div>
         )}
 
@@ -602,6 +602,7 @@ export default function GroupDetailPage({ user, userProfile }) {
           onComment={binhLuanMon}
           onDeleteComment={xoaBinhLuan}
           onLikeComment={thichBinhLuan}
+          onToggleFavorite={toggleFavorite}
           members={group.memberProfiles}
           mode="group"
         />

@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from "react";
+import { useLanguage } from "../context/LanguageContext";
 import { useSearchParams, useLocation } from "react-router-dom";
 import { formatNgay } from "../utils/formatDate";
 import Avatar from "./ui/Avatar";
@@ -16,7 +17,11 @@ const COMMON_EMOJIS = [
   "😊", "😍", "🥰", "🥳", "🙌", "👍", "🍕", "🍔"
 ];
 
-export default function ItemModal({ item, onClose, onDelete, user, userProfile, adminEmail, onLike, onComment, onDeleteComment, onLikeComment, members = [] }) {
+export default function ItemModal({ 
+  item, onClose, onDelete, user, userProfile, adminEmail, onLike, onComment, 
+  onDeleteComment, onLikeComment, onToggleFavorite, members = [] 
+}) {
+  const { t } = useLanguage();
   const [comment, setComment] = useState("");
   const [isAnimatingLike, setIsAnimatingLike] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -214,6 +219,23 @@ export default function ItemModal({ item, onClose, onDelete, user, userProfile, 
               </div>
 
               <div className="flex items-center gap-1">
+                {/* Favorite Toggle */}
+                <button
+                  onClick={() => onToggleFavorite && onToggleFavorite(item)}
+                  className={`p-2 transition-all duration-300 rounded-full hover:bg-amber-400/10 flex items-center justify-center group/fav ${item.isFavorite ? 'text-amber-500 dark:text-amber-400 bg-amber-500/10' : 'text-text-muted hover:text-amber-400'}`}
+                  title={item.isFavorite ? t("unpin") : t("pin")}
+                >
+                  <svg 
+                    width="22" height="22" viewBox="0 0 24 24" 
+                    fill={item.isFavorite ? "currentColor" : "none"} 
+                    stroke="currentColor" 
+                    strokeWidth="2.5"
+                    className={`transition-transform duration-300 group-hover/fav:scale-110 ${item.isFavorite ? "animate-like-pop" : ""}`}
+                  >
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                  </svg>
+                </button>
+
                 {isAuthorOrAdmin && (
                   <button
                     onClick={() => onDelete(item.id)}

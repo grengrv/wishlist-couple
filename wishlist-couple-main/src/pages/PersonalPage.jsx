@@ -12,7 +12,7 @@ import { useLanguage } from "../context/LanguageContext";
 export default function PersonalPage({ user, userProfile }) {
   const navigate = useNavigate();
   const [selectedItem, setSelectedItem] = useState(null);
-  const { items, xoaMon, thichMon, binhLuanMon, xoaBinhLuan, thichBinhLuan } = useWishlist(user, userProfile, null);
+  const { items, xoaMon, thichMon, binhLuanMon, xoaBinhLuan, thichBinhLuan, toggleFavorite } = useWishlist(user, userProfile, null);
   const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useLanguage();
 
@@ -77,13 +77,9 @@ export default function PersonalPage({ user, userProfile }) {
 
       <div className="mt-20">
         <div className="lg:col-span-2">
-          <div className="flex items-center gap-4 mb-10 px-4">
-            <h3 className="text-2xl font-black text-text-primary tracking-tighter uppercase">{t("your_list")}</h3>
-            <div className="h-[2px] flex-1 bg-gradient-to-r from-border-primary to-transparent"></div>
-          </div>
 
           <div className="min-h-[400px]">
-            <WishList items={items} onSelectItem={setSelectedItem} />
+            <WishList items={items} onSelectItem={setSelectedItem} onToggleFavorite={toggleFavorite} />
           </div>
         </div>
       </div>
@@ -99,6 +95,7 @@ export default function PersonalPage({ user, userProfile }) {
         onComment={binhLuanMon}
         onDeleteComment={xoaBinhLuan}
         onLikeComment={thichBinhLuan}
+        onToggleFavorite={toggleFavorite}
       />
     </div>
   );

@@ -3,11 +3,12 @@ import { db } from "../firebase";
 import {
   collection, addDoc, getDocs, onSnapshot,
   deleteDoc, doc, orderBy, query, updateDoc, arrayUnion, arrayRemove, getDoc,
-  increment, where
+  increment, where, serverTimestamp
 } from "firebase/firestore";
 import { ADMIN_EMAIL } from "../constants";
 import { notifyError } from "../utils/notify";
 import { toastStore } from "../utils/toastStore";
+import { useLanguage } from "../context/LanguageContext";
 
 /**
  * Custom hook quản lý toàn bộ logic dữ liệu wishlist:
@@ -21,6 +22,7 @@ import { toastStore } from "../utils/toastStore";
  * @param {string|null} groupId - ID nhóm để lấy/lưu wish. Bỏ qua nếu là Public
  */
 export function useWishlist(user, userProfile, groupId = null) {
+  const { t } = useLanguage();
   const [items, setItems] = useState([]);
   const [tenMon, setTenMon] = useState("");
   const [ghiChu, setGhiChu] = useState("");
@@ -37,19 +39,56 @@ export function useWishlist(user, userProfile, groupId = null) {
   useEffect(() => {
     if (!user) return;
  
+    // CHÚ Ý: Firestore orderBy sẽ loại bỏ các document thiếu trường đó.
+    // Để hỗ trợ cả các document cũ chưa có isFavorite/favoriteAt, 
+    // chúng ta lấy về và sắp xếp ở client.
     const q = query(collection(db, "wishlist"), orderBy("taoLuc", "desc"));
+
     const unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
-      let data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      // 1. Safe Data Mapping: Đảm bảo luôn có giá trị fallback cho isFavorite và favoriteAt
+      let data = snapshot.docs.map(d => {
+        const docData = d.data();
+        return { 
+          id: d.id, 
+          ...docData,
+          isFavorite: docData.isFavorite ?? false,
+          favoriteAt: docData.favoriteAt ?? null
+        };
+      });
+
+      // 2. Client-side Sorting: Đảm bảo Favorite luôn ở trên đầu kể cả khi document cũ thiếu trường
+      data.sort((a, b) => {
+        // Ưu tiên isFavorite (true trước false)
+        if (a.isFavorite !== b.isFavorite) return b.isFavorite - a.isFavorite;
+        
+        // Nếu cùng là favorite, ưu tiên favoriteAt (mới nhất lên đầu)
+        if (a.isFavorite && a.favoriteAt && b.favoriteAt) {
+          const secA = a.favoriteAt?.seconds || 0;
+          const secB = b.favoriteAt?.seconds || 0;
+          if (secA !== secB) return secB - secA;
+        }
+        
+        // Cuối cùng là theo thời gian tạo (taoLuc)
+        const taoLucA = a.taoLuc?.seconds || 0;
+        const taoLucB = b.taoLuc?.seconds || 0;
+        return taoLucB - taoLucA;
+      });
  
-      // Phân tách Wish theo Nhóm hoặc Cá nhân
+      // 3. Phân tách Wish theo Nhóm hoặc Cá nhân
       if (groupId) {
         data = data.filter(i => i.groupId === groupId);
       } else {
         // Không gian cá nhân -> Chỉ lấy wish của chính user này tạo ra và không thuộc nhóm nào
         data = data.filter(i => !i.groupId && i.uid === user.uid);
       }
+
+      // Debug logging để kiểm tra dữ liệu sau khi lọc
+      console.log(`[useWishlist] Filtered data for ${groupId ? "Group " + groupId : "Personal"}:`, data);
  
       setItems(data);
+    }, (error) => {
+      console.error("[useWishlist] Snapshot error:", error);
+      notifyError("Không thể tải danh sách điều ước. Vui lòng kiểm tra lại kết nối.");
     });
 
     // Listen for current user's likes
@@ -189,7 +228,9 @@ export function useWishlist(user, userProfile, groupId = null) {
         uid: user.uid,
         themBoi: userProfile?.username || user.email || "Khách ẩn danh",
         avatarNguoiThem: userProfile?.avatar || null,
-        groupId: groupId || null
+        groupId: groupId || null,
+        isFavorite: false,
+        favoriteAt: null
       });
 
       setTenMon("");
@@ -288,7 +329,7 @@ export function useWishlist(user, userProfile, groupId = null) {
     const likesSnap = await getDocs(likesQ);
     const isLiked = !likesSnap.empty;
 
-    toastStore.show(isLiked ? "Đã bỏ thích" : "Đã thích");
+    toastStore.show(isLiked ? t("unliked") : t("liked"));
 
     try {
       if (isLiked) {
@@ -400,7 +441,7 @@ export function useWishlist(user, userProfile, groupId = null) {
         };
 
         const docRef = await addDoc(collection(db, "replies"), reply);
-        toastStore.show("Đã trả lời");
+        toastStore.show(t("replied"));
         await updateDoc(doc(db, "wishlist", wishId), { commentCount: increment(1) });
 
         // Track who already got notified this action
@@ -443,7 +484,7 @@ export function useWishlist(user, userProfile, groupId = null) {
         };
 
         const docRef = await addDoc(collection(db, "comments"), comment);
-        toastStore.show("Đã thêm bình luận");
+        toastStore.show(t("comment_added"));
         await updateDoc(doc(db, "wishlist", wishId), { commentCount: increment(1) });
 
         const alreadyNotified = new Set([user.uid]);
@@ -485,11 +526,11 @@ export function useWishlist(user, userProfile, groupId = null) {
     try {
       if (isReply) {
         await deleteDoc(doc(db, "replies", id));
-        toastStore.show("Đã xóa phản hồi");
+        toastStore.show(t("reply_deleted"));
       } else {
         await deleteDoc(doc(db, "comments", id));
         // Also delete associated replies (could be a Cloud Function, but for now just leave them orphaned or do batch)
-        toastStore.show("Đã xóa bình luận");
+        toastStore.show(t("comment_deleted"));
       }
       await updateDoc(doc(db, "wishlist", wishId), { commentCount: increment(-1) });
       return true;
@@ -580,6 +621,61 @@ export function useWishlist(user, userProfile, groupId = null) {
     }
   }
 
+  /** Ghim / Bỏ ghim */
+  async function toggleFavorite(item) {
+    if (!user || !item) return;
+    const isCurrentlyFavorite = !!item.isFavorite;
+    const newStatus = !isCurrentlyFavorite;
+
+    try {
+      await updateDoc(doc(db, "wishlist", item.id), {
+        isFavorite: newStatus,
+        favoriteAt: newStatus ? serverTimestamp() : null
+      });
+      toastStore.show(newStatus ? t("pinned") : t("unpin"));
+
+      // TRIGGER NOTIFICATION if pinning (and not unpinning)
+      if (newStatus && item.uid !== user.uid) {
+        try {
+          // Check for duplicate: don't send if we already pinned this and it hasn't been read?
+          // Actually, standard is to send one. But let's check for "pin" type for this wishId.
+          const dupQ = query(
+            collection(db, "notifications"),
+            where("userId", "==", item.uid),
+            where("senderId", "==", user.uid),
+            where("type", "==", "pin"),
+            where("wishId", "==", item.id)
+          );
+          const dupSnap = await getDocs(dupQ);
+          
+          if (dupSnap.empty) {
+            await addDoc(collection(db, "notifications"), {
+              userId: item.uid,
+              senderId: user.uid,
+              senderName: userProfile?.username || user.displayName || user.email || "Someone",
+              senderAvatar: userProfile?.avatar || null,
+              type: "pin",
+              wishId: item.id,
+              wishTitle: item.ten,
+              groupId: item.groupId || null,
+              targetRoute: getTargetRoute(item),
+              isRead: false,
+              createdAt: serverTimestamp()
+            });
+          }
+        } catch (e) {
+          console.error("Error sending pin notification:", e);
+        }
+      }
+
+      return true;
+    } catch (err) {
+      console.error(err);
+      notifyError("Không thể cập nhật trạng thái ghim.");
+      return false;
+    }
+  }
+
   return {
     // Dữ liệu
     items: enrichedItems,
@@ -602,5 +698,6 @@ export function useWishlist(user, userProfile, groupId = null) {
     binhLuanMon,
     xoaBinhLuan,
     thichBinhLuan,
+    toggleFavorite,
   };
 }

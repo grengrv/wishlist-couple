@@ -13,15 +13,30 @@ export default function NotificationDropdown({
     onMarkRead(n.ids);
     onClose();
 
+    let baseUrl = "";
     if (n.targetRoute) {
-      let url = n.targetRoute;
-      if (n.wishId) {
-        url += `${url.includes('?') ? '&' : '?'}wishId=${n.wishId}`;
-      }
+      baseUrl = n.targetRoute;
+    } else if (n.wishId) {
+      baseUrl = n.groupId ? `/groups/${n.groupId}` : `/personal`;
+    }
+
+    if (baseUrl) {
+      let url = baseUrl;
+      const separator = url.includes('?') ? '&' : '?';
+      
+      const params = [];
+      if (n.wishId) params.push(`wishId=${n.wishId}`);
+      
       const scrollTarget = n.replyId || n.commentId;
-      if (scrollTarget) {
-        url += `${url.includes('?') ? '&' : '?'}commentId=${scrollTarget}`;
+      if (scrollTarget) params.push(`commentId=${scrollTarget}`);
+      
+      // Highlight logic for pins or any wish-related click
+      if (n.wishId) params.push(`highlight=true`);
+
+      if (params.length > 0) {
+        url += separator + params.join('&');
       }
+
       navigate(url, { state: { commentId: scrollTarget } });
       return;
     }
@@ -32,20 +47,12 @@ export default function NotificationDropdown({
       return;
     }
 
-    if (n.wishId) {
-      let url = n.groupId ? `/groups/${n.groupId}?wishId=${n.wishId}` : `/personal?wishId=${n.wishId}`;
-      const scrollTarget = n.replyId || n.commentId;
-      if (scrollTarget) url += `&commentId=${scrollTarget}`;
-      navigate(url, { state: { commentId: scrollTarget } });
-      return;
-    }
-
     navigate("/");
   };
 
   const formatText = (n) => {
-    const sender = n.senders[0];
-    const params = { name: sender, groupName: n.groupName };
+    const senders = n.senders;
+    const count = n.count;
     let key = "";
 
     if (n.type === "like") key = "liked_your_wish";
@@ -57,26 +64,32 @@ export default function NotificationDropdown({
     if (n.type === "post_group") key = "added_wish_in_group";
     if (n.type === "added_to_group") key = "added_you_to_group";
     if (n.type === "kicked") key = "kicked_you_from_group";
+    if (n.type === "pin") key = "pinnedYourWish";
 
     if (!key) return n.text;
 
-    const translated = t(key, params);
-    
-    if (translated.includes(sender)) {
-      const parts = translated.split(sender);
+    // Custom rendering for grouped senders
+    if (count === 1) {
       return (
         <>
-          {parts[0]}<span className="font-black text-text-primary">{sender}</span>{parts[1]}
-          {n.count > 1 && (
-            <span className="text-pink-500 ml-1">
-              {t("others_count", { count: n.count - 1 })}
-            </span>
-          )}
+          <span className="font-black text-text-primary">{senders[0]}</span> {t(key)}
         </>
       );
     }
 
-    return translated;
+    if (count === 2) {
+      return (
+        <>
+          <span className="font-black text-text-primary">{senders[0]}</span> {t("and")} <span className="font-black text-text-primary">{senders[1]}</span> {t(key)}
+        </>
+      );
+    }
+
+    return (
+      <>
+        <span className="font-black text-text-primary">{senders[0]}</span>, <span className="font-black text-text-primary">{senders[1]}</span> {t("and")} <span className="text-pink-500 font-bold">{count - 2} {t("others")}</span> {t(key)}
+      </>
+    );
   };
 
   const getTime = (date) => {
@@ -146,7 +159,14 @@ export default function NotificationDropdown({
                 `}
               >
                 <div className="relative shrink-0">
-                  <Avatar src={n.senderAvatars[0]} name={n.senders[0]} className="w-10 h-10 rounded-xl" />
+                  <div className="relative">
+                    <Avatar src={n.senderAvatars[0]} name={n.senders[0]} className="w-10 h-10 rounded-xl" />
+                    {n.type === "pin" && (
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-amber-400 rounded-full flex items-center justify-center border-2 border-bg-secondary text-[10px] shadow-lg shadow-amber-500/20">
+                        ⭐
+                      </div>
+                    )}
+                  </div>
                   {!n.isRead && <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-pink-hot rounded-full border-2 border-bg-secondary"></div>}
                 </div>
                 <div className="flex flex-col gap-1 min-w-0">
