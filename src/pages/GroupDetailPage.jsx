@@ -380,9 +380,9 @@ export default function GroupDetailPage({ user, userProfile }) {
             <button
               onClick={() => navigate(`/add/${id}`)}
               title={t("add_wish_tip")}
-              className="w-12 h-12 rounded-2xl bg-text-primary text-bg-primary flex items-center justify-center shadow-lg shadow-pink-brand/20 hover:scale-[1.05] active:scale-[0.95] transition-all font-bold"
+              className="w-12 h-12 rounded-2xl bg-card-bg border border-border-primary text-pink-brand flex items-center justify-center shadow-sm hover:bg-card-hover transition-all shrink-0"
             >
-              <span className="text-xl">✦</span>
+              <span className="text-2xl">✦</span>
             </button>
             <button
               onClick={handleInvite}
