@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { db } from "../firebase";
+import { db } from "@config/firebase";
 import {
   collection, query, where, orderBy, onSnapshot,
   updateDoc, doc, writeBatch
 } from "firebase/firestore";
 import toast from "react-hot-toast";
-import Avatar from "../components/ui/Avatar";
-import { useLanguage } from "../context/LanguageContext";
+import Avatar from "@components/ui/Avatar";
+import { useLanguage } from "@context/LanguageContext";
 
 export function useNotifications(user) {
   const { t } = useLanguage();

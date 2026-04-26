@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useWishlist } from "../hooks/useWishlist";
-import AddForm from "../components/AddForm";
-import { useLanguage } from "../context/LanguageContext";
+import { useWishlist } from "@hooks/useWishlist";
+import AddForm from "@components/wishlist/AddForm";
+import { useLanguage } from "@context/LanguageContext";
 
 export default function AddWishPage({ user, userProfile }) {
   const { groupId } = useParams();

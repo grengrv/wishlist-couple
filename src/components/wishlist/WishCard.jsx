@@ -1,6 +1,6 @@
-import { formatNgay } from "../utils/formatDate";
-import Avatar from "./ui/Avatar";
-import { useLanguage } from "../context/LanguageContext";
+import { formatNgay } from "@utils/formatDate";
+import Avatar from "@components/ui/Avatar";
+import { useLanguage } from "@context/LanguageContext";
 import { useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
@@ -10,7 +10,7 @@ import { motion } from "framer-motion";
  * @param {Object} item - Dữ liệu item (id, ten, ghiChu, anhUrl, taoLuc)
  * @param {Function} onClick - Mở modal xem chi tiết
  */
-export default function WishCard({ item, onClick, onToggleFavorite, user, layoutMode = "grid" }) {
+export default function WishCard({ item, onClick, onToggleFavorite, user, layoutMode = "half" }) {
   const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const [isHighlighted, setIsHighlighted] = useState(false);
@@ -19,7 +19,10 @@ export default function WishCard({ item, onClick, onToggleFavorite, user, layout
   const commentCount = item.commentCount || 0;
   const isLiked = item.isLiked;
   const isFavorite = !!item.isFavorite;
-  const isGrid = layoutMode === "grid";
+
+  // full mode is horizontal-ish on desktop, vertical-ish on mobile
+  // half/third modes are always vertical-ish (grid style)
+  const isHorizontal = layoutMode === "full";
 
   // Highlight logic
   useEffect(() => {
@@ -44,7 +47,7 @@ export default function WishCard({ item, onClick, onToggleFavorite, user, layout
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
       className={`group relative flex w-full h-full rounded-2xl border transition-all duration-500 ease-in-out cursor-pointer overflow-hidden
-        ${isGrid ? 'flex-col shadow-sm' : 'flex-row items-stretch'}
+        ${isHorizontal ? 'flex-col sm:flex-row items-stretch' : 'flex-col shadow-sm'}
         ${isHighlighted 
           ? 'ring-4 ring-amber-400 ring-offset-4 dark:ring-offset-bg-primary scale-[1.02] z-30 shadow-2xl' 
           : ''}
@@ -57,14 +60,14 @@ export default function WishCard({ item, onClick, onToggleFavorite, user, layout
       {/* Favorite Accent Bar */}
       {isFavorite && (
         <div className={`absolute left-0 bg-amber-400 dark:bg-amber-500 z-10 shadow-[2px_0_10px_rgba(251,191,36,0.3)] ${
-          isGrid ? 'top-0 w-full h-1' : 'top-0 w-1.5 h-full'
+          isHorizontal ? 'top-0 w-full sm:w-1.5 h-1 sm:h-full' : 'top-0 w-full h-1'
         }`}></div>
       )}
 
       {/* Image Section */}
       {item.anhUrl && (
         <div className={`shrink-0 overflow-hidden bg-bg-primary/30 flex items-center justify-center border-border-primary/50 ${
-          isGrid ? 'w-full h-[180px] border-b' : 'w-[100px] sm:w-[130px] border-r'
+          isHorizontal ? 'w-full sm:w-[240px] h-[200px] sm:h-auto border-b sm:border-b-0 sm:border-r' : 'w-full h-[180px] border-b'
         }`}>
           <img src={item.anhUrl} alt={item.ten} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
         </div>
@@ -74,7 +77,7 @@ export default function WishCard({ item, onClick, onToggleFavorite, user, layout
       <div className="flex-1 min-w-0 p-4 sm:p-5 flex flex-col relative">
         <div className="flex items-start justify-between gap-3 mb-2">
           <div className="flex-1 min-w-0">
-            <h3 className={`text-base sm:text-lg font-bold text-text-primary leading-tight transition-colors ${isFavorite ? 'text-amber-900 dark:text-amber-100' : ''} ${isGrid ? '' : 'truncate'}`}>
+            <h3 className={`text-base sm:text-lg font-bold text-text-primary leading-tight transition-colors ${isFavorite ? 'text-amber-900 dark:text-amber-100' : ''}`}>
               {item.ten}
             </h3>
             {isFavorite && (
@@ -103,7 +106,7 @@ export default function WishCard({ item, onClick, onToggleFavorite, user, layout
         </div>
 
         {item.ghiChu && (
-          <p className={`text-[13px] text-text-secondary leading-relaxed mb-4 opacity-80 ${isGrid ? 'line-clamp-3' : 'line-clamp-2'}`}>
+          <p className={`text-[13px] text-text-secondary leading-relaxed mb-4 opacity-80 ${isHorizontal ? 'line-clamp-4 sm:line-clamp-none' : 'line-clamp-3'}`}>
             {item.ghiChu}
           </p>
         )}
@@ -137,9 +140,9 @@ export default function WishCard({ item, onClick, onToggleFavorite, user, layout
         </div>
       </div>
       
-      {/* Arrow indicator - Only show in list mode or when hovered in grid */}
-      <div className={`flex items-center transition-all duration-300 transform group-hover:translate-x-1 pointer-events-none ${
-        isGrid ? 'absolute bottom-4 right-4 opacity-0 group-hover:opacity-100' : 'pr-3 opacity-100 text-text-muted/20 group-hover:text-pink-400'
+      {/* Arrow indicator */}
+      <div className={`flex items-center transition-all duration-300 transform group-hover:translate-x-1 pointer-events-none absolute bottom-4 right-4 ${
+        isHorizontal ? 'opacity-100 sm:relative sm:bottom-0 sm:right-0 sm:pr-4' : 'opacity-0 group-hover:opacity-100'
       }`}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="9 18 15 12 9 6"></polyline>

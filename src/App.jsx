@@ -1,32 +1,32 @@
 import { useState, useEffect } from "react";
-import { requestNotificationPermission } from "./utils/pushNotification";
+import { requestNotificationPermission } from "@utils/pushNotification";
 import { Routes, Route } from "react-router-dom";
-import { auth, db } from "./firebase";
+import { auth, db } from "@config/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
-import { ConfirmProvider } from "./context/ConfirmContext";
-import AppToast from "./components/ui/AppToast";
+import { ConfirmProvider } from "@context/ConfirmContext";
+import AppToast from "@components/ui/AppToast";
 
-import Profile from "./Profile";
-import Header from "./components/Header";
-import { notifyLogout, notifyError } from "./utils/notify";
-import Footer from "./components/Footer";
-import Auth from "./auths/Auth";
-import Admin from "./Admin/Admin";
-import { ADMIN_EMAIL } from "./constants";
-import BottomNav from "./components/BottomNav";
-import PWAUpdatePrompt from './components/PWAUpdatePrompt'
-import PWAUpdater from './components/PWAUpdater'
+import ProfilePage from "@pages/ProfilePage";
+import Header from "@components/layout/Header";
+import { notifyLogout, notifyError } from "@utils/notify";
+import Footer from "@components/layout/Footer";
+import AuthPage from "@pages/AuthPage";
+import AdminPage from "@pages/AdminPage";
+import { ADMIN_EMAIL } from "@constants";
+import BottomNav from "@components/layout/BottomNav";
+import PWAUpdatePrompt from "@components/pwa/PWAUpdatePrompt"
+import PWAUpdater from "@components/pwa/PWAUpdater"
 
 // Pages
-import HomePage from "./pages/HomePage";
-import GroupsPage from "./pages/GroupsPage";
-import GroupDetailPage from "./pages/GroupDetailPage";
-import InvitePage from "./pages/InvitePage";
-import AddWishPage from "./pages/AddWishPage";
-import PersonalPage from "./pages/PersonalPage";
+import HomePage from "@pages/HomePage";
+import GroupsPage from "@pages/GroupsPage";
+import GroupDetailPage from "@pages/GroupDetailPage";
+import InvitePage from "@pages/InvitePage";
+import AddWishPage from "@pages/AddWishPage";
+import PersonalPage from "@pages/PersonalPage";
 
-import { useLanguage } from "./context/LanguageContext";
+import { useLanguage } from "@context/LanguageContext";
 
 function App() {
   const { t } = useLanguage();
@@ -104,14 +104,14 @@ function App() {
 
         <main className="flex-1 w-full max-w-[1600px] mx-auto px-[5%] md:px-[10%] flex flex-col transition-all duration-500">
           {!user ? (
-            <Auth />
+            <AuthPage />
           ) : user.email === ADMIN_EMAIL ? (
-            <Admin />
+            <AdminPage />
           ) : (
             <div className="flex-1 w-full flex flex-col">
               {/* Modal Profile dùng chung toàn app */}
               {showProfile && (
-                <Profile
+                <ProfilePage
                   userProfile={userProfile}
                   onClose={() => setShowProfile(false)}
                   onUpdate={(updated) => setUserProfile(prev => ({ ...prev, ...updated }))}

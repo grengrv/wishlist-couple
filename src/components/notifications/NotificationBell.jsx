@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { useNotifications } from "../hooks/useNotifications.jsx";
-import NotificationDropdown from "./NotificationDropdown";
+import { useNotifications } from "@hooks/useNotifications.jsx";
+import NotificationDropdown from "@components/notifications/NotificationDropdown";
 
 export default function NotificationBell({ user, variant = "desktop" }) {
   const [isOpen, setIsOpen] = useState(false);

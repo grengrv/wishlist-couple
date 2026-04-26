@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
-import { auth, db } from "../firebase";
+import { auth, db } from "@config/firebase";
 import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     updateProfile
 } from "firebase/auth";
 import { doc, setDoc, query, collection, where, getDocs } from "firebase/firestore";
-import Button from "../components/ui/Button";
-import Input from "../components/ui/Input";
-import { notifyDangNhap, notifyDangKy, notifyError } from "../utils/notify";
+import Button from "@components/ui/Button";
+import Input from "@components/ui/Input";
+import { notifyDangNhap, notifyDangKy, notifyError } from "@utils/notify";
 
-import { useLanguage } from "../context/LanguageContext";
+import { useLanguage } from "@context/LanguageContext";
 
 export default function Auth() {
     const { t } = useLanguage();

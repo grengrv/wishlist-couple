@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import Avatar from "./ui/Avatar";
-import { useLanguage } from "../context/LanguageContext";
+import Avatar from "@components/ui/Avatar";
+import { useLanguage } from "@context/LanguageContext";
 
 export default function NotificationDropdown({
   notifications = [], onMarkRead, onMarkAllRead, isMuted, onToggleMute, onClose

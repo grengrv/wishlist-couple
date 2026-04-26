@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import Button from "./ui/Button";
-import Avatar from "./ui/Avatar";
-import ThemeToggle from "./ui/ThemeToggle";
-import NotificationBell from "./NotificationBell";
-import { useLanguage } from "../context/LanguageContext";
+import Button from "@components/ui/Button";
+import Avatar from "@components/ui/Avatar";
+import ThemeToggle from "@components/ui/ThemeToggle";
+import NotificationBell from "@components/notifications/NotificationBell";
+import { useLanguage } from "@context/LanguageContext";
 
 export default function Header({ user, userProfile, onOpenProfile, onLogout }) {
   const [isScrolled, setIsScrolled] = useState(false);

@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getDoc, doc } from "firebase/firestore";
-import { db } from "../firebase";
-import { useGroups } from "../hooks/useGroups";
-import Button from "../components/ui/Button";
-import Input from "../components/ui/Input";
+import { db } from "@config/firebase";
+import { useGroups } from "@hooks/useGroups";
+import Button from "@components/ui/Button";
+import Input from "@components/ui/Input";
 
 export default function InvitePage({ user, userProfile }) {
   const { id } = useParams();

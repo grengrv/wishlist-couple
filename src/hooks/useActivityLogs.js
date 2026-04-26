@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { db } from "../firebase";
+import { db } from "@config/firebase";
 import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
 
 export function useActivityLogs(roomId) {

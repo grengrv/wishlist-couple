@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect } from "react";
 import Cropper from "react-easy-crop";
-import getCroppedImg from "../utils/cropImage";
-import { useConfirm } from "../context/ConfirmContext";
-import { notifyCompressing } from "../utils/notify";
+import getCroppedImg from "@utils/cropImage";
+import { useConfirm } from "@context/ConfirmContext";
+import { notifyCompressing } from "@utils/notify";
 
 export default function ImageEditorModal({ isOpen, imageSrc, file, isBanner, isGif, onClose, onSave }) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });

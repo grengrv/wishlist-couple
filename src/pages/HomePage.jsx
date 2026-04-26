@@ -1,6 +1,6 @@
-import AboutSection from "../components/AboutSection";
+import AboutSection from "@components/common/AboutSection";
 import { useNavigate } from "react-router-dom";
-import { useLanguage } from "../context/LanguageContext";
+import { useLanguage } from "@context/LanguageContext";
 
 export default function HomePage() {
   const navigate = useNavigate();

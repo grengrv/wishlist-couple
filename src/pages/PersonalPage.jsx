@@ -1,13 +1,13 @@
 import { useState } from "react";
-import Stats from "../components/Stats";
-import WishList from "../components/WishList";
-import ItemModal from "../components/ItemModal";
+import Stats from "@components/wishlist/Stats";
+import WishList from "@components/wishlist/WishList";
+import ItemModal from "@components/wishlist/ItemModal";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
-import { useWishlist } from "../hooks/useWishlist";
+import { useWishlist } from "@hooks/useWishlist";
 import { useEffect } from "react";
-import { ADMIN_EMAIL } from "../constants";
-import { notifyXoaWish } from "../utils/notify";
-import { useLanguage } from "../context/LanguageContext";
+import { ADMIN_EMAIL } from "@constants";
+import { notifyXoaWish } from "@utils/notify";
+import { useLanguage } from "@context/LanguageContext";
 
 export default function PersonalPage({ user, userProfile }) {
   const navigate = useNavigate();

@@ -23,8 +23,8 @@
  * └──────────────────────┴───────────────────────────────────┴─────────┘
  */
 
-import { toastStore } from "./toastStore";
-import { translations } from "./translations";
+import { toastStore } from "@utils/toastStore";
+import { translations } from "@utils/translations";
 
 const getLang = () => localStorage.getItem("lang") || "vi";
 

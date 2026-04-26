@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { toastStore } from "../../utils/toastStore";
+import { toastStore } from "@utils/toastStore";
 
 /**
  * AppToast — Hệ thống thông báo Sileo-style.

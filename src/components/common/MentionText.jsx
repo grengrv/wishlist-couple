@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from "react";
-import { db } from "../firebase";
+import { db } from "@config/firebase";
 import { collection, query, where, getDocs, limit } from "firebase/firestore";
-import Avatar from "./ui/Avatar";
+import Avatar from "@components/ui/Avatar";
 
 const HOVER_DELAY_MS = 200;
 

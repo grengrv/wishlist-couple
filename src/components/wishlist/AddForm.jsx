@@ -1,9 +1,9 @@
 import { useState } from "react";
-import Button from "./ui/Button";
-import Input from "./ui/Input";
-import { useConfirm } from "../context/ConfirmContext";
-import { notifyThemWish, notifyError } from "../utils/notify";
-import { useLanguage } from "../context/LanguageContext";
+import Button from "@components/ui/Button";
+import Input from "@components/ui/Input";
+import { useConfirm } from "@context/ConfirmContext";
+import { notifyThemWish, notifyError } from "@utils/notify";
+import { useLanguage } from "@context/LanguageContext";
 
 export default function AddForm({
   tenMon, setTenMon,

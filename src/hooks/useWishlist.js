@@ -1,14 +1,14 @@
 import { useState, useEffect, useMemo } from "react";
-import { db } from "../firebase";
+import { db } from "@config/firebase";
 import {
   collection, addDoc, getDocs, onSnapshot,
   deleteDoc, doc, orderBy, query, updateDoc, arrayUnion, arrayRemove, getDoc,
   increment, where, serverTimestamp
 } from "firebase/firestore";
-import { ADMIN_EMAIL } from "../constants";
-import { notifyError } from "../utils/notify";
-import { toastStore } from "../utils/toastStore";
-import { useLanguage } from "../context/LanguageContext";
+import { ADMIN_EMAIL } from "@constants";
+import { notifyError } from "@utils/notify";
+import { toastStore } from "@utils/toastStore";
+import { useLanguage } from "@context/LanguageContext";
 
 /**
  * Custom hook quản lý toàn bộ logic dữ liệu wishlist:

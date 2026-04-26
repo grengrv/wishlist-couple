@@ -1,8 +1,8 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import Avatar from "./ui/Avatar";
-import { useLanguage } from "../context/LanguageContext";
+import Avatar from "@components/ui/Avatar";
+import { useLanguage } from "@context/LanguageContext";
 
 export default function ActivityLog({ logs }) {
   const { t, lang } = useLanguage();

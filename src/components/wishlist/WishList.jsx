@@ -1,6 +1,6 @@
 import { useState } from "react";
-import WishCard from "./WishCard";
-import { useLanguage } from "../context/LanguageContext";
+import WishCard from "@components/wishlist/WishCard";
+import { useLanguage } from "@context/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
 
 /**
@@ -8,7 +8,13 @@ import { motion, AnimatePresence } from "framer-motion";
  */
 export default function WishList({ items, onSelectItem, onToggleFavorite, user }) {
   const { t } = useLanguage();
-  const [layoutMode, setLayoutMode] = useState("grid"); // "grid" | "list"
+  const [layoutMode, setLayoutMode] = useState("half"); // "full" | "half" | "third"
+
+  const gridConfig = {
+    full: "grid-cols-1",
+    half: "grid-cols-1 sm:grid-cols-2",
+    third: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+  };
 
   return (
     <div className="w-full">
@@ -28,38 +34,46 @@ export default function WishList({ items, onSelectItem, onToggleFavorite, user }
         {/* Layout Toggle System */}
         <div className="flex items-center gap-1 bg-bg-secondary/80 backdrop-blur-md p-1.5 rounded-[20px] border border-border-primary/50 shadow-inner">
           <button
-            onClick={() => setLayoutMode("grid")}
+            onClick={() => setLayoutMode("full")}
             className={`flex items-center gap-2 px-4 py-2 rounded-[14px] text-[12px] font-black uppercase tracking-wider transition-all duration-300 ${
-              layoutMode === "grid"
+              layoutMode === "full"
                 ? "bg-text-primary text-bg-primary shadow-lg scale-105"
                 : "text-text-muted hover:text-text-primary hover:bg-white/5"
             }`}
+            title={t("layout_full")}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-              <rect x="3" y="3" width="7" height="7"></rect>
-              <rect x="14" y="3" width="7" height="7"></rect>
-              <rect x="14" y="14" width="7" height="7"></rect>
-              <rect x="3" y="14" width="7" height="7"></rect>
+              <rect x="3" y="3" width="18" height="18" rx="2" />
             </svg>
-            {t("layout_grid")}
           </button>
           <button
-            onClick={() => setLayoutMode("list")}
+            onClick={() => setLayoutMode("half")}
             className={`flex items-center gap-2 px-4 py-2 rounded-[14px] text-[12px] font-black uppercase tracking-wider transition-all duration-300 ${
-              layoutMode === "list"
+              layoutMode === "half"
                 ? "bg-text-primary text-bg-primary shadow-lg scale-105"
                 : "text-text-muted hover:text-text-primary hover:bg-white/5"
             }`}
+            title={t("layout_half")}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-              <line x1="8" y1="6" x2="21" y2="6"></line>
-              <line x1="8" y1="12" x2="21" y2="12"></line>
-              <line x1="8" y1="18" x2="21" y2="18"></line>
-              <line x1="3" y1="6" x2="3.01" y2="6"></line>
-              <line x1="3" y1="12" x2="3.01" y2="12"></line>
-              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+              <rect x="3" y="3" width="8" height="18" rx="2" />
+              <rect x="13" y="3" width="8" height="18" rx="2" />
             </svg>
-            {t("layout_list")}
+          </button>
+          <button
+            onClick={() => setLayoutMode("third")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-[14px] text-[12px] font-black uppercase tracking-wider transition-all duration-300 ${
+              layoutMode === "third"
+                ? "bg-text-primary text-bg-primary shadow-lg scale-105"
+                : "text-text-muted hover:text-text-primary hover:bg-white/5"
+            }`}
+            title={t("layout_third")}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              <rect x="2" y="3" width="6" height="18" rx="1.5" />
+              <rect x="9" y="3" width="6" height="18" rx="1.5" />
+              <rect x="16" y="3" width="6" height="18" rx="1.5" />
+            </svg>
           </button>
         </div>
       </div>
@@ -67,11 +81,7 @@ export default function WishList({ items, onSelectItem, onToggleFavorite, user }
       {/* Main Container Layout */}
       <motion.div 
         layout
-        className={
-          layoutMode === "list"
-            ? "flex flex-col gap-4"
-            : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5"
-        }
+        className={`grid gap-5 ${gridConfig[layoutMode]}`}
       >
         {items.length === 0 && (
           <div className="col-span-full py-20 flex flex-col items-center justify-center bg-bg-secondary/30 rounded-[40px] border-2 border-dashed border-border-primary/50 text-center animate-fade-in">

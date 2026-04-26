@@ -1,4 +1,4 @@
-import { useLanguage } from "../context/LanguageContext";
+import { useLanguage } from "@context/LanguageContext";
 
 /**
  * Stats component - Phiên bản "Soft Capsule" với Icon Tối giản (Outline)

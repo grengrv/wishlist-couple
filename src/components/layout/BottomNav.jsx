@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import NotificationBell from "./NotificationBell";
+import NotificationBell from "@components/notifications/NotificationBell";
 
 export default function BottomNav({ user, onOpenProfile }) {
   const { pathname } = useLocation();

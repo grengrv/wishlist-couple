@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { auth, db } from "../firebase";
+import { auth, db } from "@config/firebase";
 import { signOut } from "firebase/auth";
 import { collection, getDocs, deleteDoc, doc, orderBy, query } from "firebase/firestore";
-import { formatNgay } from "../utils/formatDate";
+import { formatNgay } from "@utils/formatDate";
 
 /**
  * Admin component - Trang quản trị dành cho email admin

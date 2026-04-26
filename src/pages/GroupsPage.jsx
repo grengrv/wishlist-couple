@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getDoc, doc, onSnapshot } from "firebase/firestore";
-import { db } from "../firebase";
-import Button from "../components/ui/Button";
-import Input from "../components/ui/Input";
-import { useGroups } from "../hooks/useGroups";
-import { useConfirm } from "../context/ConfirmContext";
-import { notifyTaoNhom, notifyXoaNhom, notifyThamGiaNhom, notifyLuuNhom, notifyError } from "../utils/notify";
-import { useLanguage } from "../context/LanguageContext";
+import { db } from "@config/firebase";
+import Button from "@components/ui/Button";
+import Input from "@components/ui/Input";
+import { useGroups } from "@hooks/useGroups";
+import { useConfirm } from "@context/ConfirmContext";
+import { notifyTaoNhom, notifyXoaNhom, notifyThamGiaNhom, notifyLuuNhom, notifyError } from "@utils/notify";
+import { useLanguage } from "@context/LanguageContext";
 
 export default function GroupsPage({ user, userProfile }) {
   const { groups, taoNhom, suaNhom, xoaNhom, thamGiaBangMa } = useGroups(user, userProfile);

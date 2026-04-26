@@ -1,7 +1,7 @@
 import { useRef, useEffect } from "react";
-import Avatar from "./ui/Avatar";
-import { useMentionAutocomplete } from "../hooks/useMentionAutocomplete";
-import { useLanguage } from "../context/LanguageContext";
+import Avatar from "@components/ui/Avatar";
+import { useMentionAutocomplete } from "@hooks/useMentionAutocomplete";
+import { useLanguage } from "@context/LanguageContext";
 
 const MAX_TAGS = 5;
 

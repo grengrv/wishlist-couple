@@ -48,4 +48,17 @@ export default defineConfig({
   server: {
     host: true, // thay vì [IP_ADDRESS]
   },
+  resolve: {
+    alias: {
+      '@': '/src',
+      '@components': '/src/components',
+      '@hooks': '/src/hooks',
+      '@context': '/src/context',
+      '@api': '/src/api',
+      '@config': '/src/config',
+      '@utils': '/src/utils',
+      '@constants': '/src/constants',
+      '@pages': '/src/pages',
+    }
+  }
 })

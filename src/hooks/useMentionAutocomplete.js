@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { db } from "../firebase";
+import { db } from "@config/firebase";
 import { collection, query, where, orderBy, limit, getDocs, documentId } from "firebase/firestore";
 
 const DEBOUNCE_MS = 220;
