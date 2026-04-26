@@ -187,7 +187,7 @@ export const translations = {
     your_list: "Danh sách của bạn",
 
     // Home Page
-    home_hero_tag: "Ước mơ của chúng mình",
+    home_hero_tag: "Ước mơ của chúng mìnhhh",
     home_hero_title: "Mơ ước chung, Hạnh phúc riêng.",
     home_hero_subtitle: "Không gian tuyệt vời để chúng mình cùng nhau lưu giữ từng tâm tư, nguyện vọng và biến những dự định nhỏ bé thành hiện thực ngọt ngào.",
     start_now: "Bắt đầu ngay",
