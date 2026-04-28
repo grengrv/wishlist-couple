@@ -216,10 +216,10 @@ export default function GroupsPage({ user, userProfile }) {
             <Input
               value={joinCode}
               onChange={e => setJoinCode(e.target.value.toUpperCase().slice(0, 6))}
-              className="!text-center !text-4xl !font-black !tracking-[10px] !h-20 !bg-bg-primary !border-none !rounded-3xl focus:!bg-pink-50 transition-all"
+              className="!text-center !text-4xl !font-black !tracking-[10px] !h-20 !bg-bg-primary !border-none !rounded-3xl transition-all"
             />
             <div className="flex flex-col gap-3">
-              <button onClick={handleJoin} disabled={joinCode.length !== 6 || isJoining} className="w-full h-14 bg-text-primary text-bg-primary font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-pink-600 transition-all shadow-xl shadow-pink-500/10 active:scale-95 disabled:opacity-50">
+              <button onClick={handleJoin} disabled={joinCode.length !== 6 || isJoining} className="w-full h-14 bg-text-primary text-bg-primary font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-pink-100 transition-all shadow-xl shadow-pink-500/10 active:scale-95 disabled:opacity-50">
                 {isJoining ? t("processing") : t("join_now")}
               </button>
               <button onClick={handleCloseJoin} className="w-full h-12 text-text-muted font-bold hover:text-text-secondary">{t("later")}</button>

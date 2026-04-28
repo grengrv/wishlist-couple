@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
+import { useLanguage } from "@context/LanguageContext";
 
 export default function ThemeToggle() {
+  const { t } = useLanguage();
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
@@ -24,10 +26,11 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
+      title={isDark ? t("switch_to_light") : t("switch_to_dark")}
       className="w-10 h-10 rounded-2xl flex items-center 
                 justify-center bg-gray-200 dark:bg-gray-100 
                 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-300 group"
-      aria-label="Toggle theme"
+      aria-label={t("toggle_theme") || "Toggle theme"}
     >
       {isDark ? (
         <svg

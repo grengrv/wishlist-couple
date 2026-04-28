@@ -109,51 +109,8 @@ function App() {
           />
 
           <main className="flex-1 w-full max-w-[1600px] mx-auto px-[5%] md:px-[10%] flex flex-col transition-all duration-500">
-            {!user ? (
-              <AuthPage />
-            ) : (!user.emailVerified && !user.isAnonymous) ? (
-              <div className="flex-1 flex items-center justify-center p-6 min-h-[60vh]">
-                <div className="bg-bg-secondary w-full max-w-[460px] p-10 rounded-[40px] border border-border-primary shadow-2xl text-center animate-slide-up">
-                  <div className="w-20 h-20 bg-amber-500/10 text-amber-500 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-8 shadow-sm">
-                    <span className="animate-pulse">✉️</span>
-                  </div>
-                  <h2 className="text-3xl font-black text-text-primary tracking-tight mb-4">
-                    {t("verify_email_title") || "Xác minh Email"}
-                  </h2>
-                  <p className="text-text-muted font-bold text-[15px] leading-relaxed mb-8">
-                    {t("verify_email_msg") || "Bạn cần xác minh email để sử dụng ứng dụng. Vui lòng kiểm tra hộp thư đến (hoặc thư rác) của bạn."}
-                  </p>
-                  
-                  <div className="flex flex-col gap-3">
-                    <Button 
-                      onClick={() => window.location.reload()}
-                      className="!rounded-2xl !py-4 bg-pink-500 text-white font-black text-xs uppercase tracking-widest hover:bg-pink-600 transition-all shadow-lg active:scale-95"
-                    >
-                      {t("i_have_verified") || "Tôi đã xác minh"}
-                    </Button>
-                    <Button 
-                      variant="ghost"
-                      onClick={async () => {
-                        try {
-                          await sendEmailVerification(user);
-                          toastStore.show(t("verification_email_sent") || "Đã gửi lại email xác minh!");
-                        } catch (e) {
-                          notifyError(t("resend_failed") || "Gửi lại thất bại, vui lòng đợi một lát.");
-                        }
-                      }}
-                      className="!rounded-2xl !py-4 !text-text-muted hover:!text-text-primary font-black text-[11px] uppercase tracking-widest transition-all"
-                    >
-                      {t("resend_verification") || "Gửi lại email"}
-                    </Button>
-                    <button 
-                      onClick={handleLogout}
-                      className="mt-4 text-[11px] font-black uppercase tracking-widest text-text-muted/40 hover:text-rose-500 transition-colors"
-                    >
-                      {t("logout") || "Đăng xuất"}
-                    </button>
-                  </div>
-                </div>
-              </div>
+            {!user || (!user.emailVerified && !user.isAnonymous) ? (
+              <AuthPage user={user} />
             ) : user.email === ADMIN_EMAIL ? (
               <AdminPage />
             ) : (

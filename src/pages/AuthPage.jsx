@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { auth, db } from "@config/firebase";
 import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     sendEmailVerification,
+    sendPasswordResetEmail,
+    confirmPasswordReset,
     updateProfile
 } from "firebase/auth";
 import { doc, setDoc, query, collection, where, getDocs } from "firebase/firestore";
@@ -14,15 +17,39 @@ import { toastStore } from "@utils/toastStore";
 
 import { useLanguage } from "@context/LanguageContext";
 
-export default function Auth() {
+import { signOut } from "firebase/auth";
+import { notifyLogout } from "@utils/notify";
+
+export default function Auth({ user }) {
     const { t } = useLanguage();
-    const [mode, setMode] = useState("login"); // "login" | "register"
+    const [searchParams] = useSearchParams();
+    const [mode, setMode] = useState("login"); // "login" | "register" | "reset"
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [username, setUsername] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [usernameStatus, setUsernameStatus] = useState({ state: "idle", message: "" });
     const [activeTooltip, setActiveTooltip] = useState(null);
+
+    const oobCode = searchParams.get("oobCode");
+    const authMode = searchParams.get("mode");
+
+    useEffect(() => {
+        if (authMode === "resetPassword" && oobCode) {
+            setMode("reset");
+        }
+    }, [authMode, oobCode]);
+
+    const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            notifyLogout();
+        } catch (err) {
+            notifyError(t("logout_failed"));
+        }
+    };
 
     // Helper: Validate Email
     const validateEmail = (email) => {
@@ -73,7 +100,56 @@ export default function Auth() {
         }, 600);
 
         return () => clearTimeout(timer);
-    }, [username, mode]);
+    }, [username, mode, t]);
+
+    // Nếu người dùng đã đăng nhập nhưng chưa xác minh email, hiển thị giao diện xác minh
+    // PHẢI đặt sau các hooks để tránh lỗi "Rendered fewer hooks than expected"
+    if (user && !user.emailVerified && !user.isAnonymous) {
+        return (
+            <div className="flex-1 flex items-center justify-center p-6 min-h-[60vh]">
+                <div className="bg-bg-secondary w-full max-w-[460px] p-10 rounded-[40px] border border-border-primary shadow-2xl text-center animate-slide-up">
+                    <div className="w-20 h-20 bg-amber-500/10 text-amber-500 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-8 shadow-sm">
+                        <span className="animate-pulse">✉️</span>
+                    </div>
+                    <h2 className="text-3xl font-black text-text-primary tracking-tight mb-4">
+                        {t("verify_email_title")}
+                    </h2>
+                    <p className="text-text-muted font-bold text-[15px] leading-relaxed mb-8">
+                        {t("verify_email_msg")}
+                    </p>
+                    
+                    <div className="flex flex-col gap-3">
+                        <Button 
+                            onClick={() => window.location.reload()}
+                            className="!rounded-2xl !py-4 bg-pink-500 text-white font-black text-xs uppercase tracking-widest hover:bg-pink-600 transition-all shadow-lg active:scale-95"
+                        >
+                            {t("i_have_verified")}
+                        </Button>
+                        <Button 
+                            variant="ghost"
+                            onClick={async () => {
+                                try {
+                                    await sendEmailVerification(user);
+                                    toastStore.show(t("verification_email_sent"));
+                                } catch (e) {
+                                    notifyError(t("resend_failed"));
+                                }
+                            }}
+                            className="!rounded-2xl !py-4 !text-text-muted hover:!text-text-primary font-black text-[11px] uppercase tracking-widest transition-all"
+                        >
+                            {t("resend_verification")}
+                        </Button>
+                        <button 
+                            onClick={handleLogout}
+                            className="mt-4 text-[11px] font-black uppercase tracking-widest text-text-muted/40 hover:text-rose-500 transition-colors"
+                        >
+                            {t("logout")}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     async function handleSubmit() {
         if (mode === "register") {
@@ -123,7 +199,7 @@ export default function Auth() {
                     taoLuc: new Date()
                 });
                 notifyDangKy();
-                toastStore.show(t("verification_email_sent") || "Mã xác minh đã được gửi đến email của bạn!", { duration: 6000 });
+                toastStore.show(t("verification_email_sent"), { duration: 6000 });
             }
         } catch (err) {
             if (err.code === "auth/invalid-credential") notifyError(t("login_invalid_error"));
@@ -133,6 +209,54 @@ export default function Auth() {
             else notifyError(t("general_error"));
         }
         setLoading(false);
+    }
+
+    async function handleForgotPassword() {
+        if (!email) {
+            notifyError(t("email_required"));
+            return;
+        }
+        if (!validateEmail(email)) {
+            notifyError(t("email_format_error"));
+            return;
+        }
+
+        try {
+            // Cấu hình để Firebase gửi link quay lại trang web của mình thay vì trang mặc định của Firebase
+            const actionCodeSettings = {
+                url: window.location.origin, 
+                handleCodeInApp: true,
+            };
+            await sendPasswordResetEmail(auth, email, actionCodeSettings);
+            toastStore.show(t("reset_link_sent"));
+        } catch (err) {
+            console.error(err);
+            notifyError(t("reset_error"));
+        }
+    }
+
+    async function handleResetPassword() {
+        if (!validatePassword(newPassword)) {
+            notifyError(t("password_weak_error"));
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            notifyError(t("password_mismatch"));
+            return;
+        }
+        setLoading(true);
+        try {
+            await confirmPasswordReset(auth, oobCode, newPassword);
+            toastStore.show(t("reset_success"));
+            setMode("login");
+            // Clear URL params
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } catch (err) {
+            console.error(err);
+            notifyError(t("general_error"));
+        } finally {
+            setLoading(false);
+        }
     }
 
     const toggleMode = () => {
@@ -157,12 +281,14 @@ export default function Auth() {
                         <span className="animate-beat">♥</span>
                     </div>
                     <h1 className="text-3xl font-black text-text-primary tracking-tight">
-                        {mode === "login" ? t("welcome_back") : t("create_account")}
+                        {mode === "login" ? t("welcome_back") : mode === "reset" ? t("reset_password_title") : t("create_account")}
                     </h1>
                     <p className="text-text-muted font-bold mt-2 text-sm leading-relaxed">
                         {mode === "login"
                             ? t("login_subtitle")
-                            : t("register_subtitle")}
+                            : mode === "reset"
+                                ? t("password_tip")
+                                : t("register_subtitle")}
                     </p>
                 </div>
 
@@ -194,73 +320,125 @@ export default function Auth() {
                         </div>
                     )}
 
-                    <div className="space-y-2">
-                        <label className="text-[11px] font-black uppercase tracking-widest text-text-muted ml-1 flex justify-between items-center">
-                            <span>Email</span>
-                            <InfoIcon
-                                id="email"
-                                activeTooltip={activeTooltip}
-                                setActiveTooltip={setActiveTooltip}
-                                text={t("email_tip")}
-                            />
-                        </label>
-                        <Input
-                            type="email"
-                            placeholder="username@example.com"
-                            value={email}
-                            onChange={e => setEmail(e.target.value)}
-                            onKeyDown={e => e.key === "Enter" && handleSubmit()}
-                            className="!rounded-2xl !bg-bg-primary/50 !border-border-primary !h-12 !font-bold transition-all focus:!bg-bg-secondary"
-                        />
-                    </div>
+                    {mode !== "reset" ? (
+                        <>
+                            <div className="space-y-2">
+                                <label className="text-[11px] font-black uppercase tracking-widest text-text-muted ml-1 flex justify-between items-center">
+                                    <span>Email</span>
+                                    <InfoIcon
+                                        id="email"
+                                        activeTooltip={activeTooltip}
+                                        setActiveTooltip={setActiveTooltip}
+                                        text={t("email_tip")}
+                                    />
+                                </label>
+                                <Input
+                                    type="email"
+                                    placeholder="username@example.com"
+                                    value={email}
+                                    onChange={e => setEmail(e.target.value)}
+                                    onKeyDown={e => e.key === "Enter" && handleSubmit()}
+                                    className="!rounded-2xl !bg-bg-primary/50 !border-border-primary !h-12 !font-bold transition-all focus:!bg-bg-secondary"
+                                />
+                            </div>
 
-                    <div className="space-y-2">
-                        <label className="text-[11px] font-black uppercase tracking-widest text-text-muted ml-1 flex justify-between items-center">
-                            <span>{t("password")}</span>
-                            <InfoIcon
-                                id="password"
-                                activeTooltip={activeTooltip}
-                                setActiveTooltip={setActiveTooltip}
-                                text={t("password_tip")}
-                            />
-                        </label>
-                        <Input
-                            type="password"
-                            placeholder="••••••••"
-                            value={password}
-                            onChange={e => setPassword(e.target.value)}
-                            onKeyDown={e => e.key === "Enter" && handleSubmit()}
-                            className="!rounded-2xl !bg-bg-primary/50 !border-border-primary !h-12 !font-bold transition-all focus:!bg-bg-secondary"
-                        />
-                    </div>
+                            <div className="space-y-2">
+                                <label className="text-[11px] font-black uppercase tracking-widest text-text-muted ml-1 flex justify-between items-center">
+                                    <span>{t("password")}</span>
+                                    <InfoIcon
+                                        id="password"
+                                        activeTooltip={activeTooltip}
+                                        setActiveTooltip={setActiveTooltip}
+                                        text={t("password_tip")}
+                                    />
+                                </label>
+                                <Input
+                                    type="password"
+                                    placeholder="••••••••"
+                                    value={password}
+                                    onChange={e => setPassword(e.target.value)}
+                                    onKeyDown={e => e.key === "Enter" && handleSubmit()}
+                                    className="!rounded-2xl !bg-bg-primary/50 !border-border-primary !h-12 !font-bold transition-all focus:!bg-bg-secondary"
+                                />
+                                {mode === "login" && (
+                                    <button
+                                        onClick={handleForgotPassword}
+                                        className="text-[10px] font-black uppercase tracking-widest text-text-muted hover:text-pink-500 transition-colors ml-1 w-fit"
+                                    >
+                                        {t("forgot_password")}
+                                    </button>
+                                )}
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div className="space-y-2">
+                                <label className="text-[11px] font-black uppercase tracking-widest text-text-muted ml-1">
+                                    {t("new_password")}
+                                </label>
+                                <Input
+                                    type="password"
+                                    placeholder="••••••••"
+                                    value={newPassword}
+                                    onChange={e => setNewPassword(e.target.value)}
+                                    onKeyDown={e => e.key === "Enter" && handleResetPassword()}
+                                    className="!rounded-2xl !bg-bg-primary/50 !border-border-primary !h-12 !font-bold transition-all focus:!bg-bg-secondary"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[11px] font-black uppercase tracking-widest text-text-muted ml-1">
+                                    {t("confirm_new_password")}
+                                </label>
+                                <Input
+                                    type="password"
+                                    placeholder="••••••••"
+                                    value={confirmPassword}
+                                    onChange={e => setConfirmPassword(e.target.value)}
+                                    onKeyDown={e => e.key === "Enter" && handleResetPassword()}
+                                    className="!rounded-2xl !bg-bg-primary/50 !border-border-primary !h-12 !font-bold transition-all focus:!bg-bg-secondary"
+                                />
+                            </div>
+                        </>
+                    )}
 
                     <Button
-                        onClick={handleSubmit}
+                        onClick={mode === "reset" ? handleResetPassword : handleSubmit}
                         disabled={loading || (mode === 'register' && usernameStatus.state === 'invalid')}
                         className="!rounded-2xl !py-4 bg-text-primary text-bg-primary font-black text-xs uppercase tracking-widest hover:bg-pink-600 transition-all mt-4 shadow-none active:scale-95"
                     >
-                        {loading ? t("processing") : mode === "login" ? t("login") : t("register")}
+                        {loading ? t("processing") : mode === "login" ? t("login") : mode === "reset" ? t("save") : t("register")}
                     </Button>
 
                     {/* Switch Mode Link */}
-                    <div className="text-center mt-8 pt-8 border-t border-border-primary/50">
-                        <button
-                            onClick={toggleMode}
-                            className="group text-[14px] font-bold text-text-muted hover:text-text-primary transition-colors inline-flex flex-col items-center gap-1"
-                        >
-                            {mode === "login" ? (
-                                <>
-                                    <span>{t("no_account")}</span>
-                                    <span className="text-pink-500 font-black uppercase tracking-widest text-[11px] group-hover:scale-105 transition-transform">{t("register_now")}</span>
-                                </>
-                            ) : (
-                                <>
-                                    <span>{t("has_account")}</span>
-                                    <span className="text-pink-500 font-black uppercase tracking-widest text-[11px] group-hover:scale-105 transition-transform">{t("back_to_login")}</span>
-                                </>
-                            )}
-                        </button>
-                    </div>
+                    {mode !== "reset" && (
+                        <div className="text-center mt-8 pt-8 border-t border-border-primary/50">
+                            <div
+                                className="text-[14px] font-bold text-text-muted inline-flex flex-col items-center gap-1 cursor-default"
+                            >
+                                {mode === "login" ? (
+                                    <>
+                                        <span>{t("no_account")}</span>
+                                        <span 
+                                            onClick={toggleMode}
+                                            className="text-pink-500 font-black uppercase tracking-widest text-[11px] hover:text-pink-700 hover:scale-105 hover:underline transition-all cursor-pointer"
+                                        >
+                                            {t("register_now")}
+                                        </span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>{t("has_account")}</span>
+                                        <span 
+                                            onClick={toggleMode}
+                                            className="text-pink-500 font-black uppercase tracking-widest text-[11px] hover:text-pink-700 hover:scale-105 hover:underline transition-all cursor-pointer"
+                                        >
+                                            {t("back_to_login")}
+                                        </span>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

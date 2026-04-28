@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { auth, db } from "@config/firebase";
-import { updateProfile } from "firebase/auth";
-import { doc, setDoc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
+import { updateProfile, deleteUser, signOut } from "firebase/auth";
+import { doc, setDoc, collection, query, where, getDocs, updateDoc, deleteDoc, writeBatch } from "firebase/firestore";
 import Button from "@components/ui/Button";
 import ImageEditorModal from "@components/wishlist/ImageEditorModal";
 import { toastStore } from "@utils/toastStore";
@@ -195,6 +195,56 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
         if (ok) { setBannerPreview(null); setBannerBase64(""); }
     };
 
+    async function xoaTaiKhoan() {
+        const ok = await confirm({
+            title: t("delete_account_title"),
+            message: t("delete_account_msg"),
+            confirmText: t("delete_account_confirm"),
+            cancelText: t("cancel"),
+            variant: "danger"
+        });
+
+        if (!ok) return;
+
+        setLoading(true);
+        try {
+            const uid = auth.currentUser.uid;
+            const batch = writeBatch(db);
+
+            // 1. Thu thập tất cả docs liên quan để xóa
+            const collectionsToDelete = ["wishlist", "folders", "comments", "replies", "likes", "notifications"];
+            for (const colName of collectionsToDelete) {
+                // notification dùng userId, wishlist/folders dùng uid, còn lại dùng userId
+                const fieldName = (colName === "wishlist" || colName === "folders") ? "uid" : "userId";
+                const q = query(collection(db, colName), where(fieldName, "==", uid));
+                const snap = await getDocs(q);
+                snap.forEach(d => batch.delete(d.ref));
+            }
+
+            // 2. Xóa hồ sơ người dùng
+            batch.delete(doc(db, "users", uid));
+
+            // 3. Thực thi batch xóa Firestore
+            await batch.commit();
+
+            // 4. Xóa User Auth
+            await deleteUser(auth.currentUser);
+            
+            toastStore.show(t("account_deleted"));
+            onClose();
+        } catch (err) {
+            console.error(err);
+            if (err.code === "auth/requires-recent-login") {
+                notifyError(t("reauth_required"));
+                await signOut(auth);
+            } else {
+                notifyError(t("delete_failed") || "Xóa thất bại, vui lòng thử lại.");
+            }
+        } finally {
+            setLoading(false);
+        }
+    }
+
     async function luuThongTin() {
         const trimmedUsername = username.trim();
         const trimmedDisplayName = displayName.trim() || trimmedUsername;
@@ -336,22 +386,32 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                                 t={t}
                             />
 
-                            <div className="flex gap-3 mt-4 pt-4 border-t border-border-primary/50">
+                            <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-border-primary/50">
                                 <Button
-                                    variant="ghost"
-                                    onClick={() => { setTheme(userProfile?.theme || DEFAULT_THEME); setMode("view"); }}
-                                    className="!bg-bg-primary/50 !text-text-secondary hover:!bg-bg-primary/80 !py-4 !rounded-[20px] font-black text-xs uppercase tracking-widest flex-1 border border-border-primary/50 shadow-none"
-                                >
-                                    {t("cancel")}
-                                </Button>
-                                <Button
-                                    onClick={luuThongTin}
+                                    variant="danger"
+                                    onClick={xoaTaiKhoan}
                                     disabled={loading}
-                                    style={{ backgroundColor: activeTheme.color }}
-                                    className="!text-white hover:opacity-90 !py-4 !rounded-[20px] font-black text-xs uppercase tracking-widest flex-[2] border-none shadow-none"
+                                    className="!bg-rose-500/10 !text-rose-500 hover:!bg-rose-500/20 !py-3 !rounded-[16px] font-black text-[10px] uppercase tracking-[2px] border border-rose-500/20 shadow-none mb-2"
                                 >
-                                    {loading ? t("saving") : t("save_changes")}
+                                    {t("delete_account")}
                                 </Button>
+                                <div className="flex gap-3">
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => { setTheme(userProfile?.theme || DEFAULT_THEME); setMode("view"); }}
+                                        className="!bg-bg-primary/50 !text-text-secondary hover:!bg-bg-primary/80 !py-4 !rounded-[20px] font-black text-xs uppercase tracking-widest flex-1 border border-border-primary/50 shadow-none"
+                                    >
+                                        {t("cancel")}
+                                    </Button>
+                                    <Button
+                                        onClick={luuThongTin}
+                                        disabled={loading}
+                                        style={{ backgroundColor: activeTheme.color }}
+                                        className="!text-white hover:opacity-90 !py-4 !rounded-[20px] font-black text-xs uppercase tracking-widest flex-[2] border-none shadow-none"
+                                    >
+                                        {loading ? t("saving") : t("save_changes")}
+                                    </Button>
+                                </div>
                             </div>
                         </>
                     )}
