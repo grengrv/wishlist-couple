@@ -2,6 +2,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useWishlist } from "@hooks/useWishlist";
 import AddForm from "@components/wishlist/AddForm";
 import { useLanguage } from "@context/LanguageContext";
+import { useFolders } from "@hooks/useFolders";
+import { useState } from "react";
 
 export default function AddWishPage({ user, userProfile }) {
   const { groupId } = useParams();
@@ -9,12 +11,15 @@ export default function AddWishPage({ user, userProfile }) {
   const { t } = useLanguage();
 
   const {
-    tenMon, setTenMon, ghiChu, setGhiChu, previewAnh, dangTai, keoVao, setKeoVao, chonAnh, xoaAnh, themMon,
+    tenMon, setTenMon, ghiChu, setGhiChu, mood, setMood, previewAnh, dangTai, keoVao, setKeoVao, chonAnh, xoaAnh, themMon,
     formError, isImageTooLarge, nenAnh, setFormError, items
   } = useWishlist(user, userProfile, groupId);
 
-  const handleCreate = async () => {
-    const success = await themMon();
+  const { folders } = useFolders(user, userProfile, groupId);
+  const [selectedFolderId, setSelectedFolderId] = useState(null);
+
+  const handleCreate = async (moodOverride) => {
+    const success = await themMon(selectedFolderId, moodOverride);
     if (success) {
       navigate(-1);
       return true;
@@ -62,6 +67,7 @@ export default function AddWishPage({ user, userProfile }) {
           <AddForm
             tenMon={tenMon} setTenMon={setTenMon}
             ghiChu={ghiChu} setGhiChu={setGhiChu}
+            mood={mood} setMood={setMood}
             previewAnh={previewAnh} dangTai={dangTai}
             keoVao={keoVao} setKeoVao={setKeoVao}
             chonAnh={chonAnh} xoaAnh={xoaAnh}
@@ -72,6 +78,9 @@ export default function AddWishPage({ user, userProfile }) {
             setFormError={setFormError}
             existingItems={items}
             isGroup={!!groupId}
+            folders={folders}
+            selectedFolderId={selectedFolderId}
+            onSelectFolder={setSelectedFolderId}
           />
         </div>
       </div>

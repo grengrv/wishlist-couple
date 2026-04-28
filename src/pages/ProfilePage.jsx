@@ -39,6 +39,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
     const confirm = useConfirm();
     const { t, lang } = useLanguage();
     const [mode, setMode] = useState("view"); // "view" | "edit"
+    const [isPreviewMode, setIsPreviewMode] = useState(false);
 
     // Form state
     const [displayName, setDisplayName] = useState(userProfile?.displayName || userProfile?.username || "");
@@ -252,7 +253,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
     const formatDate = (timestamp) => {
         if (!timestamp) return t("just_joined");
         const d = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-        return d.toLocaleDateString(lang === "vi" ? "vi-VN" : "en-US", { month: 'short', year: 'numeric', day: 'numeric' });
+        return d.toLocaleDateString(lang === "vi" ? "vi-VN" : "en-US", { day: 'numeric', month: 'short', year: 'numeric' });
     };
 
     const activeTheme = previewTheme || theme || DEFAULT_THEME;
@@ -279,6 +280,8 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                     onOpenStatusSelector={openStatusSelector}
                     onRequestClose={handleRequestClose}
                     setMode={setMode}
+                    isPreviewMode={isPreviewMode}
+                    setIsPreviewMode={setIsPreviewMode}
                     t={t}
                 />
 
@@ -300,7 +303,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                                 </div>
                             </div>
 
-                            {!isReadOnly && (
+                            {!isReadOnly && !isPreviewMode && (
                                 <Button
                                     onClick={() => setMode("edit")}
                                     style={{ backgroundColor: activeTheme.color }}

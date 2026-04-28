@@ -20,7 +20,7 @@ export function useGroups(user, userProfile) {
     return unsub;
   }, [user]);
 
-  async function taoNhom(name, description) {
+  async function taoNhom(name, description, themeColor = null, bannerUrl = null) {
     if (!name.trim() || name.length < 2) return null;
     if (name.length > 40 || (description && description.length > 100)) return null;
 
@@ -33,18 +33,20 @@ export function useGroups(user, userProfile) {
       return code;
     };
 
-    const inviteCode = generateInviteCode(); // tách ra trước
+    const inviteCode = generateInviteCode();
 
     const docRef = await addDoc(collection(db, "groups"), {
       name,
       description: description || "",
+      themeColor,
+      bannerUrl,
       ownerUid: user.uid,
       members: [user.uid],
       inviteCode,
       createdAt: new Date()
     });
 
-    return { id: docRef.id, inviteCode }; // trả về cả hai
+    return { id: docRef.id, inviteCode };
   }
 
   async function thamGiaNhom(groupId) {

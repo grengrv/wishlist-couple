@@ -34,6 +34,7 @@ export function useWishlist(user, userProfile, groupId = null) {
   const [formError, setFormError] = useState("");
   const [isImageTooLarge, setIsImageTooLarge] = useState(false);
   const [pendingFile, setPendingFile] = useState(null);
+  const [mood, setMood] = useState(null);
  
   // Lấy danh sách & đăng ký paste listener khi user đăng nhập
   useEffect(() => {
@@ -52,7 +53,10 @@ export function useWishlist(user, userProfile, groupId = null) {
           id: d.id, 
           ...docData,
           isFavorite: docData.isFavorite ?? false,
-          favoriteAt: docData.favoriteAt ?? null
+          favoriteAt: docData.favoriteAt ?? null,
+          pinnedBy: docData.pinnedBy || [],
+          pinCount: docData.pinCount || 0,
+          folderId: docData.folderId || null
         };
       });
 
@@ -116,8 +120,9 @@ export function useWishlist(user, userProfile, groupId = null) {
   // Decorate items with isLiked state
   const enrichedItems = useMemo(() => items.map(item => ({
     ...item,
-    isLiked: userLikes.has(item.id)
-  })), [items, userLikes]);
+    isLiked: userLikes.has(item.id),
+    isPinned: item.pinnedBy?.includes(user?.uid)
+  })), [items, userLikes, user?.uid]);
 
   /** Đọc file ảnh và lưu dưới dạng base64 */
   function chonAnh(file) {
@@ -202,7 +207,7 @@ export function useWishlist(user, userProfile, groupId = null) {
   }
 
   /** Thêm item mới vào Firestore, lưu email người thêm */
-  async function themMon() {
+  async function themMon(folderId = null, moodOverride = undefined) {
     setFormError("");
     if (tenMon.trim().length < 2) {
       notifyError("Tên món phải có ít nhất 2 ký tự.");
@@ -230,11 +235,16 @@ export function useWishlist(user, userProfile, groupId = null) {
         avatarNguoiThem: userProfile?.avatar || null,
         groupId: groupId || null,
         isFavorite: false,
-        favoriteAt: null
+        favoriteAt: null,
+        pinnedBy: [],
+        pinCount: 0,
+        folderId: folderId || null,
+        mood: (moodOverride !== undefined ? moodOverride : mood) || null,
       });
 
       setTenMon("");
       setGhiChu("");
+      setMood(null);
       xoaAnh();
 
       // TRIGGER NOTIFICATION to Group Owner
@@ -305,6 +315,22 @@ export function useWishlist(user, userProfile, groupId = null) {
 
     try {
       await deleteDoc(doc(db, "wishlist", id));
+
+      if (item?.groupId) {
+        await addDoc(collection(db, "activity_logs"), {
+          roomId: item.groupId,
+          actorId: user.uid,
+          actorName: userProfile?.username || user.displayName || user.email,
+          actorAvatar: userProfile?.avatar || null,
+          action: "delete_wish",
+          targetId: id,
+          targetName: item.ten,
+          timestamp: new Date(),
+          date: new Date().toISOString().split("T")[0],
+          createdAt: serverTimestamp()
+        });
+      }
+
       return true;
     } catch (err) {
       console.error(err);
@@ -318,35 +344,47 @@ export function useWishlist(user, userProfile, groupId = null) {
     return item.groupId ? `/groups/${item.groupId}` : "/personal";
   };
 
-  /** Thích / Bỏ thích */
-  async function thichMon(item) {
+  /** Thích / Bỏ thích với Reaction */
+  async function thichMon(item, reactionType = "heart") {
     if (!user || !item) return;
     
     const wishId = item.id;
+    const allowedReactions = ["heart", "fire", "wow", "haha", "pray", "party"];
+    const type = allowedReactions.includes(reactionType) ? reactionType : "heart";
     
     // Check if user already liked
     const likesQ = query(collection(db, "likes"), where("wishId", "==", wishId), where("userId", "==", user.uid));
     const likesSnap = await getDocs(likesQ);
-    const isLiked = !likesSnap.empty;
-
-    toastStore.show(isLiked ? t("unliked") : t("liked"));
+    const existingLike = likesSnap.empty ? null : likesSnap.docs[0];
 
     try {
-      if (isLiked) {
-        // Remove likes
-        const deletePromises = likesSnap.docs.map(d => deleteDoc(d.ref));
-        await Promise.all(deletePromises);
-        await updateDoc(doc(db, "wishlist", wishId), { likeCount: increment(-1) });
+      if (existingLike) {
+        const currentData = existingLike.data();
+        if (currentData.reaction === type) {
+          // Remove same reaction (Unlike)
+          await deleteDoc(existingLike.ref);
+          await updateDoc(doc(db, "wishlist", wishId), { likeCount: increment(-1) });
+          toastStore.show(t("unliked"));
+        } else {
+          // Change reaction type
+          await updateDoc(existingLike.ref, { 
+            reaction: type,
+            updatedAt: new Date() 
+          });
+          toastStore.show(t("reaction_updated") || "Đã đổi cảm xúc!");
+        }
       } else {
-        // Add like
+        // Add new reaction
         await addDoc(collection(db, "likes"), {
           wishId: wishId,
           userId: user.uid,
           username: userProfile?.username || user.displayName || user.email || "Bạn nhỏ",
           avatar: userProfile?.avatar || null,
+          reaction: type,
           createdAt: new Date()
         });
         await updateDoc(doc(db, "wishlist", wishId), { likeCount: increment(1) });
+        toastStore.show(t("liked"));
 
         // TRIGGER NOTIFICATION
         if (item.uid !== user.uid) {
@@ -356,6 +394,7 @@ export function useWishlist(user, userProfile, groupId = null) {
             senderName: userProfile?.username || user.displayName || user.email || "Someone",
             senderAvatar: userProfile?.avatar || null,
             type: "like",
+            reaction: type,
             wishId: wishId,
             wishTitle: item.ten,
             groupId: item.groupId || null,
@@ -368,7 +407,7 @@ export function useWishlist(user, userProfile, groupId = null) {
       return true;
     } catch (err) {
       console.error(err);
-      notifyError("Lỗi khi cập nhật lượt thích.");
+      notifyError("Lỗi khi cập nhật cảm xúc.");
       return false;
     }
   }
@@ -621,51 +660,82 @@ export function useWishlist(user, userProfile, groupId = null) {
     }
   }
 
-  /** Ghim / Bỏ ghim */
+  /** Ghim / Bỏ ghim (Per-user Favorite) */
   async function toggleFavorite(item) {
     if (!user || !item) return;
-    const isCurrentlyFavorite = !!item.isFavorite;
-    const newStatus = !isCurrentlyFavorite;
+    
+    const isPinned = item.pinnedBy?.includes(user.uid);
+    const newStatus = !isPinned;
 
     try {
-      await updateDoc(doc(db, "wishlist", item.id), {
-        isFavorite: newStatus,
-        favoriteAt: newStatus ? serverTimestamp() : null
-      });
-      toastStore.show(newStatus ? t("pinned") : t("unpin"));
+      if (newStatus) {
+        // Pinning
+        await updateDoc(doc(db, "wishlist", item.id), {
+          pinnedBy: arrayUnion(user.uid),
+          pinCount: increment(1),
+          // We keep isFavorite and favoriteAt for the UI sorting logic if needed, 
+          // or we can transition to using pinCount. For now, let's keep them updated 
+          // based on if ANYONE has pinned it, or just for the owner.
+          // Actually, let's make isFavorite reflect if the CURRENT user has pinned it 
+          // in the sorting logic later, but for the document itself, let's just use it 
+          // to mean "is pinned by at least one person" or similar.
+          isFavorite: true, 
+          favoriteAt: serverTimestamp()
+        });
+        toastStore.show(t("pinned"));
 
-      // TRIGGER NOTIFICATION if pinning (and not unpinning)
-      if (newStatus && item.uid !== user.uid) {
-        try {
-          // Check for duplicate: don't send if we already pinned this and it hasn't been read?
-          // Actually, standard is to send one. But let's check for "pin" type for this wishId.
-          const dupQ = query(
-            collection(db, "notifications"),
-            where("userId", "==", item.uid),
-            where("senderId", "==", user.uid),
-            where("type", "==", "pin"),
-            where("wishId", "==", item.id)
-          );
-          const dupSnap = await getDocs(dupQ);
-          
-          if (dupSnap.empty) {
-            await addDoc(collection(db, "notifications"), {
-              userId: item.uid,
-              senderId: user.uid,
-              senderName: userProfile?.username || user.displayName || user.email || "Someone",
-              senderAvatar: userProfile?.avatar || null,
-              type: "pin",
-              wishId: item.id,
-              wishTitle: item.ten,
-              groupId: item.groupId || null,
-              targetRoute: getTargetRoute(item),
-              isRead: false,
-              createdAt: serverTimestamp()
+        // TRIGGER NOTIFICATION
+        if (item.uid !== user.uid) {
+          try {
+            // Check for duplicate: don't send if we already pinned this
+            const dupQ = query(
+              collection(db, "notifications"),
+              where("userId", "==", item.uid),
+              where("senderId", "==", user.uid),
+              where("type", "==", "pin"),
+              where("wishId", "==", item.id)
+            );
+            const dupSnap = await getDocs(dupQ);
+            
+            if (dupSnap.empty) {
+              await addDoc(collection(db, "notifications"), {
+                userId: item.uid,
+                senderId: user.uid,
+                senderName: userProfile?.username || user.displayName || user.email || "Someone",
+                senderAvatar: userProfile?.avatar || null,
+                type: "pin",
+                wishId: item.id,
+                wishTitle: item.ten,
+                groupId: item.groupId || null,
+                targetRoute: getTargetRoute(item),
+                isRead: false,
+                createdAt: serverTimestamp()
+              });
+            }
+          } catch (e) {
+            console.error("Error sending pin notification:", e);
+          }
+        }
+      } else {
+        // Unpinning
+        await updateDoc(doc(db, "wishlist", item.id), {
+          pinnedBy: arrayRemove(user.uid),
+          pinCount: increment(-1)
+        });
+        
+        // After removing, check if anyone else still pins it to update isFavorite
+        const updatedDoc = await getDoc(doc(db, "wishlist", item.id));
+        if (updatedDoc.exists()) {
+          const updatedData = updatedDoc.data();
+          if (!updatedData.pinnedBy || updatedData.pinnedBy.length === 0) {
+            await updateDoc(doc(db, "wishlist", item.id), {
+              isFavorite: false,
+              favoriteAt: null
             });
           }
-        } catch (e) {
-          console.error("Error sending pin notification:", e);
         }
+        
+        toastStore.show(t("unpin"));
       }
 
       return true;
@@ -682,6 +752,7 @@ export function useWishlist(user, userProfile, groupId = null) {
     // Form state
     tenMon, setTenMon,
     ghiChu, setGhiChu,
+    mood, setMood,
     previewAnh,
     dangTai,
     keoVao, setKeoVao,
@@ -699,5 +770,34 @@ export function useWishlist(user, userProfile, groupId = null) {
     xoaBinhLuan,
     thichBinhLuan,
     toggleFavorite,
+    /** Di chuyển wish vào folder */
+    moveToFolder: async (wishId, folderId) => {
+      try {
+        const wish = items.find(i => i.id === wishId);
+        await updateDoc(doc(db, "wishlist", wishId), {
+          folderId: folderId || null
+        });
+
+        if (wish?.groupId) {
+          await addDoc(collection(db, "activity_logs"), {
+            roomId: wish.groupId,
+            actorId: user.uid,
+            actorName: userProfile?.username || user.displayName || user.email,
+            actorAvatar: userProfile?.avatar || null,
+            action: "move_wish",
+            targetId: wishId,
+            targetName: wish.ten,
+            timestamp: new Date(),
+            date: new Date().toISOString().split("T")[0],
+            createdAt: serverTimestamp()
+          });
+        }
+
+        return true;
+      } catch (err) {
+        notifyError("Không thể di chuyển vào thư mục.");
+        return false;
+      }
+    }
   };
 }

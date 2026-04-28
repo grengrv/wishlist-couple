@@ -3,12 +3,14 @@ import { auth, db } from "@config/firebase";
 import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
+    sendEmailVerification,
     updateProfile
 } from "firebase/auth";
 import { doc, setDoc, query, collection, where, getDocs } from "firebase/firestore";
 import Button from "@components/ui/Button";
 import Input from "@components/ui/Input";
 import { notifyDangNhap, notifyDangKy, notifyError } from "@utils/notify";
+import { toastStore } from "@utils/toastStore";
 
 import { useLanguage } from "@context/LanguageContext";
 
@@ -106,6 +108,14 @@ export default function Auth() {
                 }
                 const result = await createUserWithEmailAndPassword(auth, email, password);
                 await updateProfile(result.user, { displayName: username });
+                
+                // Gửi email xác minh
+                try {
+                    await sendEmailVerification(result.user);
+                } catch (e) {
+                    console.error("Lỗi gửi email xác minh:", e);
+                }
+
                 await setDoc(doc(db, "users", result.user.uid), {
                     username: username,
                     email: email,
@@ -113,6 +123,7 @@ export default function Auth() {
                     taoLuc: new Date()
                 });
                 notifyDangKy();
+                toastStore.show(t("verification_email_sent") || "Mã xác minh đã được gửi đến email của bạn!", { duration: 6000 });
             }
         } catch (err) {
             if (err.code === "auth/invalid-credential") notifyError(t("login_invalid_error"));

@@ -1,0 +1,29 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Allow read access to all authenticated users
+    // Allow write access only to authenticated users, with size limits
+    match /{allPaths=**} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() 
+                   && request.resource.size < 10 * 1024 * 1024 // 10MB limit
+                   && request.resource.contentType.matches('image/.*'); // Only images
+    }
+    
+    // Specific folders could be more restricted
+    match /avatars/{userId}/{allPaths=**} {
+      allow write: if isSignedIn() && request.auth.uid == userId;
+    }
+    
+    match /banners/{groupId}/{allPaths=**} {
+      allow write: if isSignedIn(); // Ideally check group membership
+    }
+  }
+}

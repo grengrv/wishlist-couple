@@ -8,18 +8,22 @@ import { useGroups } from "@hooks/useGroups";
 import { useConfirm } from "@context/ConfirmContext";
 import { notifyTaoNhom, notifyXoaNhom, notifyThamGiaNhom, notifyLuuNhom, notifyError } from "@utils/notify";
 import { useLanguage } from "@context/LanguageContext";
+import GroupModal from "@components/groups/GroupModal";
 
 export default function GroupsPage({ user, userProfile }) {
   const { groups, taoNhom, suaNhom, xoaNhom, thamGiaBangMa } = useGroups(user, userProfile);
   const navigate = useNavigate();
   const confirm = useConfirm();
   const { t } = useLanguage();
-  const [showCreate, setShowCreate] = useState(false);
+  
+  // GroupModal State
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    isEditMode: false,
+    initialData: null,
+  });
+
   const [showJoin, setShowJoin] = useState(false);
-
-  const [name, setName] = useState("");
-  const [desc, setDesc] = useState("");
-
   const [joinCode, setJoinCode] = useState("");
   const [joinError, setJoinError] = useState(null);
   const [isJoining, setIsJoining] = useState(false);
@@ -36,19 +40,21 @@ export default function GroupsPage({ user, userProfile }) {
   }, [contextMenu]);
 
   // --- Logic xử lý (Giữ nguyên từ code gốc) ---
-  async function handleCreate() {
-    if (!name.trim()) return;
+  async function handleSaveGroupModal(data) {
     try {
-      const result = await taoNhom(name, desc);
-      if (result?.id) {
-        notifyTaoNhom();
-        setShowCreate(false);
-        setName("");
-        setDesc("");
-        navigate(`/groups/${result.id}`);
+      if (modalState.isEditMode) {
+        await suaNhom(modalState.initialData.id, data);
+        notifyLuuNhom();
       } else {
-        notifyError(t("update_failed"));
+        const result = await taoNhom(data.name, data.description, data.themeColor, data.bannerUrl);
+        if (result?.id) {
+          notifyTaoNhom();
+          navigate(`/groups/${result.id}`);
+        } else {
+          notifyError(t("update_failed"));
+        }
       }
+      setModalState({ isOpen: false, isEditMode: false, initialData: null });
     } catch {
       notifyError(t("update_failed"));
     }
@@ -89,46 +95,21 @@ export default function GroupsPage({ user, userProfile }) {
     setJoinError(null);
   };
 
-  const handleCloseEdit = async () => {
-    const isChanged = editModal.name !== editModal.group?.name ||
-      editModal.desc !== (editModal.group?.description || "");
-    if (isChanged) {
-      const isOk = await confirm({
-        title: t("unsaved_changes"),
-        message: t("unsaved_msg"),
-        confirmText: t("discard_changes"),
-        cancelText: t("stay_to_save"),
-      });
-      if (!isOk) return;
-    }
-    setEditModal({ visible: false, group: null, name: "", desc: "" });
-  };
-
-  const handleContextMenu = (e, group) => {
-    e.preventDefault();
-    if (group.ownerUid !== user.uid) return;
-    setContextMenu({ visible: true, x: e.pageX, y: e.pageY, group });
-  };
-
   const handleOpenEdit = () => {
     const g = contextMenu.group;
     if (!g) return;
-    setEditModal({ visible: true, group: g, name: g.name, desc: g.description || "" });
+    setModalState({
+      isOpen: true,
+      isEditMode: true,
+      initialData: {
+        id: g.id,
+        name: g.name,
+        description: g.description || "",
+        themeColor: g.themeColor || "#ec4899", // Default Pink
+        bannerUrl: g.bannerUrl || null,
+      }
+    });
     setContextMenu({ ...contextMenu, visible: false });
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editModal.name.trim()) return;
-    try {
-      await suaNhom(editModal.group.id, {
-        name: editModal.name,
-        description: editModal.desc
-      });
-      setEditModal({ visible: false, group: null, name: "", desc: "" });
-      notifyLuuNhom();
-    } catch {
-      notifyError(t("update_failed"));
-    }
   };
 
   const handleDelete = async () => {
@@ -172,19 +153,23 @@ export default function GroupsPage({ user, userProfile }) {
           <button
             onClick={async () => {
               if (showJoin) await handleCloseJoin();
-              else { setShowJoin(true); setShowCreate(false); setJoinError(null); }
+              else { setShowJoin(true); setModalState(prev => ({...prev, isOpen: false})); setJoinError(null); }
             }}
             className="h-14 px-6 rounded-[22px] bg-card-bg border border-border-primary shadow-sm hover:shadow-md hover:border-pink-200 text-text-secondary hover:text-pink-500 font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center gap-3"
+
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" y1="12" x2="3" y2="12" /></svg>
             <span className={showJoin ? "hidden" : "block"}>{t("join_with_code")}</span>
           </button>
 
           <button
-            onClick={() => { setShowCreate(!showCreate); setShowJoin(false); }}
+            onClick={() => {
+              setModalState(prev => ({ isOpen: !prev.isOpen, isEditMode: false, initialData: null }));
+              setShowJoin(false);
+            }}
             className={`
               w-14 h-14 rounded-[22px] flex items-center justify-center transition-all duration-500 shadow-xl shrink-0
-              ${showCreate
+              ${modalState.isOpen && !modalState.isEditMode
                 ? "bg-card-bg border border-border-primary text-text-muted rotate-45 shadow-none"
                 : "bg-text-primary text-bg-primary shadow-pink-500/10 hover:bg-pink-600 hover:shadow-pink-500/30 hover:-translate-y-1"
               }
@@ -198,46 +183,11 @@ export default function GroupsPage({ user, userProfile }) {
         </div>
       </div>
 
-      {/* Inline Create Form - Modern Glassmorphism */}
-      {showCreate && (
-        <div className="bg-card-bg/70 backdrop-blur-xl p-8 rounded-[35px] border border-border-primary shadow-2xl shadow-pink-500/5 mb-12 animate-slide-up max-w-2xl mx-auto w-full">
-          <div className="flex flex-col gap-6">
-            <h3 className="text-xl font-black text-text-primary">{t("create_new_group_title")}</h3>
-            <div className="grid gap-4">
-              <Input
-                placeholder={t("group_name_placeholder")}
-                value={name}
-                onChange={e => setName(e.target.value)}
-                maxLength={40}
-                className="!bg-bg-primary/50 !border-border-primary !rounded-2xl !h-14 focus:!bg-card-bg focus:!ring-2 focus:!ring-pink-100 transition-all"
-              />
-              <Input
-                as="textarea"
-                rows={2}
-                placeholder={t("group_desc_placeholder")}
-                value={desc}
-                onChange={e => setDesc(e.target.value)}
-                maxLength={100}
-                className="!bg-bg-primary/50 !border-border-primary !rounded-2xl focus:!bg-card-bg focus:!ring-2 focus:!ring-pink-100 transition-all"
-              />
-            </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <button onClick={() => setShowCreate(false)} className="px-6 py-2 font-bold text-text-muted hover:text-text-secondary">{t("cancel")}</button>
-              <button
-                onClick={handleCreate}
-                disabled={!name.trim()}
-                className="px-8 py-3 bg-text-primary text-bg-primary font-black text-xs uppercase tracking-[2px] rounded-2xl hover:bg-pink-600 shadow-lg disabled:opacity-20 transition-all active:scale-95"
-              >
-                {t("create_group_btn")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Groups Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-        {groups.length === 0 && !showCreate && (
+        {groups.length === 0 && !modalState.isOpen && (
           <div className="col-span-full py-32 flex flex-col items-center justify-center bg-bg-primary/50 rounded-[40px] border-2 border-dashed border-border-primary text-center">
             <div className="w-20 h-20 bg-card-bg rounded-3xl shadow-sm flex items-center justify-center text-text-muted mb-6">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
@@ -303,56 +253,16 @@ export default function GroupsPage({ user, userProfile }) {
         </div>
       )}
 
-      {/* Edit Modal UI */}
-      {editModal.visible && (
-        <div onClick={handleCloseEdit} className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[10000] p-6 animate-fade-in">
-          <div onClick={e => e.stopPropagation()} className="bg-card-bg rounded-[40px] w-full max-w-[480px] p-10 shadow-2xl animate-slide-up flex flex-col gap-8 border border-border-primary">
-            <div className="text-center">
-              <h3 className="text-3xl font-black text-text-primary tracking-tight mb-2">{t("edit_group_title")}</h3>
-              <p className="text-text-muted font-medium">{t("edit_group_subtitle")}</p>
-            </div>
 
-            <div className="flex flex-col gap-5">
-              <div className="flex flex-col gap-2">
-                <label className="text-[11px] font-black uppercase tracking-wider text-text-muted ml-1">{t("group_name_placeholder").split(" (")[0]}</label>
-                <Input
-                  value={editModal.name}
-                  onChange={e => setEditModal({ ...editModal, name: e.target.value })}
-                  maxLength={40}
-                  className="!bg-bg-primary !border-none !rounded-2xl focus:!bg-card-bg focus:!ring-2 focus:!ring-pink-100 transition-all"
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-[11px] font-black uppercase tracking-wider text-text-muted ml-1">{t("description")}</label>
-                <Input
-                  as="textarea"
-                  rows={3}
-                  value={editModal.desc}
-                  onChange={e => setEditModal({ ...editModal, desc: e.target.value })}
-                  maxLength={100}
-                  className="!bg-bg-primary !border-none !rounded-2xl focus:!bg-card-bg focus:!ring-2 focus:!ring-pink-100 transition-all"
-                />
-              </div>
-            </div>
 
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setEditModal({ visible: false, group: null, name: "", desc: "" })}
-                className="flex-1 py-4 text-sm font-black text-text-muted hover:text-text-secondary transition-all"
-              >
-                {t("discard_changes")}
-              </button>
-              <button
-                onClick={handleSaveEdit}
-                disabled={!editModal.name.trim()}
-                className="flex-[1.5] py-4 text-sm font-black text-bg-primary bg-text-primary rounded-[22px] shadow-xl shadow-pink-500/10 hover:bg-pink-600 transition-all active:scale-95 disabled:opacity-50"
-              >
-                {t("save_changes")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Group Modal (Create/Edit) */}
+      <GroupModal 
+        isOpen={modalState.isOpen}
+        isEditMode={modalState.isEditMode}
+        initialData={modalState.initialData}
+        onClose={() => setModalState({ isOpen: false, isEditMode: false, initialData: null })}
+        onSave={handleSaveGroupModal}
+      />
     </div>
   );
 }
@@ -393,29 +303,38 @@ function GroupCard({ group, onClick, onContextMenu }) {
 
   return (
     <div
-      className="group p-7 bg-card-bg rounded-[28px] border border-border-primary cursor-pointer hover:bg-card-hover hover:border-pink-brand hover:shadow-xl hover:-translate-y-2 transition-all duration-500 flex flex-col h-full relative overflow-hidden"
+      className="group p-7 bg-card-bg rounded-[28px] border border-border-primary cursor-pointer hover:shadow-xl hover:-translate-y-2 transition-all duration-500 flex flex-col h-full relative overflow-hidden"
       onClick={onClick}
       onContextMenu={onContextMenu}
     >
-      {/* Background decoration */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-pink-faint/20 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-125 duration-700"></div>
+      {/* Background Banner */}
+      {group.bannerUrl ? (
+        <>
+          <div className="absolute top-0 left-0 w-full h-24 z-0">
+            <img src={group.bannerUrl} alt="banner" className="w-full h-full object-cover opacity-30 group-hover:opacity-40 transition-opacity duration-500 mask-image-b" style={{ WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)' }} />
+          </div>
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-125 duration-700 z-0" style={{ backgroundColor: `${group.themeColor || '#ec4899'}15` }}></div>
+        </>
+      ) : (
+        <div className="absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-125 duration-700 z-0" style={{ backgroundColor: `${group.themeColor || '#ec4899'}20` }}></div>
+      )}
 
-      <div className="relative flex-1">
+      <div className="relative z-10 flex-1">
         <div className="flex items-start justify-between mb-3">
-          <h3 className="font-black text-2xl text-text-primary group-hover:text-pink-brand transition-colors line-clamp-2 leading-tight flex-1 pr-2">
+          <h3 className="font-black text-2xl text-text-primary transition-colors line-clamp-2 leading-tight flex-1 pr-2" style={{ color: group.themeColor || '#ec4899', }}>
             {group.name}
           </h3>
-          <div className="w-10 h-10 rounded-2xl bg-bg-primary flex items-center justify-center text-pink-brand shrink-0 group-hover:bg-pink-brand group-hover:text-white transition-all duration-300">
+          <div className="w-10 h-10 rounded-2xl bg-bg-primary flex items-center justify-center shrink-0 transition-all duration-300" style={{ color: group.themeColor || '#ec4899', backgroundColor: `${group.themeColor || '#ec4899'}15` }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
           </div>
         </div>
 
         {group.description ? (
-          <p className="text-[15px] text-text-secondary line-clamp-2 leading-relaxed group-hover:text-text-primary transition-colors">
+          <p className="text-[15px] text-text-secondary line-clamp-2 leading-relaxed group-hover:text-text-primary transition-colors mt-2">
             {group.description}
           </p>
         ) : (
-          <p className="text-sm text-pink-muted italic opacity-60">{t("private_space")}</p>
+          <p className="text-sm italic opacity-60 mt-2" style={{ color: group.themeColor || '#ec4899' }}>{t("private_space")}</p>
         )}
       </div>
 

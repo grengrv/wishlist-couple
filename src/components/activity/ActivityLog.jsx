@@ -161,6 +161,11 @@ export default function ActivityLog({ logs }) {
       case "add_member": return "👋";
       case "kick_member": return "🚪";
       case "create_wish": return "✦";
+      case "delete_wish": return "🗑️";
+      case "move_wish": return "📦";
+      case "create_folder": return "📁";
+      case "rename_folder": return "✏️";
+      case "delete_folder": return "🗑️";
       default: return "📝";
     }
   };
@@ -173,6 +178,16 @@ export default function ActivityLog({ logs }) {
         return <>{lang === 'vi' ? 'đã mời ' : 'invited '} <span className="text-rose-500 font-bold">{log.targetName}</span> {lang === 'vi' ? 'rời khỏi nhóm' : 'to leave the group'}</>;
       case "create_wish":
         return <>{lang === 'vi' ? 'vừa gửi một điều ước mới: ' : 'just sent a new wish: '} <span className="text-pink-500 font-bold">"{log.targetName}"</span></>;
+      case "delete_wish":
+        return <>{lang === 'vi' ? 'vừa xóa điều ước: ' : 'deleted wish: '} <span className="text-rose-500 font-bold">"{log.targetName}"</span></>;
+      case "move_wish":
+        return <>{lang === 'vi' ? 'vừa di chuyển ' : 'moved '} <span className="text-text-primary font-bold">"{log.targetName}"</span> {lang === 'vi' ? 'vào thư mục' : 'to a folder'}</>;
+      case "create_folder":
+        return <>{lang === 'vi' ? 'vừa tạo thư mục mới: ' : 'just created a new folder: '} <span className="text-text-primary font-bold">{log.targetName}</span></>;
+      case "rename_folder":
+        return <>{lang === 'vi' ? 'vừa đổi tên thư mục thành: ' : 'just renamed a folder to: '} <span className="text-text-primary font-bold">{log.targetName}</span></>;
+      case "delete_folder":
+        return <>{lang === 'vi' ? 'vừa xóa thư mục: ' : 'deleted folder: '} <span className="text-rose-500 font-bold">{log.targetName}</span></>;
       default:
         return t("unknown_action");
     }

@@ -116,8 +116,17 @@ export const translations = {
     others: "người khác",
     and: "và",
     items: "điều ước",
+    pin_count: "Đã ghim",
+    folders: "Thư mục",
+    all_items: "Tất cả",
+    folder_name_placeholder: "Tên thư mục...",
     layout_grid: "Lưới",
     layout_list: "Danh sách",
+    add_to_folder: "Thêm vào thư mục",
+    none: "Không",
+    rename_folder_title: "Sửa thư mục",
+    delete_folder_title: "Xóa thư mục?",
+    delete_folder_msg: "Bạn có chắc muốn xóa thư mục \"{{folderName}}\"? Các điều ước bên trong sẽ không bị xóa mà được chuyển về mục \"Tất cả\".",
 
     // Toast & Alerts
     logout_success: "Đăng xuất thành công",
@@ -164,6 +173,10 @@ export const translations = {
     delete_group_btn: "Xóa nhóm",
     edit_group_title: "Chỉnh sửa nhóm",
     edit_group_subtitle: "Cập nhật thông tin không gian chung",
+    group_theme_color: "Màu chủ đạo",
+    group_banner: "Ảnh bìa nhóm",
+    change_banner: "Đổi ảnh bìa",
+    remove_banner: "Xóa ảnh",
     save_changes: "Lưu thay đổi",
     private_space: "Không gian riêng tư của chúng mình...",
     member_count: "thành viên",
@@ -184,7 +197,7 @@ export const translations = {
     hello: "Chào",
     default_friend: "Bạn nhỏ",
     personal_subtitle: "Hôm nay chúng mình sẽ cùng thực hiện điều gì đây?",
-    your_list: "Danh sách của bạn",
+    your_list: "Danh sách",
 
     // Home Page
     home_hero_tag: "Ước mơ của chúng mình",
@@ -220,12 +233,16 @@ export const translations = {
     drop_image: "Thả hình ảnh vào đây",
     wish_placeholder: "Bạn đang mong muốn điều gì?...",
     note_placeholder: "Ghi chú thêm một chút chi tiết nhé...",
+    wish_name_required: "Hãy đặt tên cho điều ước nhé ✨",
     sending_to_cloud: "Đang gửi lên mây...",
     send_wish: "Gửi mong muốn ✦",
     oops_error: "Ối! Có lỗi nhỏ",
     compress_for_me: "Nén ảnh giúp tớ",
     pick_another: "Chọn ảnh khác",
     got_it: "Đã hiểu",
+    liked: "Đã thích! ❤️",
+    unliked: "Đã bỏ thích!",
+    reaction_updated: "Đã đổi cảm xúc!",
 
     // Group Detail Page
     loading_room: "Đang tải phòng...",
@@ -260,6 +277,29 @@ export const translations = {
     kick_member_msg: "Hành động này sẽ mời họ rời khỏi nhóm. Họ vẫn có thể tham gia lại bằng mã mời nếu muốn.",
     kick_success: "Đã mời thành viên rời khỏi nhóm.",
 
+    // Group Detail - Dropdown Menu
+    group_customize: "Tùy chỉnh nhóm",
+    edit_name_desc: "Sửa tên và mô tả",
+    add_cover_photo: "Thêm ảnh bìa",
+    change_cover_photo: "Đổi ảnh bìa",
+    remove_cover_photo: "Xóa ảnh bìa",
+    disband_group: "Giải tán nhóm",
+    theme_color: "Màu chủ đạo",
+    choose_custom_color: "Chọn màu khác",
+    save_failed: "Lưu thất bại. Vui lòng thử lại!",
+
+    // Mood Tags
+    mood_label: "Cảm xúc",
+    mood_craving: "Muốn lắm!",
+    mood_dreaming: "Chỉ mơ thôi",
+    mood_urgent: "Cấp bách!",
+    mood_done: "Đã có rồi!",
+    mood_expensive: "Đắt quá",
+    mood_together: "Cùng làm!",
+
+    // Wish name required
+    wish_name_required: "Hãy đặt tên cho điều ước nhé ✨",
+
     // Activity Log
     activity_history: "Lịch sử hoạt động",
     all_time: "Tất cả",
@@ -269,6 +309,9 @@ export const translations = {
     added_member_log: "vừa thêm {{targetName}} vào nhóm",
     kicked_member_log: "đã mời {{targetName}} rời khỏi nhóm",
     created_wish_log: "vừa gửi một điều ước mới: \"{{targetName}}\"",
+    created_folder_log: "vừa tạo thư mục mới: {{targetName}}",
+    renamed_folder_log: "vừa đổi tên thư mục thành: {{targetName}}",
+    deleted_folder_log: "vừa xóa thư mục: {{targetName}}",
     unknown_action: "đã thực hiện một hành động",
     no_activity: "Chưa có hoạt động nào trong mục này...",
     unknown_date: "Chưa xác định",
@@ -351,6 +394,27 @@ export const translations = {
     general_error: "Có lỗi xảy ra, thử lại nhé",
     username_required: "Vui lòng nhập username",
     username_invalid_tip: "Username không hợp lệ (3-20 ký tự, chữ/số/_)",
+    
+    // Legal Pages
+    terms_title: "Điều khoản Dịch vụ",
+    terms_last_updated: "Cập nhật lần cuối: 26/04/2026",
+    terms_intro: "Chào mừng bạn đến với Wishifyy. Bằng việc truy cập và sử dụng dịch vụ của chúng tôi, bạn đồng ý tuân thủ các điều khoản và điều kiện dưới đây.",
+    terms_section_1_title: "1. Sử dụng Dịch vụ",
+    terms_section_1_desc: "Bạn có trách nhiệm bảo mật thông tin tài khoản của mình. Wishifyy được thiết kế làm không gian riêng tư để chia sẻ và lưu giữ điều ước. Mọi hành vi lợi dụng nền tảng cho mục đích xấu đều sẽ bị xử lý nghiêm ngặt.",
+    terms_section_2_title: "2. Quyền riêng tư và Nội dung",
+    terms_section_2_desc: "Nội dung bạn đăng tải thuộc về bạn. Tuy nhiên, bằng việc chia sẻ nội dung trong các nhóm, bạn cấp quyền cho những thành viên trong nhóm đó được xem và tương tác với nội dung của bạn.",
+    terms_section_3_title: "3. Thay đổi Điều khoản",
+    terms_section_3_desc: "Chúng tôi có quyền sửa đổi các điều khoản này bất cứ lúc nào. Các thay đổi sẽ có hiệu lực ngay khi được đăng tải trên trang web này.",
+    
+    privacy_title: "Chính sách Bảo mật",
+    privacy_last_updated: "Cập nhật lần cuối: 26/04/2026",
+    privacy_intro: "Tại Wishifyy, quyền riêng tư của bạn là ưu tiên hàng đầu. Chính sách này giải thích cách chúng tôi thu thập, sử dụng và bảo vệ thông tin cá nhân của bạn.",
+    privacy_section_1_title: "1. Thông tin chúng tôi thu thập",
+    privacy_section_1_desc: "Chúng tôi chỉ thu thập các thông tin cần thiết để cung cấp trải nghiệm tốt nhất, bao gồm email đăng nhập, tên hiển thị, ảnh đại diện và các nội dung (điều ước, bình luận) bạn tự nguyện cung cấp.",
+    privacy_section_2_title: "2. Cách chúng tôi sử dụng thông tin",
+    privacy_section_2_desc: "Thông tin của bạn được sử dụng để đồng bộ hóa dữ liệu giữa các thiết bị, hiển thị hồ sơ cá nhân trong các nhóm mà bạn tham gia và cải thiện chất lượng dịch vụ. Chúng tôi KHÔNG BÁN dữ liệu của bạn cho bất kỳ bên thứ ba nào.",
+    privacy_section_3_title: "3. Bảo mật dữ liệu",
+    privacy_section_3_desc: "Chúng tôi sử dụng các công nghệ bảo mật tiên tiến để bảo vệ dữ liệu của bạn khỏi các truy cập trái phép. Bạn cũng có thể yêu cầu xóa tài khoản và mọi dữ liệu liên quan bất cứ lúc nào.",
   },
   en: {
     // General
@@ -469,8 +533,17 @@ export const translations = {
     others: "others",
     and: "and",
     items: "items",
+    pin_count: "Pinned",
+    folders: "Folders",
+    all_items: "All Items",
+    folder_name_placeholder: "Folder name...",
     layout_grid: "Grid",
     layout_list: "List",
+    add_to_folder: "Add to folder",
+    none: "None",
+    rename_folder_title: "Edit Folder",
+    delete_folder_title: "Delete Folder?",
+    delete_folder_msg: "Are you sure you want to delete folder \"{{folderName}}\"? The wishes inside will not be deleted but moved to \"All Items\".",
 
     // Toast & Alerts
     logout_success: "Logout successful",
@@ -517,6 +590,10 @@ export const translations = {
     delete_group_btn: "Delete Group",
     edit_group_title: "Edit Group",
     edit_group_subtitle: "Update shared space information",
+    group_theme_color: "Theme Color",
+    group_banner: "Group Banner",
+    change_banner: "Change Banner",
+    remove_banner: "Remove Banner",
     save_changes: "Save Changes",
     private_space: "Our private space...",
     member_count: "members",
@@ -537,7 +614,7 @@ export const translations = {
     hello: "Hello",
     default_friend: "friend",
     personal_subtitle: "What shall we do today?",
-    your_list: "Your List",
+    your_list: "List",
 
     // Home Page
     home_hero_tag: "✨ Our Shared Dreams",
@@ -573,12 +650,16 @@ export const translations = {
     drop_image: "Drop image here",
     wish_placeholder: "What are you wishing for?...",
     note_placeholder: "Add some notes here...",
+    wish_name_required: "Please name your wish ✨",
     sending_to_cloud: "Sending to cloud...",
     send_wish: "Send Wish ✦",
     oops_error: "Oops! Small error",
     compress_for_me: "Compress it for me",
     pick_another: "Pick another",
     got_it: "Got it",
+    liked: "Liked! ❤️",
+    unliked: "Unliked!",
+    reaction_updated: "Reaction updated!",
 
     // Group Detail Page
     loading_room: "Loading room...",
@@ -613,6 +694,29 @@ export const translations = {
     kick_member_msg: "This will remove them from the group. They can still rejoin using an invite code if they wish.",
     kick_success: "Member removed from the group.",
 
+    // Group Detail - Dropdown Menu
+    group_customize: "Customize Group",
+    edit_name_desc: "Edit name & description",
+    add_cover_photo: "Add cover photo",
+    change_cover_photo: "Change cover photo",
+    remove_cover_photo: "Remove cover photo",
+    disband_group: "Disband group",
+    theme_color: "Theme Color",
+    choose_custom_color: "Choose custom color",
+    save_failed: "Save failed. Please try again!",
+
+    // Mood Tags
+    mood_label: "Mood",
+    mood_craving: "Want it!",
+    mood_dreaming: "Just dreaming",
+    mood_urgent: "Urgent!",
+    mood_done: "Got it!",
+    mood_expensive: "Too pricey",
+    mood_together: "Let's do it!",
+
+    // Wish name required
+    wish_name_required: "Please name your wish ✨",
+
     // Activity Log
     activity_history: "Activity History",
     all_time: "All",
@@ -622,6 +726,9 @@ export const translations = {
     added_member_log: "just added {{targetName}} to the group",
     kicked_member_log: "invited {{targetName}} to leave the group",
     created_wish_log: "just sent a new wish: \"{{targetName}}\"",
+    created_folder_log: "just created a new folder: {{targetName}}",
+    renamed_folder_log: "just renamed a folder to: {{targetName}}",
+    deleted_folder_log: "just deleted a folder: {{targetName}}",
     unknown_action: "performed an action",
     no_activity: "No activity in this section yet...",
     unknown_date: "Unknown",
@@ -704,5 +811,26 @@ export const translations = {
     general_error: "An error occurred, please try again",
     username_required: "Please enter a username",
     username_invalid_tip: "Invalid username (3-20 characters, letters/numbers/_)",
+    
+    // Legal Pages
+    terms_title: "Terms of Service",
+    terms_last_updated: "Last updated: April 26, 2026",
+    terms_intro: "Welcome to Wishifyy. By accessing and using our service, you agree to comply with the terms and conditions outlined below.",
+    terms_section_1_title: "1. Use of Service",
+    terms_section_1_desc: "You are responsible for keeping your account secure. Wishifyy is designed as a private space to share and keep wishes. Any misuse of the platform will result in immediate action.",
+    terms_section_2_title: "2. Privacy and Content",
+    terms_section_2_desc: "The content you post belongs to you. However, by sharing content within groups, you grant members of those groups the right to view and interact with your content.",
+    terms_section_3_title: "3. Changes to Terms",
+    terms_section_3_desc: "We reserve the right to modify these terms at any time. Changes will be effective immediately upon posting on this website.",
+    
+    privacy_title: "Privacy Policy",
+    privacy_last_updated: "Last updated: April 26, 2026",
+    privacy_intro: "At Wishifyy, your privacy is our priority. This policy explains how we collect, use, and protect your personal information.",
+    privacy_section_1_title: "1. Information We Collect",
+    privacy_section_1_desc: "We only collect information necessary to provide the best experience, including your login email, display name, avatar, and content (wishes, comments) you voluntarily provide.",
+    privacy_section_2_title: "2. How We Use Information",
+    privacy_section_2_desc: "Your information is used to sync data across devices, display your profile in joined groups, and improve service quality. We DO NOT sell your data to third parties.",
+    privacy_section_3_title: "3. Data Security",
+    privacy_section_3_desc: "We use advanced security technologies to protect your data from unauthorized access. You may also request to delete your account and all associated data at any time.",
   }
 };

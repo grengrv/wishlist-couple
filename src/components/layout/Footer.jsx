@@ -1,4 +1,6 @@
 import { useLanguage } from "@context/LanguageContext";
+import { Link } from "react-router-dom";
+
 
 /**
  * Footer Component
@@ -34,12 +36,16 @@ export default function Footer() {
           <div>
             <h3 className="text-xs uppercase tracking-[2px] font-black text-text-muted mb-6">{t("categories")}</h3>
             <ul className="flex flex-col gap-4">
-              {[t('home'), t('personal'), t('groups')].map((item) => (
-                <li key={item}>
-                  <a href="#" className="text-[15px] font-bold text-text-secondary hover:text-pink-500 transition-all flex items-center group">
+              {[
+                { name: t('home'), path: '/' },
+                { name: t('personal'), path: '/personal' },
+                { name: t('groups'), path: '/groups' }
+              ].map((item) => (
+                <li key={item.path}>
+                  <Link to={item.path} onClick={() => window.scrollTo(0, 0)} className="text-[15px] font-bold text-text-secondary hover:text-pink-500 transition-all flex items-center group">
                     <span className="w-0 group-hover:w-2 h-[2px] bg-pink-400 mr-0 group-hover:mr-2 transition-all"></span>
-                    {item}
-                  </a>
+                    {item.name}
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -48,12 +54,15 @@ export default function Footer() {
           <div>
             <h3 className="text-xs uppercase tracking-[2px] font-black text-text-muted mb-6">{t("legal")}</h3>
             <ul className="flex flex-col gap-4">
-              {[t('terms'), t('privacy')].map((item) => (
-                <li key={item}>
-                  <a href="#" className="text-[15px] font-bold text-text-secondary hover:text-pink-500 transition-all flex items-center group">
+              {[
+                { name: t('terms'), path: '/terms' },
+                { name: t('privacy'), path: '/privacy' }
+              ].map((item) => (
+                <li key={item.path}>
+                  <Link to={item.path} onClick={() => window.scrollTo(0, 0)} className="text-[15px] font-bold text-text-secondary hover:text-pink-500 transition-all flex items-center group">
                     <span className="w-0 group-hover:w-2 h-[2px] bg-pink-400 mr-0 group-hover:mr-2 transition-all"></span>
-                    {item}
-                  </a>
+                    {item.name}
+                  </Link>
                 </li>
               ))}
             </ul>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { usePreview } from "@context/PreviewContext";
 
 /**
  * Avatar — UI Primitive
@@ -17,7 +18,13 @@ const sizes = {
 
 export default function Avatar({ src, name = "?", size = "sm", className = "", ...props }) {
   const [imgError, setImgError] = useState(false);
+  const showPreview = usePreview();
   const isSm = size === "sm";
+
+  const handlePreview = (e) => {
+    e.stopPropagation();
+    showPreview(src, name);
+  };
 
   // Hiển thị ảnh nếu có src và không bị lỗi load
   if (src && !imgError) {
@@ -26,10 +33,12 @@ export default function Avatar({ src, name = "?", size = "sm", className = "", .
         key={src}
         src={src} 
         alt="avatar" 
+        onClick={handlePreview}
         onError={() => setImgError(true)}
         className={`
           ${sizes[size]} 
           rounded-full object-cover shrink-0
+          cursor-pointer hover:scale-110 active:scale-95 transition-all duration-300
           ${isSm ? "border-[1.5px] border-pink-light" : "border-pink-light"}
           ${className}
         `}
@@ -45,11 +54,13 @@ export default function Avatar({ src, name = "?", size = "sm", className = "", .
 
   return (
     <div 
+      onClick={handlePreview}
       className={`
         ${sizes[size]} 
         rounded-full shrink-0
         bg-gradient-avatar text-white font-bold
         flex items-center justify-center
+        cursor-pointer hover:scale-110 active:scale-95 transition-all duration-300
         ${className}
       `}
       {...props}

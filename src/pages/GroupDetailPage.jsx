@@ -8,6 +8,8 @@ import Stats from "@components/wishlist/Stats";
 import AddForm from "@components/wishlist/AddForm";
 import WishList from "@components/wishlist/WishList";
 import ItemModal from "@components/wishlist/ItemModal";
+import FolderList from "@components/wishlist/FolderList";
+import { useFolders } from "@hooks/useFolders";
 import Button from "@components/ui/Button";
 import Input from "@components/ui/Input";
 import { ADMIN_EMAIL } from "@constants";
@@ -19,6 +21,7 @@ import { useActivityLogs } from "@hooks/useActivityLogs";
 import ActivityLog from "@components/activity/ActivityLog";
 import toast from "react-hot-toast";
 import { useLanguage } from "@context/LanguageContext";
+import ImageEditorModal from "@components/wishlist/ImageEditorModal";
 
 function generateInviteCode() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -28,6 +31,17 @@ function generateInviteCode() {
   }
   return code;
 }
+
+const PRESET_COLORS = [
+  { name: "H\u1ed3ng", value: "#ec4899" },
+  { name: "\u0110\u1ecf", value: "#f43f5e" },
+  { name: "Cam", value: "#f97316" },
+  { name: "V\u00e0ng", value: "#f59e0b" },
+  { name: "Xanh l\u00e1", value: "#10b981" },
+  { name: "Xanh d\u01b0\u01a1ng", value: "#3b82f6" },
+  { name: "Tím", value: "#8b5cf6" },
+  { name: "X\u00e1m", value: "#64748b" },
+];
 
 export default function GroupDetailPage({ user, userProfile }) {
   const { id } = useParams();
@@ -48,6 +62,13 @@ export default function GroupDetailPage({ user, userProfile }) {
   const [isAdding, setIsAdding] = useState(false);
   const [isLandscapeWide, setIsLandscapeWide] = useState(false);
 
+  // Banner editor state
+  const [bannerEditor, setBannerEditor] = useState({ isOpen: false, imageSrc: null, file: null, isGif: false });
+  const [isSavingBanner, setIsSavingBanner] = useState(false);
+  // Group settings menu
+  const [showGroupMenu, setShowGroupMenu] = useState(false);
+  const groupMenuRef = useRef(null);
+
   useEffect(() => {
     const checkWide = () => setIsLandscapeWide(window.innerWidth >= 900 && window.matchMedia("(orientation: landscape)").matches);
     checkWide();
@@ -60,15 +81,23 @@ export default function GroupDetailPage({ user, userProfile }) {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const {
-    items, xoaMon, thichMon, binhLuanMon, xoaBinhLuan, thichBinhLuan, toggleFavorite
+    items, xoaMon, thichMon, binhLuanMon, xoaBinhLuan, thichBinhLuan, toggleFavorite, moveToFolder
   } = useWishlist(user, userProfile, id);
+  const { folders, addFolder, updateFolder, deleteFolder } = useFolders(user, userProfile, id);
+  const [activeFolderId, setActiveFolderId] = useState(null);
 
   const [filterUserId, setFilterUserId] = useState("all");
 
   const filteredItems = React.useMemo(() => {
-    if (filterUserId === "all") return items;
-    return items.filter(item => item.uid === filterUserId);
-  }, [items, filterUserId]);
+    let list = items;
+    if (filterUserId !== "all") {
+      list = list.filter(item => item.uid === filterUserId);
+    }
+    if (activeFolderId !== null) {
+      list = list.filter(item => item.folderId === activeFolderId);
+    }
+    return list;
+  }, [items, filterUserId, activeFolderId]);
 
   useEffect(() => {
     const wishId = searchParams.get("wishId");
@@ -93,6 +122,18 @@ export default function GroupDetailPage({ user, userProfile }) {
   useEffect(() => {
     isEditingRef.current = isEditing;
   }, [isEditing]);
+
+  // Close group menu on outside click
+  useEffect(() => {
+    if (!showGroupMenu) return;
+    const handler = (e) => {
+      if (groupMenuRef.current && !groupMenuRef.current.contains(e.target)) {
+        setShowGroupMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showGroupMenu]);
 
   useEffect(() => {
     let unsubGroup;
@@ -232,6 +273,48 @@ export default function GroupDetailPage({ user, userProfile }) {
 
   const isOwner = group?.ownerUid === user?.uid || user?.email === ADMIN_EMAIL;
 
+  function handleBannerFileSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const isGif = file.type === "image/gif";
+    const objectUrl = URL.createObjectURL(file);
+    setBannerEditor({ isOpen: true, imageSrc: objectUrl, file, isGif });
+    e.target.value = "";
+  }
+
+  async function handleBannerSave(processedImage) {
+    setBannerEditor({ isOpen: false, imageSrc: null, file: null, isGif: false });
+    setIsSavingBanner(true);
+    try {
+      await suaNhom(id, { bannerUrl: processedImage });
+      notifyLuuNhom();
+    } catch {
+      notifyError(t("save_failed"));
+    } finally {
+      setIsSavingBanner(false);
+    }
+  }
+
+  async function handleBannerRemove() {
+    setIsSavingBanner(true);
+    try {
+      await suaNhom(id, { bannerUrl: null });
+      notifyLuuNhom();
+    } catch {
+      notifyError(t("save_failed"));
+    } finally {
+      setIsSavingBanner(false);
+    }
+  }
+
+  async function handleThemeColorChange(color) {
+    try {
+      await suaNhom(id, { themeColor: color });
+    } catch {
+      notifyError(t("save_failed"));
+    }
+  }
+
   async function handleAddMember() {
     if (!newUsername.trim()) return;
     setIsAdding(true);
@@ -265,7 +348,7 @@ export default function GroupDetailPage({ user, userProfile }) {
   if (!group) return <p className="py-10 text-center text-pink-brand animate-pulse">{t("loading_room")}</p>;
 
   return (
-    <div className="flex w-full items-start transition-all duration-500 pt-6 md:pt-10">
+    <div className="flex flex-1 w-full items-start gap-0 transition-all duration-500 pt-6 md:pt-10">
 
       {/* CỘT MAIN CONTENT */}
       <div className={`flex-1 min-w-0 transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${showMembers ? "pr-6 lg:pr-10" : "pr-0"}`}>
@@ -273,11 +356,33 @@ export default function GroupDetailPage({ user, userProfile }) {
           <span className="text-lg leading-none">←</span> {t("back_to_list")}
         </button>
 
-        <div className="group relative flex flex-col sm:flex-row sm:items-start justify-between gap-6 mb-10 bg-card-bg p-6 sm:p-8 rounded-[24px] border border-border-primary shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
-          {/* Vạch trang trí bên trái */}
-          <div className="absolute top-0 left-0 w-1.5 h-full bg-pink-brand rounded-l-[24px]"></div>
+        <div 
+          className="group relative flex flex-col sm:flex-row sm:items-start justify-between gap-6 mb-10 bg-card-bg p-6 sm:p-8 rounded-[24px] border border-border-primary shadow-sm hover:shadow-md transition-shadow duration-300"
+          style={{ '--hover-border-color': group.themeColor || '#ec4899' }}
+        >
+          {/* Background Banner */}
+          {group.bannerUrl ? (
+            <div className="absolute inset-0 z-0 rounded-[24px] overflow-hidden pointer-events-none">
+              {/* Ảnh - light: opacity-75, dark: opacity-55 để nhìn rõ trên cả 2 nền */}
+              <img 
+                src={group.bannerUrl} 
+                alt="banner" 
+                className="absolute inset-0 w-full h-full object-cover object-top opacity-100 dark:opacity-100 group-hover:opacity-90 dark:group-hover:opacity-70 transition-opacity duration-500 ease-out" 
+                style={{ 
+                  WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.7) 60%, rgba(0,0,0,0) 100%)',
+                  maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.7) 60%, rgba(0,0,0,0) 100%)'
+                }}
+              />
+              {/* Light mode: lớp phủ trắng nhẹ để text đọc được, Dark mode: phủ tối hơn */}
+              <div className="absolute inset-0 bg-gradient-to-r from-card-bg/80 via-card-bg/50 to-card-bg/10 dark:from-card-bg/70 dark:via-card-bg/40 dark:to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-card-bg/60 dark:to-card-bg/50"></div>
+            </div>
+          ) : null}
 
-          <div className="flex-1 min-w-0 ml-1.5 pr-0 sm:pr-[320px]">
+          {/* Vạch trang trí bên trái */}
+          <div className="absolute top-0 left-0 w-1.5 h-full rounded-l-[24px] z-10" style={{ backgroundColor: group.themeColor || '#ec4899' }}></div>
+
+          <div className="relative z-10 flex-1 min-w-0 ml-1.5 pr-0 sm:pr-[320px]">
             {isEditing ? (
               <div className="flex flex-col gap-3 mb-4 pr-0 sm:pr-8 animate-fade-in opacity-100">
                 <div className="relative">
@@ -302,20 +407,136 @@ export default function GroupDetailPage({ user, userProfile }) {
             ) : (
               <>
                 <div className="flex items-end gap-3 mb-1">
-                  <h2 className="text-[28px] sm:text-[32px] font-black text-pink-brand tracking-tight leading-tight break-words">
+                  <h2 
+                    className="text-[28px] sm:text-[32px] font-black tracking-tight leading-tight break-words drop-shadow-sm"
+                    style={{ color: group.themeColor || '#ec4899' }}
+                  >
                     {group.name}
                   </h2>
                   {isOwner && (
-                    <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity pb-1.5">
-                      <button onClick={() => setIsEditing(true)} className="p-1.5 text-pink-brand hover:bg-pink-50 rounded-lg transition-colors" title={t("edit_group_name")}>
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                    <div ref={groupMenuRef} className="relative flex items-center pb-1.5">
+                      {/* Settings trigger button */}
+                      <button
+                        onClick={() => setShowGroupMenu(v => !v)}
+                        className="p-1.5 rounded-lg transition-all duration-200 hover:bg-black/5 dark:hover:bg-white/5"
+                        style={{ color: group.themeColor || '#ec4899' }}
+                        title={t("group_customize")}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
                       </button>
-                      <button onClick={handleXoaGroup} className="p-1.5 text-pink-brand hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title={t("disband_group_btn")}>
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                      </button>
+
+                      {/* Dropdown menu */}
+                      <AnimatePresence>
+                        {showGroupMenu && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.92, y: -6 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.92, y: -6 }}
+                            transition={{ duration: 0.15, ease: 'easeOut' }}
+                            className="absolute left-0 top-full mt-2 w-64 bg-card-bg border border-border-primary rounded-2xl shadow-2xl shadow-black/10 dark:shadow-black/40 z-[200] overflow-hidden py-1.5"
+                          >
+                            {/* Edit name */}
+                            <button
+                              onClick={() => { setIsEditing(true); setShowGroupMenu(false); }}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-text-secondary hover:bg-bg-primary hover:text-text-primary transition-colors"
+                            >
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: group.themeColor || '#ec4899' }}><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                              {t("edit_name_desc")}
+                            </button>
+
+                            {/* Change banner */}
+                            <button
+                              onClick={() => { document.getElementById(`banner-upload-${id}`).click(); setShowGroupMenu(false); }}
+                              disabled={isSavingBanner}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-text-secondary hover:bg-bg-primary hover:text-text-primary transition-colors disabled:opacity-40"
+                            >
+                              {isSavingBanner ? (
+                                <div className="w-[15px] h-[15px] rounded-full border-2 border-current/20 border-t-current animate-spin" style={{ color: group.themeColor || '#ec4899' }} />
+                              ) : (
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: group.themeColor || '#ec4899' }}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                              )}
+                              {group.bannerUrl ? t("change_cover_photo") : t("add_cover_photo")}
+                            </button>
+
+                            {/* Remove banner */}
+                            {group.bannerUrl && (
+                              <button
+                                onClick={() => { handleBannerRemove(); setShowGroupMenu(false); }}
+                                disabled={isSavingBanner}
+                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-text-secondary hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 transition-colors disabled:opacity-40"
+                              >
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-red-400"><path d="M21 9l-1 12H4L3 9"/><path d="M1 9h22"/><path d="M8 9V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v4"/></svg>
+                                {t("remove_cover_photo")}
+                              </button>
+                            )}
+
+                            {/* Divider */}
+                            <div className="h-px bg-border-primary/60 mx-3 my-1" />
+
+                            {/* Theme color picker */}
+                            <div className="px-4 py-3">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-2.5">{t("theme_color")}</p>
+                              <div className="flex flex-wrap gap-2 mb-2">
+                                {PRESET_COLORS.map(c => (
+                                  <button
+                                    key={c.value}
+                                    onClick={() => handleThemeColorChange(c.value)}
+                                    title={c.name}
+                                    className="w-7 h-7 rounded-full transition-all duration-200 flex items-center justify-center hover:scale-110 focus:outline-none"
+                                    style={{
+                                      backgroundColor: c.value,
+                                      boxShadow: (group.themeColor || '#ec4899') === c.value
+                                        ? `0 0 0 2px white, 0 0 0 4px ${c.value}`
+                                        : 'none',
+                                      transform: (group.themeColor || '#ec4899') === c.value ? 'scale(1.15)' : undefined
+                                    }}
+                                  >
+                                    {(group.themeColor || '#ec4899') === c.value && (
+                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                    )}
+                                  </button>
+                                ))}
+                                {/* Custom color */}
+                                <label
+                                  title={t("choose_custom_color")}
+                                  className="w-7 h-7 rounded-full border-2 border-dashed border-border-primary flex items-center justify-center cursor-pointer hover:scale-110 transition-all duration-200 overflow-hidden relative"
+                                >
+                                  <span className="text-text-muted text-base leading-none select-none">+</span>
+                                  <input
+                                    type="color"
+                                    defaultValue={group.themeColor || '#ec4899'}
+                                    onChange={e => handleThemeColorChange(e.target.value)}
+                                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                  />
+                                </label>
+                              </div>
+                            </div>
+
+                            {/* Divider */}
+                            <div className="h-px bg-border-primary/60 mx-3 my-1" />
+
+                            {/* Disband */}
+                            <button
+                              onClick={() => { handleXoaGroup(); setShowGroupMenu(false); }}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                            >
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                              {t("disband_group")}
+                            </button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   )}
                 </div>
+                {/* Hidden file input */}
+                <input
+                  id={`banner-upload-${id}`}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleBannerFileSelect}
+                />
                 {group.description && (
                   <p className="mt-2 text-sm text-text-secondary font-medium leading-relaxed break-words whitespace-pre-wrap max-w-2xl">
                     {group.description}
@@ -345,49 +566,60 @@ export default function GroupDetailPage({ user, userProfile }) {
                     return <img key={idx} src={profile.avatar} alt="avatar" className={`w-8 h-8 rounded-full border-2 border-card-bg object-cover ${zIndices[idx]}`} />;
                   }
                   return (
-                    <div key={idx} className={`w-8 h-8 rounded-full bg-bg-primary border-2 border-card-bg flex items-center justify-center text-[12px] text-pink-brand font-bold ${zIndices[idx]}`}>
+                    <div key={idx} className={`w-8 h-8 rounded-full bg-bg-primary border-2 border-card-bg flex items-center justify-center text-[12px] font-bold ${zIndices[idx]}`} style={{ color: group.themeColor || '#ec4899' }}>
                       {(profile.username || "?").charAt(0).toUpperCase()}
                     </div>
                   );
                 })}
                 {group.memberProfiles?.length > 3 && (
-                  <div className="w-8 h-8 rounded-full bg-bg-primary border-2 border-card-bg flex items-center justify-center text-[10px] text-pink-500 font-bold z-0">
+                  <div className="w-8 h-8 rounded-full bg-bg-primary border-2 border-card-bg flex items-center justify-center text-[10px] font-bold z-0" style={{ color: group.themeColor || '#ec4899' }}>
                     +{group.memberProfiles.length - 3}
                   </div>
                 )}
               </div>
-              <span className="text-[13px] font-bold text-pink-soft ml-1.5 group-hover/members:text-pink-500 transition-colors">
+              <span className="text-[13px] font-bold transition-colors ml-1.5 opacity-80 group-hover/members:opacity-100" style={{ color: group.themeColor || '#ec4899' }}>
                 {group.members?.length || 1} {t("member_count")} <span className="opacity-50 ml-1 text-[10px]">▶</span>
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0 sm:absolute sm:top-8 sm:right-8 mt-6 sm:mt-0">
+          <div className="relative z-10 flex items-center gap-3 shrink-0 sm:absolute sm:top-8 sm:right-8 mt-6 sm:mt-0">
             {isOwner && group.inviteCode && (
               <div
                 onClick={() => {
                   navigator.clipboard.writeText(group.inviteCode);
                   notifyCopied();
                 }}
-                className="group/code flex items-center gap-2.5 px-3 py-1.5 bg-pink-pale rounded-xl border border-pink-brand/10 cursor-pointer hover:bg-pink-brand/5 hover:border-pink-brand/30 transition-all duration-300 shadow-sm h-10"
+                className="group/code flex items-center gap-2.5 px-3 py-1.5 rounded-xl border cursor-pointer transition-all duration-300 shadow-sm h-10 hover:shadow-md
+                  bg-white/70 border-black/10 hover:bg-white hover:border-black/20
+                  dark:bg-white/5 dark:border-white/10 dark:hover:bg-white/10 dark:hover:border-white/20
+                  backdrop-blur-sm"
                 title={t("copy_invite_tip")}
               >
-                <span className="text-[9px] font-black text-pink-brand uppercase tracking-[1px] border-r border-pink-brand/10 pr-2.5">{t("invite_code_label")}</span>
-                <span className="text-[13px] font-black text-pink-brand tracking-[2px]">{group.inviteCode}</span>
-                <svg className="text-pink-brand/40 group-hover/code:text-pink-brand transition-all" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                <span
+                  className="text-[9px] font-black uppercase tracking-[1px] border-r pr-2.5 border-current/20"
+                  style={{ color: group.themeColor || '#ec4899' }}
+                >{t("invite_code_label")}</span>
+                <span
+                  className="text-[13px] font-black tracking-[2px]"
+                  style={{ color: group.themeColor || '#ec4899' }}
+                >{group.inviteCode}</span>
+                <svg className="transition-all opacity-40 group-hover/code:opacity-100" style={{ color: group.themeColor || '#ec4899' }} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
               </div>
             )}
             <button
               onClick={() => navigate(`/add/${id}`)}
               title={t("add_wish_tip")}
-              className="w-12 h-12 rounded-2xl bg-card-bg border border-border-primary text-pink-brand flex items-center justify-center shadow-sm hover:bg-card-hover transition-all shrink-0"
+              className="w-12 h-12 rounded-2xl bg-card-bg border border-border-primary flex items-center justify-center shadow-sm hover:bg-card-hover transition-all shrink-0"
+              style={{ color: group.themeColor || '#ec4899' }}
             >
               <span className="text-2xl">✦</span>
             </button>
             <button
               onClick={handleInvite}
               title={t("invite_tip")}
-              className="w-12 h-12 rounded-2xl bg-card-bg border border-border-primary text-pink-brand flex items-center justify-center shadow-sm hover:bg-card-hover transition-all shrink-0"
+              className="w-12 h-12 rounded-2xl bg-card-bg border border-border-primary flex items-center justify-center shadow-sm hover:bg-card-hover transition-all shrink-0"
+              style={{ color: group.themeColor || '#ec4899' }}
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="18" cy="5" r="3"></circle>
@@ -401,6 +633,18 @@ export default function GroupDetailPage({ user, userProfile }) {
         </div>
 
         <Stats items={items} />
+
+        <div className="mt-8">
+          <FolderList 
+            folders={folders} 
+            activeFolderId={activeFolderId}
+            onSelectFolder={setActiveFolderId}
+            onAddFolder={addFolder}
+            onUpdateFolder={updateFolder}
+            onDeleteFolder={deleteFolder}
+            onDropToFolder={(wishId, folderId) => moveToFolder(wishId, folderId)}
+          />
+        </div>
 
         {/* BỘ LỌC BÀI VIẾT THEO THÀNH VIÊN */}
         {group?.memberProfiles?.length > 1 && (
@@ -605,6 +849,17 @@ export default function GroupDetailPage({ user, userProfile }) {
           onToggleFavorite={toggleFavorite}
           members={group.memberProfiles}
           mode="group"
+        />
+      )}
+      {bannerEditor.isOpen && (
+        <ImageEditorModal
+          isOpen={bannerEditor.isOpen}
+          imageSrc={bannerEditor.imageSrc}
+          file={bannerEditor.file}
+          isBanner={true}
+          isGif={bannerEditor.isGif}
+          onClose={() => setBannerEditor({ isOpen: false, imageSrc: null, file: null, isGif: false })}
+          onSave={handleBannerSave}
         />
       )}
     </div>

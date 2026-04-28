@@ -14,6 +14,8 @@ export default function ProfileHeader({
   onOpenStatusSelector, 
   onRequestClose,
   setMode,
+  isPreviewMode,
+  setIsPreviewMode,
   t 
 }) {
   return (
@@ -47,17 +49,31 @@ export default function ProfileHeader({
         )}
         {!isReadOnly && <input id="banner-upload" type="file" accept="image/*" className="hidden" onChange={e => onProcessImage(e.target.files[0], true)} />}
 
-        <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center text-white backdrop-blur-md transition-all z-20" onClick={onRequestClose}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-        </button>
+        <div className="absolute top-4 right-4 flex gap-2 z-20">
+          {!isReadOnly && mode === "view" && (
+            <button 
+              className={`w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md transition-all ${isPreviewMode ? 'bg-pink-500 text-white shadow-lg scale-110' : 'bg-black/10 hover:bg-black/20 text-white'}`}
+              onClick={() => setIsPreviewMode(!isPreviewMode)}
+              title={isPreviewMode ? "Thoát xem trước" : "Xem trước hồ sơ"}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </button>
+          )}
+          <button className="w-10 h-10 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center text-white backdrop-blur-md transition-all" onClick={onRequestClose}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          </button>
+        </div>
       </div>
 
       <div className="px-6 relative flex flex-col items-center text-center gap-3 pb-2 w-full">
         <div className="relative -mt-[60px] group z-30 shrink-0 border-1 border-white rounded-[100px]">
           <div
-            className={`w-[120px] h-[120px] rounded-[100px] shadow-xl overflow-hidden relative ${!isReadOnly ? 'cursor-pointer' : ''} rotate-3 group-hover:rotate-0 transition-transform duration-500`}
+            className={`w-[120px] h-[120px] rounded-[100px] shadow-xl overflow-hidden relative ${!isReadOnly && !isPreviewMode ? 'cursor-pointer' : ''} rotate-3 group-hover:rotate-0 transition-transform duration-500`}
             onClick={() => {
-              if (isReadOnly) return;
+              if (isReadOnly || isPreviewMode) return;
               if (mode === "view") {
                 setMode("edit");
                 setTimeout(() => document.getElementById("avatar-upload").click(), 50);
@@ -97,8 +113,8 @@ export default function ProfileHeader({
             )}
           </div>
           <div
-            className={`absolute bottom-[-3px] left-[84px] w-5.5 h-5.5 rounded-full border-[3px] border-white flex items-center justify-center bg-white z-40 transition-all duration-300 ${!isReadOnly ? 'cursor-pointer hover:scale-110 active:scale-95' : ''}`}
-            onClick={onOpenStatusSelector}
+            className={`absolute bottom-[-3px] left-[84px] w-5.5 h-5.5 rounded-full border-[3px] border-white flex items-center justify-center bg-white z-40 transition-all duration-300 ${!isReadOnly && !isPreviewMode ? 'cursor-pointer hover:scale-110 active:scale-95' : ''}`}
+            onClick={!isPreviewMode ? onOpenStatusSelector : undefined}
           >
             <div className="w-full h-full rounded-full" style={{ backgroundColor: statusColors[status] || statusColors.online }}></div>
           </div>

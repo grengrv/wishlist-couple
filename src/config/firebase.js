@@ -4,12 +4,12 @@ import { getAuth } from "firebase/auth";
 import { getMessaging } from "firebase/messaging";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyCv_f10d1H0XxjYCpZeI_0NuAQibv7Cp5E",
-    authDomain: "wishlist-couple.firebaseapp.com",
-    projectId: "wishlist-couple",
-    storageBucket: "wishlist-couple.firebasestorage.app",
-    messagingSenderId: "733085795389",
-    appId: "1:733085795389:web:f6dbac08b4049f386c1654"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 const app = initializeApp(firebaseConfig);

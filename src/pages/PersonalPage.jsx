@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Stats from "@components/wishlist/Stats";
 import WishList from "@components/wishlist/WishList";
 import ItemModal from "@components/wishlist/ItemModal";
+import FolderList from "@components/wishlist/FolderList";
+import { useFolders } from "@hooks/useFolders";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useWishlist } from "@hooks/useWishlist";
-import { useEffect } from "react";
 import { ADMIN_EMAIL } from "@constants";
 import { notifyXoaWish } from "@utils/notify";
 import { useLanguage } from "@context/LanguageContext";
@@ -12,9 +13,16 @@ import { useLanguage } from "@context/LanguageContext";
 export default function PersonalPage({ user, userProfile }) {
   const navigate = useNavigate();
   const [selectedItem, setSelectedItem] = useState(null);
-  const { items, xoaMon, thichMon, binhLuanMon, xoaBinhLuan, thichBinhLuan, toggleFavorite } = useWishlist(user, userProfile, null);
+  const { items, xoaMon, thichMon, binhLuanMon, xoaBinhLuan, thichBinhLuan, toggleFavorite, moveToFolder } = useWishlist(user, userProfile, null);
+  const { folders, addFolder, updateFolder, deleteFolder } = useFolders(user);
+  const [activeFolderId, setActiveFolderId] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useLanguage();
+
+  const filteredItems = useMemo(() => {
+    if (activeFolderId === null) return items;
+    return items.filter(item => item.folderId === activeFolderId);
+  }, [items, activeFolderId]);
 
   useEffect(() => {
     const wishId = searchParams.get("wishId");
@@ -79,7 +87,16 @@ export default function PersonalPage({ user, userProfile }) {
         <div className="lg:col-span-2">
 
           <div className="min-h-[400px]">
-            <WishList items={items} onSelectItem={setSelectedItem} onToggleFavorite={toggleFavorite} />
+            <FolderList 
+              folders={folders} 
+              activeFolderId={activeFolderId}
+              onSelectFolder={setActiveFolderId}
+              onAddFolder={addFolder}
+              onUpdateFolder={updateFolder}
+              onDeleteFolder={deleteFolder}
+              onDropToFolder={(wishId, folderId) => moveToFolder(wishId, folderId)}
+            />
+            <WishList items={filteredItems} onSelectItem={setSelectedItem} onToggleFavorite={toggleFavorite} user={user} />
           </div>
         </div>
       </div>

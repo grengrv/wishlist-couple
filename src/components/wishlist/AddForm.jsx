@@ -5,9 +5,19 @@ import { useConfirm } from "@context/ConfirmContext";
 import { notifyThemWish, notifyError } from "@utils/notify";
 import { useLanguage } from "@context/LanguageContext";
 
+const MOOD_OPTIONS = [
+  { key: "craving",   emoji: "\uD83D\uDE0D", labelKey: "mood_craving",   color: "#ec4899", bg: "#fce7f3" },
+  { key: "dreaming",  emoji: "\uD83D\uDCAD", labelKey: "mood_dreaming",  color: "#8b5cf6", bg: "#ede9fe" },
+  { key: "urgent",    emoji: "\uD83D\uDD25", labelKey: "mood_urgent",    color: "#f97316", bg: "#ffedd5" },
+  { key: "done",      emoji: "\uD83C\uDF89", labelKey: "mood_done",      color: "#10b981", bg: "#d1fae5" },
+  { key: "expensive", emoji: "\uD83D\uDCB8", labelKey: "mood_expensive", color: "#f59e0b", bg: "#fef3c7" },
+  { key: "together",  emoji: "\uD83E\uDD1D", labelKey: "mood_together",  color: "#3b82f6", bg: "#dbeafe" },
+];
+
 export default function AddForm({
   tenMon, setTenMon,
   ghiChu, setGhiChu,
+  mood, setMood,
   previewAnh,
   dangTai,
   keoVao, setKeoVao,
@@ -19,16 +29,32 @@ export default function AddForm({
   nenAnh,
   setFormError,
   existingItems,
-  isGroup = false
+  isGroup = false,
+  folders = [],
+  selectedFolderId = null,
+  onSelectFolder = () => {}
 }) {
   const [focusField, setFocusField] = useState(null);
+  const [nameError, setNameError] = useState(false);
+  const [selectedMood, setSelectedMood] = useState(mood ?? null);
   const confirm = useConfirm();
   const { t } = useLanguage();
+
+  const handleMoodClick = (key) => {
+    const next = selectedMood === key ? null : key;
+    setSelectedMood(next);
+    if (typeof setMood === "function") setMood(next);
+  };
 
   const handleCloseError = () => setFormError("");
 
   const handleThemClick = async () => {
-    if (!tenMon.trim()) return;
+    // Validate name
+    if (!tenMon.trim()) {
+      setNameError(true);
+      setTimeout(() => setNameError(false), 600);
+      return;
+    }
 
     // Kiểm tra trùng lặp
     const isDuplicate = existingItems?.some(item =>
@@ -47,11 +73,11 @@ export default function AddForm({
 
     // Thực hiện thêm món
     try {
-      const success = await themMon();
+      const success = await themMon(selectedMood);
       if (success) {
         notifyThemWish(isGroup);
+        setSelectedMood(null);
       }
-      // success === false hoặc undefined: lỗi đã được xử lý bên trong themMon (formError)
     } catch {
       notifyError(t("update_failed"));
     }
@@ -111,18 +137,24 @@ export default function AddForm({
         <div className="relative">
           <Input
             value={tenMon}
-            onChange={e => setTenMon(e.target.value)}
+            onChange={e => { setTenMon(e.target.value); if (nameError) setNameError(false); }}
             onKeyDown={e => e.key === "Enter" && handleThemClick()}
             onFocus={() => setFocusField("ten")}
             onBlur={() => setFocusField(null)}
             maxLength={40}
             placeholder={t("wish_placeholder")}
-            className={`!rounded-2xl !bg-bg-primary/50 !border-border-primary !h-14 !font-bold focus:!bg-bg-secondary focus:!ring-2 focus:!ring-pink-50 transition-all ${formError && tenMon.length < 2 ? "!border-red-300" : ""}`}
+            className={`!rounded-2xl !bg-bg-primary/50 !border-border-primary !h-14 !font-bold focus:!bg-bg-secondary focus:!ring-2 focus:!ring-pink-50 transition-all
+              ${nameError ? "!border-red-400 !ring-2 !ring-red-200 animate-shake" : ""}`}
           />
           {focusField === "ten" && (
             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-pink-400 bg-card-bg px-2 py-1 rounded-lg shadow-sm border border-border-primary animate-fade-in">
               {40 - tenMon.length}
             </span>
+          )}
+          {nameError && (
+            <p className="absolute -bottom-5 left-2 text-[10px] font-black text-red-400 animate-fade-in">
+              {t("wish_name_required")}
+            </p>
           )}
         </div>
 
@@ -144,6 +176,70 @@ export default function AddForm({
             </span>
           )}
         </div>
+
+        {/* MOOD PICKER */}
+        <div className="flex flex-col gap-2.5">
+          <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted px-1 flex items-center gap-2">
+            <span>✨</span>
+            {t("mood_label")}
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {MOOD_OPTIONS.map(m => {
+              const isSelected = selectedMood === m.key;
+              return (
+                <button
+                  key={m.key}
+                  type="button"
+                  onClick={() => handleMoodClick(m.key)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold transition-all duration-200 border select-none"
+                  style={isSelected ? {
+                    backgroundColor: m.color,
+                    color: '#fff',
+                    borderColor: m.color,
+                    boxShadow: `0 4px 14px ${m.color}40`,
+                    transform: 'scale(1.06)',
+                  } : {
+                    backgroundColor: m.bg,
+                    color: m.color,
+                    borderColor: `${m.color}30`,
+                  }}
+                >
+                  <span className="text-base leading-none">{m.emoji}</span>
+                  {t(m.labelKey)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* FOLDER SELECTOR */}
+        {folders.length > 0 && (
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-[2px] text-text-muted px-1 flex items-center gap-2">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+              {t("add_to_folder")}
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => onSelectFolder(null)}
+                className={`px-4 py-2 rounded-xl text-[12px] font-bold transition-all border ${selectedFolderId === null ? "bg-text-primary text-bg-primary border-text-primary shadow-lg" : "bg-bg-primary/30 text-text-muted border-border-primary hover:border-pink-300 hover:text-text-primary"}`}
+              >
+                {t("none")}
+              </button>
+              {folders.map(folder => (
+                <button
+                  type="button"
+                  key={folder.id}
+                  onClick={() => onSelectFolder(folder.id)}
+                  className={`px-4 py-2 rounded-xl text-[12px] font-bold transition-all border ${selectedFolderId === folder.id ? "bg-text-primary text-bg-primary border-text-primary shadow-lg" : "bg-bg-primary/30 text-text-muted border-border-primary hover:border-pink-300 hover:text-text-primary"}`}
+                >
+                  {folder.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <Button
           onClick={handleThemClick}

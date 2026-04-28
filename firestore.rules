@@ -1,0 +1,113 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // --- HELPER FUNCTIONS ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && (request.auth.token.email_verified == true || request.auth.token.firebase.sign_in_provider == 'anonymous');
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email == 'iloveu@gmail.com'; 
+    }
+
+    // Helper to validate timestamp is within 5 minutes of current request
+    function isValidTimestamp(timestamp) {
+      return timestamp != null && 
+             timestamp is timestamp &&
+             timestamp >= request.time - duration.value(5, 'm') && 
+             timestamp <= request.time + duration.value(5, 'm');
+    }
+
+    // --- COLLECTIONS ---
+
+    // Profiles
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(userId) || isAdmin();
+    }
+
+    // Wishlist
+    match /wishlist/{wishId} {
+      allow read: if isSignedIn();
+      allow create: if isEmailVerified() 
+        && request.resource.data.ten is string
+        && request.resource.data.ten.size() >= 2 
+        && request.resource.data.ten.size() <= 60
+        && request.resource.data.uid == request.auth.uid;
+      allow update: if isEmailVerified() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow delete: if isEmailVerified() && (resource.data.uid == request.auth.uid || isAdmin());
+    }
+
+    // Folders
+    match /folders/{folderId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+    }
+
+    // Groups
+    match /groups/{groupId} {
+      allow read: if isSignedIn() && (request.auth.uid in resource.data.members || isAdmin());
+      allow create: if isEmailVerified();
+      allow update: if isEmailVerified() && (request.auth.uid in resource.data.members || isAdmin());
+      allow delete: if isEmailVerified() && (resource.data.ownerUid == request.auth.uid || isAdmin());
+    }
+
+    // Likes
+    match /likes/{likeId} {
+      allow read: if isSignedIn();
+      allow create: if isEmailVerified() 
+        && request.resource.data.userId == request.auth.uid
+        && isValidTimestamp(request.resource.data.createdAt);
+      allow delete: if isEmailVerified() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // Comments & Replies
+    match /comments/{commentId} {
+      allow read: if isSignedIn();
+      allow create: if isEmailVerified() 
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.content is string
+        && request.resource.data.content.size() <= 500
+        && isValidTimestamp(request.resource.data.createdAt);
+      allow delete: if isEmailVerified() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    match /replies/{replyId} {
+      allow read: if isSignedIn();
+      allow create: if isEmailVerified() 
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.content is string
+        && request.resource.data.content.size() <= 500
+        && isValidTimestamp(request.resource.data.createdAt);
+      allow delete: if isEmailVerified() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // Notifications
+    match /notifications/{notifId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && isValidTimestamp(request.resource.data.createdAt); 
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // Activity Logs
+    match /activity_logs/{logId} {
+      allow read: if isSignedIn() && (isAdmin() || request.auth.uid != null); 
+      allow create: if isSignedIn()
+        && isValidTimestamp(request.resource.data.createdAt);
+      allow update, delete: if isAdmin();
+    }
+  }
+}

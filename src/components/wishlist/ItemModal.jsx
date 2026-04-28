@@ -14,10 +14,27 @@ import {
   collection, query, where, orderBy, onSnapshot, doc, getDocs, deleteDoc
 } from "firebase/firestore";
 
+const MOOD_META = {
+  craving:   { emoji: "\uD83D\uDE0D", labelKey: "mood_craving",   color: "#ec4899", bg: "#fce7f3" },
+  dreaming:  { emoji: "\uD83D\uDCAD", labelKey: "mood_dreaming",  color: "#8b5cf6", bg: "#ede9fe" },
+  urgent:    { emoji: "\uD83D\uDD25", labelKey: "mood_urgent",    color: "#f97316", bg: "#ffedd5" },
+  done:      { emoji: "\uD83C\uDF89", labelKey: "mood_done",      color: "#10b981", bg: "#d1fae5" },
+  expensive: { emoji: "\uD83D\uDCB8", labelKey: "mood_expensive", color: "#f59e0b", bg: "#fef3c7" },
+  together:  { emoji: "\uD83E\uDD1D", labelKey: "mood_together",  color: "#3b82f6", bg: "#dbeafe" },
+};
+
 const COMMON_EMOJIS = [
   "❤️", "✨", "🔥", "🎁", "🍰", "🎈", "🌸", "⭐",
   "😊", "😍", "🥰", "🥳", "🙌", "👍", "🍕", "🍔"
 ];
+
+const REACTION_EMOJIS = {
+  heart: "❤️",
+  fire: "🔥",
+  wow: "😮",
+  haha: "😆",
+  pray: "🙏"
+};
 
 export default function ItemModal({ 
   item, onClose, onDelete, user, userProfile, adminEmail, onLike, onComment, 
@@ -34,8 +51,21 @@ export default function ItemModal({
   const [replyTargetUser, setReplyTargetUser] = useState(null); // { userId, username }
   const [showLikesModal, setShowLikesModal] = useState(null); // { title: string, users: array }
   const [searchParams] = useSearchParams();
-  const location = useLocation();
   const [highlightedCommentId, setHighlightedCommentId] = useState(null);
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const reactionPickerRef = useRef(null);
+  const hideTimeoutRef = useRef(null);
+
+  const handleShowPicker = () => {
+    if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+    setShowReactionPicker(true);
+  };
+
+  const handleHidePicker = () => {
+    hideTimeoutRef.current = setTimeout(() => {
+      setShowReactionPicker(false);
+    }, 1500); // 1.5s delay to allow user to move mouse to picker
+  };
 
   // REAL-TIME SOCIAL DATA
   const [likes, setLikes] = useState([]);
@@ -94,6 +124,8 @@ export default function ItemModal({
   const dropdownRef = useRef(null);
 
   const isLiked = likes.some(l => l.userId === user?.uid);
+  const isPinned = item?.pinnedBy?.includes(user?.uid);
+  const pinCount = item?.pinCount || 0;
 
   // Auto-scroll to bottom or specific comment
   useEffect(() => {
@@ -135,13 +167,16 @@ export default function ItemModal({
       if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target)) {
         setShowEmojiPicker(false);
       }
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+      if (activeDropdown && !e.target.closest('.comment-dropdown')) {
         setActiveDropdown(null);
+      }
+      if (showReactionPicker && reactionPickerRef.current && !reactionPickerRef.current.contains(e.target)) {
+        setShowReactionPicker(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [activeDropdown, showReactionPicker]);
 
   // Handlers (Defined after hooks)
   const isAuthorOrAdmin = useMemo(() => {
@@ -224,15 +259,15 @@ export default function ItemModal({
                 {/* Favorite Toggle */}
                 <button
                   onClick={() => onToggleFavorite && onToggleFavorite(item)}
-                  className={`p-2 transition-all duration-300 rounded-full hover:bg-amber-400/10 flex items-center justify-center group/fav ${item.isFavorite ? 'text-amber-500 dark:text-amber-400 bg-amber-500/10' : 'text-text-muted hover:text-amber-400'}`}
-                  title={item.isFavorite ? t("unpin") : t("pin")}
+                  className={`p-2 transition-all duration-300 rounded-full hover:bg-amber-400/10 flex items-center justify-center group/fav ${isPinned ? 'text-amber-500 dark:text-amber-400 bg-amber-500/10' : 'text-text-muted hover:text-amber-400'}`}
+                  title={isPinned ? t("unpin") : t("pin")}
                 >
                   <svg 
                     width="22" height="22" viewBox="0 0 24 24" 
-                    fill={item.isFavorite ? "currentColor" : "none"} 
+                    fill={isPinned ? "currentColor" : "none"} 
                     stroke="currentColor" 
                     strokeWidth="2.5"
-                    className={`transition-transform duration-300 group-hover/fav:scale-110 ${item.isFavorite ? "animate-like-pop" : ""}`}
+                    className={`transition-transform duration-300 group-hover/fav:scale-110 ${isPinned ? "animate-like-pop" : ""}`}
                   >
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                   </svg>
@@ -262,19 +297,31 @@ export default function ItemModal({
                   <Avatar src={item.avatarNguoiThem} name={item.themBoi} className="w-9 h-9" />
                 </div>
                 <div className="flex flex-col gap-1 min-w-0">
-                  <div className="text-[14px] leading-[1.5]">
-                    <span className="font-black text-text-primary mr-2">{item.themBoi || "Ẩn danh"}</span>
-                    <span className="font-black text-pink-500 text-lg block md:inline mb-1 md:mb-0">{item.ten}</span>
-                  </div>
-                  {item.ghiChu && (
-                    <p className="text-[14px] text-text-secondary font-medium whitespace-pre-wrap">
-                      {item.ghiChu}
-                    </p>
-                  )}
-                  <span className="text-[10px] text-text-muted font-black uppercase tracking-wider mt-2">
-                    {formatNgay(item.taoLuc)}
-                  </span>
+                <div className="text-[14px] leading-[1.5]">
+                  <span className="font-black text-text-primary mr-2">{item.themBoi || "Ẩn danh"}</span>
+                  <span className="font-black text-pink-500 text-lg block md:inline mb-1 md:mb-0">{item.ten}</span>
                 </div>
+                {item.mood && MOOD_META[item.mood] && (() => {
+                  const m = MOOD_META[item.mood];
+                  return (
+                    <span
+                      className="inline-flex items-center gap-1 w-fit px-2.5 py-1 rounded-full text-[11px] font-black mb-1"
+                      style={{ backgroundColor: m.bg, color: m.color, border: `1.5px solid ${m.color}30` }}
+                    >
+                      <span className="text-sm">{m.emoji}</span>
+                      {t(m.labelKey)}
+                    </span>
+                  );
+                })()}
+                {item.ghiChu && (
+                  <p className="text-[14px] text-text-secondary font-medium whitespace-pre-wrap">
+                    {item.ghiChu}
+                  </p>
+                )}
+                <span className="text-[10px] text-text-muted font-black uppercase tracking-wider mt-2">
+                  {formatNgay(item.taoLuc)}
+                </span>
+              </div>
               </div>
 
               {/* COMMENTS LIST */}
@@ -310,26 +357,56 @@ export default function ItemModal({
               {/* LIKE & STATS */}
               <div className="p-4 flex flex-col gap-2">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={() => {
-                        if (!isLiked) setIsAnimatingLike(true);
-                        onLike(item);
-                        setTimeout(() => setIsAnimatingLike(false), 450);
-                      }}
-                      className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 bg-bg-primary hover:bg-rose-500/10 active:scale-90 ${isLiked ? 'text-rose-500 bg-rose-500/10' : 'text-text-primary'} ${isAnimatingLike ? 'animate-like-pop' : ''}`}
+                  <div className="flex items-center gap-3 relative">
+                    <div 
+                      className="relative" 
+                      onMouseEnter={handleShowPicker}
+                      onMouseLeave={handleHidePicker}
                     >
-                      <svg
-                        width="24" height="24" viewBox="0 0 24 24"
-                        fill={isLiked ? "currentColor" : "none"}
-                        stroke={isLiked ? "currentColor" : "var(--text-primary)"}
-                        strokeWidth="2.5"
-                        className="block"
+                      <button
+                        onClick={() => onLike && onLike(item, "heart")}
+                        className={`w-11 h-11 rounded-full flex items-center justify-center transition-all active:scale-90 border ${isLiked ? 'bg-pink-500/10 border-pink-500/30 text-pink-500' : 'bg-bg-primary border-border-primary/50 text-text-muted hover:text-pink-500'}`}
                       >
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.02 1.06L12 21.23l8.84-8.84 1.06-1.06a5.5 5.5 0 0 0 0-5.78z"></path>
-                      </svg>
-                    </button>
-                    <button className="w-11 h-11 rounded-full flex items-center justify-center bg-bg-primary hover:bg-bg-secondary hover:border-border-primary border border-transparent text-text-primary transition-all active:scale-95">
+                        {isLiked ? (
+                          <span className="text-xl animate-like-pop">
+                            {REACTION_EMOJIS[likes.find(l => l.userId === user?.uid)?.reaction] || "❤️"}
+                          </span>
+                        ) : (
+                          <svg
+                            width="22" height="22" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor"
+                            strokeWidth="2.5"
+                            className="block"
+                          >
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.02 1.06L12 21.23l8.84-8.84 1.06-1.06a5.5 5.5 0 0 0 0-5.78z"></path>
+                          </svg>
+                        )}
+                      </button>
+
+                      {/* Minimalist Reaction Picker */}
+                      {showReactionPicker && (
+                        <div 
+                          className="absolute bottom-full left-0 mb-3 bg-bg-secondary border border-border-primary/50 rounded-2xl p-1.5 flex items-center gap-1 animate-zoom-in z-[101]"
+                          onMouseEnter={handleShowPicker}
+                          onMouseLeave={handleHidePicker}
+                        >
+                          {Object.entries(REACTION_EMOJIS).map(([key, emoji]) => (
+                            <button
+                              key={key}
+                              onClick={() => {
+                                onLike && onLike(item, key);
+                                setShowReactionPicker(false);
+                              }}
+                              className="w-10 h-10 flex items-center justify-center text-xl hover:bg-bg-primary rounded-xl transition-all hover:scale-110 active:scale-95"
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <button className="w-11 h-11 rounded-full flex items-center justify-center bg-bg-primary hover:bg-bg-secondary border border-border-primary/50 text-text-primary transition-all active:scale-95">
                       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="block">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                       </svg>
@@ -337,9 +414,27 @@ export default function ItemModal({
                   </div>
                 </div>
 
-                <div className="relative group/likes w-fit">
+                <div className="relative group/likes w-fit flex items-center gap-2">
+                  <div className="flex items-center -space-x-1.5 mr-1">
+                    {Object.entries(
+                      likes.reduce((acc, curr) => {
+                        const r = curr.reaction || "heart";
+                        acc[r] = (acc[r] || 0) + 1;
+                        return acc;
+                      }, {})
+                    ).map(([r, count]) => (
+                      <span key={r} className="text-[14px] bg-bg-secondary rounded-full w-6 h-6 flex items-center justify-center border border-border-primary/50" title={r}>
+                        {REACTION_EMOJIS[r]}
+                      </span>
+                    ))}
+                  </div>
+
                   <span className="text-[14px] font-black text-text-primary cursor-default">
-                    {likes.length.toLocaleString('vi-VN')} lượt thích
+                    {likes.length.toLocaleString('vi-VN')} {t("lượt thích")}
+                  </span>
+                  <span className="mx-2 text-text-muted/30">•</span>
+                  <span className="text-[14px] font-black text-text-primary cursor-default">
+                    {pinCount.toLocaleString('vi-VN')} {t("Đã ghim")}
                   </span>
 
                   {/* LIKE TOOLTIP */}
