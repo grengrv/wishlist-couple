@@ -436,11 +436,6 @@ export const translations = {
     forgot_password: "Quên mật khẩu?",
     reset_link_sent: "Link đặt lại mật khẩu đã được gửi đến email của bạn!",
     reset_error: "Không thể gửi link đặt lại mật khẩu. Vui lòng kiểm tra lại email.",
-    reset_password_title: "Đặt lại mật khẩu",
-    new_password: "Mật khẩu mới",
-    confirm_new_password: "Xác nhận mật khẩu mới",
-    password_mismatch: "Mật khẩu xác nhận không khớp",
-    reset_success: "Đổi mật khẩu thành công! Bạn có thể đăng nhập ngay.",
   },
   en: {
     // General
@@ -880,10 +875,5 @@ export const translations = {
     forgot_password: "Forgot password?",
     reset_link_sent: "Password reset link has been sent to your email!",
     reset_error: "Failed to send reset link. Please check your email.",
-    reset_password_title: "Reset Password",
-    new_password: "New Password",
-    confirm_new_password: "Confirm New Password",
-    password_mismatch: "Passwords do not match",
-    reset_success: "Password reset successful! You can now log in.",
   }
 };

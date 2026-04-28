@@ -1,12 +1,10 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
 import { auth, db } from "@config/firebase";
 import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     sendEmailVerification,
     sendPasswordResetEmail,
-    confirmPasswordReset,
     updateProfile
 } from "firebase/auth";
 import { doc, setDoc, query, collection, where, getDocs } from "firebase/firestore";
@@ -18,29 +16,15 @@ import { toastStore } from "@utils/toastStore";
 import { useLanguage } from "@context/LanguageContext";
 
 import { signOut } from "firebase/auth";
-import { notifyLogout } from "@utils/notify";
-
 export default function Auth({ user }) {
     const { t } = useLanguage();
-    const [searchParams] = useSearchParams();
-    const [mode, setMode] = useState("login"); // "login" | "register" | "reset"
+    const [mode, setMode] = useState("login"); // "login" | "register"
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [username, setUsername] = useState("");
-    const [newPassword, setNewPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [usernameStatus, setUsernameStatus] = useState({ state: "idle", message: "" });
     const [activeTooltip, setActiveTooltip] = useState(null);
-
-    const oobCode = searchParams.get("oobCode");
-    const authMode = searchParams.get("mode");
-
-    useEffect(() => {
-        if (authMode === "resetPassword" && oobCode) {
-            setMode("reset");
-        }
-    }, [authMode, oobCode]);
 
     const handleLogout = async () => {
         try {
@@ -222,40 +206,11 @@ export default function Auth({ user }) {
         }
 
         try {
-            // Cấu hình để Firebase gửi link quay lại trang web của mình thay vì trang mặc định của Firebase
-            const actionCodeSettings = {
-                url: window.location.origin, 
-                handleCodeInApp: true,
-            };
-            await sendPasswordResetEmail(auth, email, actionCodeSettings);
+            await sendPasswordResetEmail(auth, email);
             toastStore.show(t("reset_link_sent"));
         } catch (err) {
             console.error(err);
             notifyError(t("reset_error"));
-        }
-    }
-
-    async function handleResetPassword() {
-        if (!validatePassword(newPassword)) {
-            notifyError(t("password_weak_error"));
-            return;
-        }
-        if (newPassword !== confirmPassword) {
-            notifyError(t("password_mismatch"));
-            return;
-        }
-        setLoading(true);
-        try {
-            await confirmPasswordReset(auth, oobCode, newPassword);
-            toastStore.show(t("reset_success"));
-            setMode("login");
-            // Clear URL params
-            window.history.replaceState({}, document.title, window.location.pathname);
-        } catch (err) {
-            console.error(err);
-            notifyError(t("general_error"));
-        } finally {
-            setLoading(false);
         }
     }
 
@@ -281,14 +236,12 @@ export default function Auth({ user }) {
                         <span className="animate-beat">♥</span>
                     </div>
                     <h1 className="text-3xl font-black text-text-primary tracking-tight">
-                        {mode === "login" ? t("welcome_back") : mode === "reset" ? t("reset_password_title") : t("create_account")}
+                        {mode === "login" ? t("welcome_back") : t("create_account")}
                     </h1>
                     <p className="text-text-muted font-bold mt-2 text-sm leading-relaxed">
                         {mode === "login"
                             ? t("login_subtitle")
-                            : mode === "reset"
-                                ? t("password_tip")
-                                : t("register_subtitle")}
+                            : t("register_subtitle")}
                     </p>
                 </div>
 
@@ -320,98 +273,64 @@ export default function Auth({ user }) {
                         </div>
                     )}
 
-                    {mode !== "reset" ? (
-                        <>
-                            <div className="space-y-2">
-                                <label className="text-[11px] font-black uppercase tracking-widest text-text-muted ml-1 flex justify-between items-center">
-                                    <span>Email</span>
-                                    <InfoIcon
-                                        id="email"
-                                        activeTooltip={activeTooltip}
-                                        setActiveTooltip={setActiveTooltip}
-                                        text={t("email_tip")}
-                                    />
-                                </label>
-                                <Input
-                                    type="email"
-                                    placeholder="username@example.com"
-                                    value={email}
-                                    onChange={e => setEmail(e.target.value)}
-                                    onKeyDown={e => e.key === "Enter" && handleSubmit()}
-                                    className="!rounded-2xl !bg-bg-primary/50 !border-border-primary !h-12 !font-bold transition-all focus:!bg-bg-secondary"
-                                />
-                            </div>
+                    <div className="space-y-2">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-text-muted ml-1 flex justify-between items-center">
+                            <span>Email</span>
+                            <InfoIcon
+                                id="email"
+                                activeTooltip={activeTooltip}
+                                setActiveTooltip={setActiveTooltip}
+                                text={t("email_tip")}
+                            />
+                        </label>
+                        <Input
+                            type="email"
+                            placeholder="username@example.com"
+                            value={email}
+                            onChange={e => setEmail(e.target.value)}
+                            onKeyDown={e => e.key === "Enter" && handleSubmit()}
+                            className="!rounded-2xl !bg-bg-primary/50 !border-border-primary !h-12 !font-bold transition-all focus:!bg-bg-secondary"
+                        />
+                    </div>
 
-                            <div className="space-y-2">
-                                <label className="text-[11px] font-black uppercase tracking-widest text-text-muted ml-1 flex justify-between items-center">
-                                    <span>{t("password")}</span>
-                                    <InfoIcon
-                                        id="password"
-                                        activeTooltip={activeTooltip}
-                                        setActiveTooltip={setActiveTooltip}
-                                        text={t("password_tip")}
-                                    />
-                                </label>
-                                <Input
-                                    type="password"
-                                    placeholder="••••••••"
-                                    value={password}
-                                    onChange={e => setPassword(e.target.value)}
-                                    onKeyDown={e => e.key === "Enter" && handleSubmit()}
-                                    className="!rounded-2xl !bg-bg-primary/50 !border-border-primary !h-12 !font-bold transition-all focus:!bg-bg-secondary"
-                                />
-                                {mode === "login" && (
-                                    <button
-                                        onClick={handleForgotPassword}
-                                        className="text-[10px] font-black uppercase tracking-widest text-text-muted hover:text-pink-500 transition-colors ml-1 w-fit"
-                                    >
-                                        {t("forgot_password")}
-                                    </button>
-                                )}
-                            </div>
-                        </>
-                    ) : (
-                        <>
-                            <div className="space-y-2">
-                                <label className="text-[11px] font-black uppercase tracking-widest text-text-muted ml-1">
-                                    {t("new_password")}
-                                </label>
-                                <Input
-                                    type="password"
-                                    placeholder="••••••••"
-                                    value={newPassword}
-                                    onChange={e => setNewPassword(e.target.value)}
-                                    onKeyDown={e => e.key === "Enter" && handleResetPassword()}
-                                    className="!rounded-2xl !bg-bg-primary/50 !border-border-primary !h-12 !font-bold transition-all focus:!bg-bg-secondary"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[11px] font-black uppercase tracking-widest text-text-muted ml-1">
-                                    {t("confirm_new_password")}
-                                </label>
-                                <Input
-                                    type="password"
-                                    placeholder="••••••••"
-                                    value={confirmPassword}
-                                    onChange={e => setConfirmPassword(e.target.value)}
-                                    onKeyDown={e => e.key === "Enter" && handleResetPassword()}
-                                    className="!rounded-2xl !bg-bg-primary/50 !border-border-primary !h-12 !font-bold transition-all focus:!bg-bg-secondary"
-                                />
-                            </div>
-                        </>
-                    )}
+                    <div className="space-y-2">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-text-muted ml-1 flex justify-between items-center">
+                            <span>{t("password")}</span>
+                            <InfoIcon
+                                id="password"
+                                activeTooltip={activeTooltip}
+                                setActiveTooltip={setActiveTooltip}
+                                text={t("password_tip")}
+                            />
+                        </label>
+                        <Input
+                            type="password"
+                            placeholder="••••••••"
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            onKeyDown={e => e.key === "Enter" && handleSubmit()}
+                            className="!rounded-2xl !bg-bg-primary/50 !border-border-primary !h-12 !font-bold transition-all focus:!bg-bg-secondary"
+                        />
+                        {mode === "login" && (
+                            <button
+                                onClick={handleForgotPassword}
+                                className="text-[10px] font-black uppercase tracking-widest text-text-muted hover:text-pink-500 transition-colors ml-1 w-fit"
+                            >
+                                {t("forgot_password")}
+                            </button>
+                        )}
+                    </div>
 
                     <Button
-                        onClick={mode === "reset" ? handleResetPassword : handleSubmit}
+                        onClick={handleSubmit}
                         disabled={loading || (mode === 'register' && usernameStatus.state === 'invalid')}
                         className="!rounded-2xl !py-4 bg-text-primary text-bg-primary font-black text-xs uppercase tracking-widest hover:bg-pink-600 transition-all mt-4 shadow-none active:scale-95"
                     >
-                        {loading ? t("processing") : mode === "login" ? t("login") : mode === "reset" ? t("save") : t("register")}
+                        {loading ? t("processing") : mode === "login" ? t("login") : t("register")}
                     </Button>
 
                     {/* Switch Mode Link */}
-                    {mode !== "reset" && (
-                        <div className="text-center mt-8 pt-8 border-t border-border-primary/50">
+                    <div className="text-center mt-8 pt-8 border-t border-border-primary/50">
                             <div
                                 className="text-[14px] font-bold text-text-muted inline-flex flex-col items-center gap-1 cursor-default"
                             >
@@ -438,7 +357,6 @@ export default function Auth({ user }) {
                                 )}
                             </div>
                         </div>
-                    )}
                 </div>
             </div>
         </div>
