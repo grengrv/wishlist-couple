@@ -413,121 +413,6 @@ export default function GroupDetailPage({ user, userProfile }) {
                   >
                     {group.name}
                   </h2>
-                  {isOwner && (
-                    <div ref={groupMenuRef} className="relative flex items-center pb-1.5">
-                      {/* Settings trigger button */}
-                      <button
-                        onClick={() => setShowGroupMenu(v => !v)}
-                        className="p-1.5 rounded-lg transition-all duration-200 hover:bg-black/5 dark:hover:bg-white/5"
-                        style={{ color: group.themeColor || '#ec4899' }}
-                        title={t("group_customize")}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
-                      </button>
-
-                      {/* Dropdown menu */}
-                      <AnimatePresence>
-                        {showGroupMenu && (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.92, y: -6 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.92, y: -6 }}
-                            transition={{ duration: 0.15, ease: 'easeOut' }}
-                            className="absolute left-0 top-full mt-2 w-64 bg-card-bg border border-border-primary rounded-2xl shadow-2xl shadow-black/10 dark:shadow-black/40 z-[200] overflow-hidden py-1.5"
-                          >
-                            {/* Edit name */}
-                            <button
-                              onClick={() => { setIsEditing(true); setShowGroupMenu(false); }}
-                              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-text-secondary hover:bg-bg-primary hover:text-text-primary transition-colors"
-                            >
-                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: group.themeColor || '#ec4899' }}><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                              {t("edit_name_desc")}
-                            </button>
-
-                            {/* Change banner */}
-                            <button
-                              onClick={() => { document.getElementById(`banner-upload-${id}`).click(); setShowGroupMenu(false); }}
-                              disabled={isSavingBanner}
-                              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-text-secondary hover:bg-bg-primary hover:text-text-primary transition-colors disabled:opacity-40"
-                            >
-                              {isSavingBanner ? (
-                                <div className="w-[15px] h-[15px] rounded-full border-2 border-current/20 border-t-current animate-spin" style={{ color: group.themeColor || '#ec4899' }} />
-                              ) : (
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: group.themeColor || '#ec4899' }}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                              )}
-                              {group.bannerUrl ? t("change_cover_photo") : t("add_cover_photo")}
-                            </button>
-
-                            {/* Remove banner */}
-                            {group.bannerUrl && (
-                              <button
-                                onClick={() => { handleBannerRemove(); setShowGroupMenu(false); }}
-                                disabled={isSavingBanner}
-                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-text-secondary hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 transition-colors disabled:opacity-40"
-                              >
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-red-400"><path d="M21 9l-1 12H4L3 9"/><path d="M1 9h22"/><path d="M8 9V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v4"/></svg>
-                                {t("remove_cover_photo")}
-                              </button>
-                            )}
-
-                            {/* Divider */}
-                            <div className="h-px bg-border-primary/60 mx-3 my-1" />
-
-                            {/* Theme color picker */}
-                            <div className="px-4 py-3">
-                              <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-2.5">{t("theme_color")}</p>
-                              <div className="flex flex-wrap gap-2 mb-2">
-                                {PRESET_COLORS.map(c => (
-                                  <button
-                                    key={c.value}
-                                    onClick={() => handleThemeColorChange(c.value)}
-                                    title={c.name}
-                                    className="w-7 h-7 rounded-full transition-all duration-200 flex items-center justify-center hover:scale-110 focus:outline-none"
-                                    style={{
-                                      backgroundColor: c.value,
-                                      boxShadow: (group.themeColor || '#ec4899') === c.value
-                                        ? `0 0 0 2px white, 0 0 0 4px ${c.value}`
-                                        : 'none',
-                                      transform: (group.themeColor || '#ec4899') === c.value ? 'scale(1.15)' : undefined
-                                    }}
-                                  >
-                                    {(group.themeColor || '#ec4899') === c.value && (
-                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                    )}
-                                  </button>
-                                ))}
-                                {/* Custom color */}
-                                <label
-                                  title={t("choose_custom_color")}
-                                  className="w-7 h-7 rounded-full border-2 border-dashed border-border-primary flex items-center justify-center cursor-pointer hover:scale-110 transition-all duration-200 overflow-hidden relative"
-                                >
-                                  <span className="text-text-muted text-base leading-none select-none">+</span>
-                                  <input
-                                    type="color"
-                                    defaultValue={group.themeColor || '#ec4899'}
-                                    onChange={e => handleThemeColorChange(e.target.value)}
-                                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                  />
-                                </label>
-                              </div>
-                            </div>
-
-                            {/* Divider */}
-                            <div className="h-px bg-border-primary/60 mx-3 my-1" />
-
-                            {/* Disband */}
-                            <button
-                              onClick={() => { handleXoaGroup(); setShowGroupMenu(false); }}
-                              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-                            >
-                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                              {t("disband_group")}
-                            </button>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  )}
                 </div>
                 {/* Hidden file input */}
                 <input
@@ -590,7 +475,7 @@ export default function GroupDetailPage({ user, userProfile }) {
                   navigator.clipboard.writeText(group.inviteCode);
                   notifyCopied();
                 }}
-                className="group/code flex items-center gap-2.5 px-3 py-1.5 rounded-xl border cursor-pointer transition-all duration-300 shadow-sm h-10 hover:shadow-md
+                className="group/code flex items-center gap-2.5 px-3 py-1.5 rounded-xl border cursor-pointer transition-all duration-300 shadow-sm h-12 hover:shadow-md
                   bg-white/70 border-black/10 hover:bg-white hover:border-black/20
                   dark:bg-white/5 dark:border-white/10 dark:hover:bg-white/10 dark:hover:border-white/20
                   backdrop-blur-sm"
@@ -601,7 +486,7 @@ export default function GroupDetailPage({ user, userProfile }) {
                   style={{ color: group.themeColor || '#ec4899' }}
                 >{t("invite_code_label")}</span>
                 <span
-                  className="text-[13px] font-black tracking-[2px]"
+                  className="text-[14px] font-black tracking-[2px]"
                   style={{ color: group.themeColor || '#ec4899' }}
                 >{group.inviteCode}</span>
                 <svg className="transition-all opacity-40 group-hover/code:opacity-100" style={{ color: group.themeColor || '#ec4899' }} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
@@ -629,6 +514,125 @@ export default function GroupDetailPage({ user, userProfile }) {
                 <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
               </svg>
             </button>
+            
+            {/* Tùy chỉnh nhóm Menu */}
+            {isOwner && (
+              <div ref={groupMenuRef} className="relative flex items-center shrink-0">
+                <button
+                  onClick={() => setShowGroupMenu(v => !v)}
+                  className={`w-12 h-12 rounded-2xl border flex items-center justify-center transition-all duration-300 hover:shadow-md active:scale-95 z-10
+                    ${showGroupMenu 
+                      ? 'bg-black/10 border-black/20 dark:bg-white/10 dark:border-white/20 shadow-inner' 
+                      : 'bg-card-bg border-border-primary hover:bg-card-hover shadow-sm hover:-translate-y-0.5'}`}
+                  style={{ color: group.themeColor || '#ec4899' }}
+                  title={t("group_customize")}
+                >
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="19" cy="12" r="2.5"/></svg>
+                </button>
+
+                {/* Dropdown menu */}
+                <AnimatePresence>
+                  {showGroupMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.92, y: -6 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.92, y: -6 }}
+                      transition={{ duration: 0.15, ease: 'easeOut' }}
+                      className="absolute right-0 top-full mt-2 w-64 bg-card-bg border border-border-primary rounded-2xl shadow-2xl shadow-black/10 dark:shadow-black/40 z-[200] overflow-hidden py-1.5"
+                    >
+                      {/* Edit name */}
+                      <button
+                        onClick={() => { setIsEditing(true); setShowGroupMenu(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-text-secondary hover:bg-bg-primary hover:text-text-primary transition-colors"
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: group.themeColor || '#ec4899' }}><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                        {t("edit_name_desc")}
+                      </button>
+
+                      {/* Change banner */}
+                      <button
+                        onClick={() => { document.getElementById(`banner-upload-${id}`).click(); setShowGroupMenu(false); }}
+                        disabled={isSavingBanner}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-text-secondary hover:bg-bg-primary hover:text-text-primary transition-colors disabled:opacity-40"
+                      >
+                        {isSavingBanner ? (
+                          <div className="w-[15px] h-[15px] rounded-full border-2 border-current/20 border-t-current animate-spin" style={{ color: group.themeColor || '#ec4899' }} />
+                        ) : (
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: group.themeColor || '#ec4899' }}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                        )}
+                        {group.bannerUrl ? t("change_cover_photo") : t("add_cover_photo")}
+                      </button>
+
+                      {/* Remove banner */}
+                      {group.bannerUrl && (
+                        <button
+                          onClick={() => { handleBannerRemove(); setShowGroupMenu(false); }}
+                          disabled={isSavingBanner}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-text-secondary hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 transition-colors disabled:opacity-40"
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-red-400"><path d="M21 9l-1 12H4L3 9"/><path d="M1 9h22"/><path d="M8 9V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v4"/></svg>
+                          {t("remove_cover_photo")}
+                        </button>
+                      )}
+
+                      {/* Divider */}
+                      <div className="h-px bg-border-primary/60 mx-3 my-1" />
+
+                      {/* Theme color picker */}
+                      <div className="px-4 py-3">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-2.5">{t("theme_color")}</p>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {PRESET_COLORS.map(c => (
+                            <button
+                              key={c.value}
+                              onClick={() => handleThemeColorChange(c.value)}
+                              title={c.name}
+                              className="w-7 h-7 rounded-full transition-all duration-200 flex items-center justify-center hover:scale-110 focus:outline-none"
+                              style={{
+                                backgroundColor: c.value,
+                                boxShadow: (group.themeColor || '#ec4899') === c.value
+                                  ? `0 0 0 2px white, 0 0 0 4px ${c.value}`
+                                  : 'none',
+                                transform: (group.themeColor || '#ec4899') === c.value ? 'scale(1.15)' : undefined
+                              }}
+                            >
+                              {(group.themeColor || '#ec4899') === c.value && (
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                              )}
+                            </button>
+                          ))}
+                          {/* Custom color */}
+                          <label
+                            title={t("choose_custom_color")}
+                            className="w-7 h-7 rounded-full border-2 border-dashed border-border-primary flex items-center justify-center cursor-pointer hover:scale-110 transition-all duration-200 overflow-hidden relative"
+                          >
+                            <span className="text-text-muted text-base leading-none select-none">+</span>
+                            <input
+                              type="color"
+                              defaultValue={group.themeColor || '#ec4899'}
+                              onChange={e => handleThemeColorChange(e.target.value)}
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                            />
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Divider */}
+                      <div className="h-px bg-border-primary/60 mx-3 my-1" />
+
+                      {/* Disband */}
+                      <button
+                        onClick={() => { handleXoaGroup(); setShowGroupMenu(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        {t("disband_group")}
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
         </div>
 
