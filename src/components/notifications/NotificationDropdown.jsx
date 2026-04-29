@@ -64,6 +64,7 @@ export default function NotificationDropdown({
     if (n.type === "post_group") key = "added_wish_in_group";
     if (n.type === "added_to_group") key = "added_you_to_group";
     if (n.type === "kicked") key = "kicked_you_from_group";
+    if (n.type === "left_group") key = "left_group";
     if (n.type === "pin") key = "pinnedYourWish";
 
     if (!key) return n.text;

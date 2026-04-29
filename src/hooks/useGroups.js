@@ -172,12 +172,11 @@ export function useGroups(user, userProfile) {
     if (!username.trim()) return { error: "Vui lòng nhập tên người dùng." };
 
     // Find user by username
-    const q = query(collection(db, "users"), where("username", "==", username.trim()));
-    const snap = await getDocs(q);
+    const qUser = query(collection(db, "users"), where("username", "==", username.trim()));
+    const snap = await getDocs(qUser);
 
     if (snap.empty) return { error: 404 }; // Not found
 
-    const targetUser = snap.docs[0].data();
     const targetUid = snap.docs[0].id;
 
     const groupRef = doc(db, "groups", groupId);
@@ -221,5 +220,48 @@ export function useGroups(user, userProfile) {
     return { success: true };
   }
 
-  return { groups, taoNhom, thamGiaNhom, thamGiaBangMa, suaNhom, xoaNhom, kickMember, addMemberByUsername };
+  async function roiNhom(groupId) {
+    const groupRef = doc(db, "groups", groupId);
+    const groupSnap = await getDoc(groupRef);
+    if (!groupSnap.exists()) return { error: "Group not found" };
+
+    const gData = groupSnap.data();
+
+    // Remove current user from members array
+    await updateDoc(groupRef, {
+      members: arrayRemove(user.uid)
+    });
+
+    // LOG ACTIVITY
+    await addDoc(collection(db, "activity_logs"), {
+      roomId: groupId,
+      actorId: user.uid,
+      actorName: userProfile?.username || user.displayName || user.email,
+      actorAvatar: userProfile?.avatar || null,
+      action: "leave_group",
+      targetId: user.uid,
+      targetName: userProfile?.username || user.displayName || user.email,
+      targetRoute: `/groups/${groupId}`,
+      timestamp: new Date(),
+      date: new Date().toISOString().split("T")[0],
+      createdAt: new Date()
+    });
+
+    // NOTIFY OWNER
+    await addDoc(collection(db, "notifications"), {
+      userId: gData.ownerUid,
+      senderId: user.uid,
+      senderName: userProfile?.username || user.displayName || user.email,
+      senderAvatar: userProfile?.avatar || null,
+      type: "left_group",
+      groupId: groupId,
+      groupName: gData.name,
+      isRead: false,
+      createdAt: new Date()
+    });
+
+    return { success: true };
+  }
+
+  return { groups, taoNhom, thamGiaNhom, thamGiaBangMa, suaNhom, xoaNhom, kickMember, addMemberByUsername, roiNhom };
 }

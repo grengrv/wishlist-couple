@@ -3,6 +3,7 @@ import { auth, db } from "@config/firebase";
 import { updateProfile, deleteUser, signOut } from "firebase/auth";
 import { doc, setDoc, collection, query, where, getDocs, updateDoc, deleteDoc, writeBatch } from "firebase/firestore";
 import Button from "@components/ui/Button";
+import ThemeToggle from "@components/ui/ThemeToggle";
 import ImageEditorModal from "@components/wishlist/ImageEditorModal";
 import { toastStore } from "@utils/toastStore";
 import { notifyCapNhatHoSo, notifyDoiAvatar, notifyDoiBanner, notifyError } from "@utils/notify";
@@ -37,7 +38,7 @@ const STATUS_COLORS = {
 
 export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = false }) {
     const confirm = useConfirm();
-    const { t, lang } = useLanguage();
+    const { t, lang, setLang } = useLanguage();
     const [mode, setMode] = useState("view"); // "view" | "edit"
     const [isPreviewMode, setIsPreviewMode] = useState(false);
 
@@ -356,11 +357,50 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                             {!isReadOnly && !isPreviewMode && (
                                 <Button
                                     onClick={() => setMode("edit")}
-                                    style={{ backgroundColor: activeTheme.color }}
-                                    className="w-full !rounded-[20px] !text-white hover:opacity-90 !py-4 transition-all font-black text-xs uppercase tracking-widest border-none"
+                                    style={{ backgroundColor: activeTheme.color, boxShadow: `0 8px 24px -8px ${activeTheme.color}` }}
+                                    className="w-full !rounded-[20px] !text-white hover:-translate-y-0.5 !py-4 transition-all active:scale-95 font-black text-[11px] uppercase tracking-widest border-none flex items-center justify-center gap-2"
                                 >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                     {t("edit_profile_btn")}
                                 </Button>
+                            )}
+
+                            {/* System Settings for Mobile & Easy Access */}
+                            {!isReadOnly && !isPreviewMode && (
+                                <div className="mt-8 pt-6 relative md:hidden">
+                                    {/* Subtle Separator */}
+                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-border-primary to-transparent" />
+                                    
+                                    <h4 className="text-[10px] font-black uppercase tracking-[2px] text-text-muted mb-4 opacity-70 flex items-center justify-center gap-2">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                                        {t("system_settings")}
+                                    </h4>
+                                    
+                                    <div className="bg-bg-primary/30 p-1.5 rounded-[20px] border border-border-primary/50 flex items-center gap-1.5 shadow-inner">
+                                        <div className="flex-1 flex items-center justify-between bg-bg-secondary p-1 rounded-2xl shadow-sm border border-border-primary/50 relative overflow-hidden z-0">
+                                            {/* Sliding Indicator for language */}
+                                            <div 
+                                                className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-pink-hot rounded-xl shadow-sm transition-transform duration-300 cubic-bezier(0.4, 0, 0.2, 1) -z-10 ${lang === 'vi' ? 'translate-x-1' : 'translate-x-[calc(100%+6px)]'}`} 
+                                            />
+                                            <button
+                                                onClick={() => setLang("vi")}
+                                                className={`flex-1 py-3 text-[10px] font-black rounded-xl transition-colors duration-300 uppercase tracking-widest ${lang === "vi" ? "text-white" : "text-text-muted hover:text-text-primary"}`}
+                                            >
+                                                Việt Nam
+                                            </button>
+                                            <button
+                                                onClick={() => setLang("en")}
+                                                className={`flex-1 py-3 text-[10px] font-black rounded-xl transition-colors duration-300 uppercase tracking-widest ${lang === "en" ? "text-white" : "text-text-muted hover:text-text-primary"}`}
+                                            >
+                                                English
+                                            </button>
+                                        </div>
+
+                                        <div className="shrink-0 flex items-center justify-center">
+                                            <ThemeToggle />
+                                        </div>
+                                    </div>
+                                </div>
                             )}
                         </>
                     ) : (
@@ -386,31 +426,42 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                                 t={t}
                             />
 
-                            <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-border-primary/50">
-                                <Button
-                                    variant="danger"
-                                    onClick={xoaTaiKhoan}
-                                    disabled={loading}
-                                    className="!bg-rose-500/10 !text-rose-500 hover:!bg-rose-500/20 !py-3 !rounded-[16px] font-black text-[10px] uppercase tracking-[2px] border border-rose-500/20 shadow-none mb-2"
-                                >
-                                    {t("delete_account")}
-                                </Button>
-                                <div className="flex gap-3">
+                            <div className="flex flex-col gap-4 mt-6 pt-6 border-t border-border-primary/50">
+                                {/* Primary Actions: Save and Cancel */}
+                                <div className="flex gap-3 w-full">
                                     <Button
                                         variant="ghost"
                                         onClick={() => { setTheme(userProfile?.theme || DEFAULT_THEME); setMode("view"); }}
-                                        className="!bg-bg-primary/50 !text-text-secondary hover:!bg-bg-primary/80 !py-4 !rounded-[20px] font-black text-xs uppercase tracking-widest flex-1 border border-border-primary/50 shadow-none"
+                                        className="!bg-bg-secondary hover:!bg-border-primary/50 !text-text-secondary !py-4 !rounded-[20px] font-black text-[11px] uppercase tracking-widest flex-1 border border-border-primary/50 shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2"
                                     >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                         {t("cancel")}
                                     </Button>
                                     <Button
                                         onClick={luuThongTin}
                                         disabled={loading}
-                                        style={{ backgroundColor: activeTheme.color }}
-                                        className="!text-white hover:opacity-90 !py-4 !rounded-[20px] font-black text-xs uppercase tracking-widest flex-[2] border-none shadow-none"
+                                        style={{ backgroundColor: activeTheme.color, boxShadow: `0 8px 24px -8px ${activeTheme.color}` }}
+                                        className="!text-white hover:opacity-90 hover:-translate-y-0.5 !py-4 !rounded-[20px] font-black text-[11px] uppercase tracking-widest flex-[2] border-none transition-all active:scale-95 flex items-center justify-center gap-2"
                                     >
+                                        {loading ? (
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        ) : (
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                                        )}
                                         {loading ? t("saving") : t("save_changes")}
                                     </Button>
+                                </div>
+                                
+                                {/* Destructive Action: Delete Account */}
+                                <div className="mt-2 flex justify-center">
+                                    <button
+                                        onClick={xoaTaiKhoan}
+                                        disabled={loading}
+                                        className="text-[10px] font-black uppercase tracking-[1px] text-text-muted hover:text-red-500 transition-colors flex items-center gap-1.5 py-2 px-4 rounded-xl hover:bg-red-500/10 active:scale-95"
+                                    >
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                        {t("delete_account")}
+                                    </button>
                                 </div>
                             </div>
                         </>

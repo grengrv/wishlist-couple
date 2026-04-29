@@ -160,6 +160,7 @@ export default function ActivityLog({ logs }) {
     switch (action) {
       case "add_member": return "👋";
       case "kick_member": return "🚪";
+      case "leave_group": return "🚶";
       case "create_wish": return "✦";
       case "delete_wish": return "🗑️";
       case "move_wish": return "📦";
@@ -173,9 +174,14 @@ export default function ActivityLog({ logs }) {
   const getActionText = (log) => {
     switch (log.action) {
       case "add_member":
+        if (log.actorId === log.targetId) {
+          return <>{lang === 'vi' ? 'đã tham gia qua lời mời' : 'joined via invitation'}</>;
+        }
         return <>{lang === 'vi' ? 'vừa thêm ' : 'just added '} <span className="text-text-primary font-bold">{log.targetName}</span> {lang === 'vi' ? 'vào nhóm' : 'to the group'}</>;
       case "kick_member":
         return <>{lang === 'vi' ? 'đã mời ' : 'invited '} <span className="text-rose-500 font-bold">{log.targetName}</span> {lang === 'vi' ? 'rời khỏi nhóm' : 'to leave the group'}</>;
+      case "leave_group":
+        return <>{lang === 'vi' ? 'vừa rời khỏi nhóm' : 'just left the group'}</>;
       case "create_wish":
         return <>{lang === 'vi' ? 'vừa gửi một điều ước mới: ' : 'just sent a new wish: '} <span className="text-pink-500 font-bold">"{log.targetName}"</span></>;
       case "delete_wish":

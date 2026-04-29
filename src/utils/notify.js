@@ -96,6 +96,11 @@ export function notifyThamGiaNhom() {
   toastStore.show(t("join_group_success"));
 }
 
+// ── RỜI NHÓM (leave_group) ────────────────────────────────────────────────
+export function notifyRoiNhom() {
+  toastStore.show(t("leave_group_success"));
+}
+
 // ── SAO CHÉP (copy) ───────────────────────────────────────────────────────────
 export function notifyCopied() {
   toastStore.show(t("copy_success"));
