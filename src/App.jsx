@@ -7,6 +7,7 @@ import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { ConfirmProvider } from "@context/ConfirmContext";
 import { PreviewProvider } from "@context/PreviewContext";
 import AppToast from "@components/ui/AppToast";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 import ProfilePage from "@pages/ProfilePage";
 import Header from "@components/layout/Header";
@@ -143,6 +144,7 @@ function App() {
           <Footer />
         </div>
         <PWAUpdater />
+        <SpeedInsights />
       </PreviewProvider>
     </ConfirmProvider>
   );
