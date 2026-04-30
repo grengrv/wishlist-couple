@@ -13,8 +13,11 @@ import { useLanguage } from "@context/LanguageContext";
 export default function PersonalPage({ user, userProfile }) {
   const navigate = useNavigate();
   const [selectedItem, setSelectedItem] = useState(null);
-  const { items, xoaMon, thichMon, binhLuanMon, xoaBinhLuan, thichBinhLuan, toggleFavorite, moveToFolder } = useWishlist(user, userProfile, null);
-  const { folders, addFolder, updateFolder, deleteFolder } = useFolders(user);
+  const { 
+    items, xoaMon, thichMon, binhLuanMon, xoaBinhLuan, thichBinhLuan, toggleFavorite, moveToFolder,
+    loading: wishlistLoading 
+  } = useWishlist(user, userProfile, null);
+  const { folders, loading: foldersLoading, addFolder, updateFolder, deleteFolder } = useFolders(user);
   const [activeFolderId, setActiveFolderId] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useLanguage();
@@ -87,17 +90,26 @@ export default function PersonalPage({ user, userProfile }) {
         <div className="lg:col-span-2">
 
           <div className="min-h-[400px]">
-            <FolderList 
-              folders={folders} 
-              items={items}
-              activeFolderId={activeFolderId}
-              onSelectFolder={setActiveFolderId}
-              onAddFolder={addFolder}
-              onUpdateFolder={updateFolder}
-              onDeleteFolder={deleteFolder}
-              onDropToFolder={(wishId, folderId) => moveToFolder(wishId, folderId)}
-            />
-            <WishList items={filteredItems} onSelectItem={setSelectedItem} onToggleFavorite={toggleFavorite} user={user} />
+            {wishlistLoading || foldersLoading ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <div className="w-10 h-10 border-4 border-pink-500/20 border-t-pink-500 rounded-full animate-spin"></div>
+                <p className="text-[10px] font-black uppercase tracking-[2px] text-text-muted opacity-40">{t("loading_data") || "Đang tải dữ liệu..."}</p>
+              </div>
+            ) : (
+              <>
+                <FolderList 
+                  folders={folders} 
+                  items={items}
+                  activeFolderId={activeFolderId}
+                  onSelectFolder={setActiveFolderId}
+                  onAddFolder={addFolder}
+                  onUpdateFolder={updateFolder}
+                  onDeleteFolder={deleteFolder}
+                  onDropToFolder={(wishId, folderId) => moveToFolder(wishId, folderId)}
+                />
+                <WishList items={filteredItems} onSelectItem={setSelectedItem} onToggleFavorite={toggleFavorite} user={user} />
+              </>
+            )}
           </div>
         </div>
       </div>

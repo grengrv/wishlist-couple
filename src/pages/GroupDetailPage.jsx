@@ -80,10 +80,11 @@ export default function GroupDetailPage({ user, userProfile }) {
   const logs = useActivityLogs(id);
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const {
-    items, xoaMon, thichMon, binhLuanMon, xoaBinhLuan, thichBinhLuan, toggleFavorite, moveToFolder
+   const {
+    items, xoaMon, thichMon, binhLuanMon, xoaBinhLuan, thichBinhLuan, toggleFavorite, moveToFolder,
+    loading: wishlistLoading
   } = useWishlist(user, userProfile, id);
-  const { folders, addFolder, updateFolder, deleteFolder } = useFolders(user, userProfile, id);
+  const { folders, loading: foldersLoading, addFolder, updateFolder, deleteFolder } = useFolders(user, userProfile, id);
   const [activeFolderId, setActiveFolderId] = useState(null);
 
   const [filterUserId, setFilterUserId] = useState("all");
@@ -716,7 +717,12 @@ export default function GroupDetailPage({ user, userProfile }) {
           </motion.div>
         )}
 
-        {filteredItems.length === 0 && filterUserId !== "all" ? (
+        {wishlistLoading || foldersLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <div className="w-10 h-10 border-4 border-pink-500/20 border-t-pink-500 rounded-full animate-spin"></div>
+            <p className="text-[10px] font-black uppercase tracking-[2px] text-text-muted opacity-40">{t("loading_data") || "Đang tải dữ liệu..."}</p>
+          </div>
+        ) : filteredItems.length === 0 && filterUserId !== "all" ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-16 flex flex-col items-center justify-center text-center">
             <div className="text-4xl mb-3 opacity-50">📭</div>
             <p className="text-sm font-bold text-text-muted italic uppercase tracking-widest">{t("no_posts_yet")}</p>

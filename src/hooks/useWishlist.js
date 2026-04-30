@@ -36,6 +36,7 @@ export function useWishlist(user, userProfile, groupId = null) {
   const [pendingFile, setPendingFile] = useState(null);
   const [mood, setMood] = useState(null);
   const [link, setLink] = useState("");
+  const [loading, setLoading] = useState(true);
  
   // Lấy danh sách & đăng ký paste listener khi user đăng nhập
   useEffect(() => {
@@ -91,8 +92,10 @@ export function useWishlist(user, userProfile, groupId = null) {
       console.log(`[useWishlist] Filtered data for ${groupId ? "Group " + groupId : "Personal"}:`, data);
  
       setItems(data);
+      setLoading(false);
     }, (error) => {
       console.error("[useWishlist] Snapshot error:", error);
+      setLoading(false);
       notifyError("Không thể tải danh sách điều ước. Vui lòng kiểm tra lại kết nối.");
     });
 
@@ -764,6 +767,7 @@ export function useWishlist(user, userProfile, groupId = null) {
     formError,
     isImageTooLarge,
     setFormError,
+    loading,
     // Actions
     chonAnh,
     xoaAnh,
