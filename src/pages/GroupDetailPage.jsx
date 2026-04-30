@@ -9,7 +9,6 @@ import AddForm from "@components/wishlist/AddForm";
 import WishList from "@components/wishlist/WishList";
 import ItemModal from "@components/wishlist/ItemModal";
 import FolderList from "@components/wishlist/FolderList";
-import LuckyWheel from "@components/wishlist/LuckyWheel";
 import { useFolders } from "@hooks/useFolders";
 import Button from "@components/ui/Button";
 import Input from "@components/ui/Input";
@@ -68,7 +67,6 @@ export default function GroupDetailPage({ user, userProfile }) {
   const [isSavingBanner, setIsSavingBanner] = useState(false);
   // Group settings menu
   const [showGroupMenu, setShowGroupMenu] = useState(false);
-  const [showLuckyWheel, setShowLuckyWheel] = useState(false);
   const groupMenuRef = useRef(null);
 
   useEffect(() => {
@@ -520,14 +518,6 @@ export default function GroupDetailPage({ user, userProfile }) {
               </div>
             )}
             <button
-              onClick={() => setShowLuckyWheel(true)}
-              title={t("lucky_wheel_title")}
-              className="w-12 h-12 rounded-2xl bg-card-bg border border-border-primary flex items-center justify-center shadow-sm hover:bg-card-hover transition-all shrink-0"
-              style={{ color: group.themeColor || '#ec4899' }}
-            >
-              <span className="text-2xl">🎡</span>
-            </button>
-            <button
               onClick={() => navigate(`/add/${id}`)}
               title={t("add_wish_tip")}
               className="w-12 h-12 rounded-2xl bg-card-bg border border-border-primary flex items-center justify-center shadow-sm hover:bg-card-hover transition-all shrink-0"
@@ -920,14 +910,6 @@ export default function GroupDetailPage({ user, userProfile }) {
         />
       )}
 
-      <AnimatePresence>
-        {showLuckyWheel && (
-          <LuckyWheel 
-            items={items} 
-            onClose={() => setShowLuckyWheel(false)} 
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 }

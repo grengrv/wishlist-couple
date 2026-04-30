@@ -457,11 +457,6 @@ export const translations = {
     forgot_password: "Quên mật khẩu?",
     reset_link_sent: "Link đặt lại mật khẩu đã được gửi đến email của bạn!",
     reset_error: "Không thể gửi link đặt lại mật khẩu. Vui lòng kiểm tra lại email.",
-    lucky_wheel_title: "Vòng Quay May Mắn",
-    lucky_wheel_subtitle: "Hãy để định mệnh chọn giúp bạn nhé!",
-    spin_now: "QUAY NGAY!",
-    spinning: "ĐANG QUAY...",
-    you_got: "KẾT QUẢ",
     loading_data: "Đang tải dữ liệu...",
   },
   en: {
@@ -923,11 +918,6 @@ export const translations = {
     forgot_password: "Forgot password?",
     reset_link_sent: "Password reset link has been sent to your email!",
     reset_error: "Failed to send reset link. Please check your email.",
-    lucky_wheel_title: "Lucky Wheel",
-    lucky_wheel_subtitle: "Let destiny choose for you!",
-    spin_now: "SPIN NOW!",
-    spinning: "SPINNING...",
-    you_got: "RESULT",
     loading_data: "Loading data...",
   }
 };

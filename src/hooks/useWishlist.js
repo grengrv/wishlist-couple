@@ -39,6 +39,9 @@ export function useWishlist(user, userProfile, groupId = null) {
   const [loading, setLoading] = useState(true);
  
   // Lấy danh sách & đăng ký paste listener khi user đăng nhập
+  useEffect(() => {
+    if (!user) return;
+
     let unsubscribeSnapshot;
     
     const startSnapshot = () => {
