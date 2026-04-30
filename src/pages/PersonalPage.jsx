@@ -20,7 +20,7 @@ export default function PersonalPage({ user, userProfile }) {
   const { t } = useLanguage();
 
   const filteredItems = useMemo(() => {
-    if (activeFolderId === null) return items;
+    if (!activeFolderId) return items;
     return items.filter(item => item.folderId === activeFolderId);
   }, [items, activeFolderId]);
 
@@ -89,6 +89,7 @@ export default function PersonalPage({ user, userProfile }) {
           <div className="min-h-[400px]">
             <FolderList 
               folders={folders} 
+              items={items}
               activeFolderId={activeFolderId}
               onSelectFolder={setActiveFolderId}
               onAddFolder={addFolder}

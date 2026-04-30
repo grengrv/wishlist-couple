@@ -167,7 +167,7 @@ export default function ItemModal({
       if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target)) {
         setShowEmojiPicker(false);
       }
-      if (activeDropdown && !e.target.closest('.comment-dropdown')) {
+      if (activeDropdown && dropdownRef.current && !dropdownRef.current.contains(e.target) && !e.target.closest('[data-dropdown-trigger]')) {
         setActiveDropdown(null);
       }
       if (showReactionPicker && reactionPickerRef.current && !reactionPickerRef.current.contains(e.target)) {
@@ -301,24 +301,40 @@ export default function ItemModal({
                   <span className="font-black text-text-primary mr-2">{item.themBoi || "Ẩn danh"}</span>
                   <span className="font-black text-pink-500 text-lg block md:inline mb-1 md:mb-0">{item.ten}</span>
                 </div>
-                {item.mood && MOOD_META[item.mood] && (() => {
-                  const m = MOOD_META[item.mood];
-                  return (
-                    <span
-                      className="inline-flex items-center gap-1 w-fit px-2.5 py-1 rounded-full text-[11px] font-black mb-1"
-                      style={{ backgroundColor: m.bg, color: m.color, border: `1.5px solid ${m.color}30` }}
+                <div className="flex flex-wrap items-center gap-3 mt-2 mb-3">
+                  {item.mood && MOOD_META[item.mood] && (() => {
+                    const m = MOOD_META[item.mood];
+                    return (
+                      <span
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-black"
+                        style={{ backgroundColor: m.bg, color: m.color, border: `1.5px solid ${m.color}30` }}
+                      >
+                        <span className="text-sm">{m.emoji}</span>
+                        {t(m.labelKey)}
+                      </span>
+                    );
+                  })()}
+
+                  {item.link && (
+                    <a
+                      href={item.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-4 py-1.5 bg-pink-500 text-white rounded-full text-[12px] font-black hover:bg-pink-600 transition-all shadow-md shadow-pink-500/20 active:scale-95"
                     >
-                      <span className="text-sm">{m.emoji}</span>
-                      {t(m.labelKey)}
-                    </span>
-                  );
-                })()}
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                      {t("view_product")}
+                    </a>
+                  )}
+                </div>
+
                 {item.ghiChu && (
-                  <p className="text-[14px] text-text-secondary font-medium whitespace-pre-wrap">
+                  <p className="text-[14px] text-text-secondary font-medium whitespace-pre-wrap leading-relaxed">
                     {item.ghiChu}
                   </p>
                 )}
-                <span className="text-[10px] text-text-muted font-black uppercase tracking-wider mt-2">
+                
+                <span className="text-[10px] text-text-muted font-black uppercase tracking-wider mt-4 block">
                   {formatNgay(item.taoLuc)}
                 </span>
               </div>

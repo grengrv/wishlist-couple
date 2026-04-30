@@ -11,7 +11,7 @@ export default function AddWishPage({ user, userProfile }) {
   const { t } = useLanguage();
 
   const {
-    tenMon, setTenMon, ghiChu, setGhiChu, mood, setMood, previewAnh, dangTai, keoVao, setKeoVao, chonAnh, xoaAnh, themMon,
+    tenMon, setTenMon, link, setLink, ghiChu, setGhiChu, mood, setMood, previewAnh, setPreviewAnh, anhBase64, setAnhBase64, dangTai, keoVao, setKeoVao, chonAnh, xoaAnh, themMon,
     formError, isImageTooLarge, nenAnh, setFormError, items
   } = useWishlist(user, userProfile, groupId);
 
@@ -66,9 +66,12 @@ export default function AddWishPage({ user, userProfile }) {
         <div className="relative">
           <AddForm
             tenMon={tenMon} setTenMon={setTenMon}
+            link={link} setLink={setLink}
             ghiChu={ghiChu} setGhiChu={setGhiChu}
             mood={mood} setMood={setMood}
-            previewAnh={previewAnh} dangTai={dangTai}
+            previewAnh={previewAnh} setPreviewAnh={setPreviewAnh}
+            anhBase64={anhBase64} setAnhBase64={setAnhBase64}
+            dangTai={dangTai}
             keoVao={keoVao} setKeoVao={setKeoVao}
             chonAnh={chonAnh} xoaAnh={xoaAnh}
             themMon={handleCreate}

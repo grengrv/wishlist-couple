@@ -47,7 +47,7 @@ export default function CommentItem({
             onClick={() => onLike(comment.id, isReply ? "reply" : "comment")}
             className={`text-[11px] font-black transition-colors ${hasLiked ? 'text-pink-500' : 'text-text-muted hover:text-text-secondary'}`}
           >
-            Thích
+            {hasLiked ? "Đã thích" : "Thích"}
           </button>
 
           {!isReply && (

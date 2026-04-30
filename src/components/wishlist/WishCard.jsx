@@ -97,23 +97,42 @@ export default function WishCard({ item, onClick, onToggleFavorite, user, layout
             <h3 className={`text-base sm:text-lg font-bold text-text-primary leading-tight transition-colors ${isFavorite ? 'text-amber-900 dark:text-amber-100' : ''}`}>
               {item.ten}
             </h3>
-            {isFavorite && (
-              <span className="inline-block text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 mt-0.5">
-                {t("pinned")}
-              </span>
-            )}
-            {item.mood && MOOD_META[item.mood] && (() => {
-              const m = MOOD_META[item.mood];
-              return (
-                <span
-                  className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-black"
-                  style={{ backgroundColor: m.bg, color: m.color, border: `1px solid ${m.color}25` }}
-                >
-                  <span>{m.emoji}</span>
-                  {t(m.labelKey)}
+
+            {/* Metadata Row: Pinned - Mood - Link */}
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              {isFavorite && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase tracking-wider border border-amber-500/20">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                  {t("pinned")}
                 </span>
-              );
-            })()}
+              )}
+              
+              {item.mood && MOOD_META[item.mood] && (() => {
+                const m = MOOD_META[item.mood];
+                return (
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black border"
+                    style={{ backgroundColor: m.bg, color: m.color, borderColor: `${m.color}30` }}
+                  >
+                    <span>{m.emoji}</span>
+                    {t(m.labelKey)}
+                  </span>
+                );
+              })()}
+
+              {item.link && (
+                <a
+                  href={item.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-pink-500/10 text-pink-500 rounded-full text-[10px] font-black hover:bg-pink-500 hover:text-white transition-all border border-pink-500/20"
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                  {t("view_product")}
+                </a>
+              )}
+            </div>
           </div>
           
           {/* Star Button - Fixed to Right */}

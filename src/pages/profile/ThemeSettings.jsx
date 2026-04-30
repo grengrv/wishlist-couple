@@ -17,7 +17,7 @@ export default function ThemeSettings({
             <div className="relative group">
               <div
                 style={{ backgroundColor: activeTheme.backgroundColor }}
-                className="w-12 h-12 rounded-xl shadow-lg cursor-pointer border-2 border-border-primary flex items-center justify-center transition-transform hover:scale-105 active:scale-95 overflow-hidden"
+                className="w-12 h-12 rounded-xl cursor-pointer border-2 border-border-primary flex items-center justify-center transition-transform hover:scale-105 active:scale-95 overflow-hidden"
                 onClick={() => document.getElementById('bg-color-picker').click()}
               >
                 <div className="absolute inset-0 opacity-10 bg-black/10" />
@@ -55,7 +55,7 @@ export default function ThemeSettings({
             <div className="relative group">
               <div
                 style={{ backgroundColor: activeTheme.color }}
-                className="w-12 h-12 rounded-xl shadow-lg cursor-pointer border-2 border-border-primary flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
+                className="w-12 h-12 rounded-xl cursor-pointer border-2 border-border-primary flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
                 onClick={() => document.getElementById('accent-color-picker').click()}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z" /><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" /><path d="M2 2l7.586 7.586" /><circle cx="11" cy="11" r="2" /></svg>
@@ -87,7 +87,7 @@ export default function ThemeSettings({
                   <button
                     key={c.name}
                     style={{ backgroundColor: c.value }}
-                    className={`w-6 h-6 rounded-lg shrink-0 border border-white/50 transition-all ${theme.color === c.value ? 'scale-110 shadow-sm border-white' : 'hover:scale-110 opacity-80 hover:opacity-100'}`}
+                    className={`w-6 h-6 rounded-lg shrink-0 border border-white/50 transition-all ${theme.color === c.value ? 'scale-110 border-white' : 'hover:scale-110 opacity-80 hover:opacity-100'}`}
                     onClick={() => setTheme({ ...theme, color: c.value })}
                     onMouseEnter={() => setPreviewTheme({ ...theme, color: c.value })}
                     onMouseLeave={() => setPreviewTheme(null)}

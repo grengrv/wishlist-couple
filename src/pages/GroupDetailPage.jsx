@@ -93,7 +93,8 @@ export default function GroupDetailPage({ user, userProfile }) {
     if (filterUserId !== "all") {
       list = list.filter(item => item.uid === filterUserId);
     }
-    if (activeFolderId !== null) {
+    // Folder filter
+    if (activeFolderId) {
       list = list.filter(item => item.folderId === activeFolderId);
     }
     return list;

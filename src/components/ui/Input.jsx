@@ -13,7 +13,6 @@ const baseClass = `
   font-[inherit]
   transition-[border,box-shadow] duration-200
   focus:border-pink-hot focus:bg-bg-secondary
-  focus:shadow-[0_0_0_3px_rgba(233,30,140,0.08)]
   disabled:opacity-50 disabled:cursor-not-allowed
 `;
 

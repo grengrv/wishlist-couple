@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { requestNotificationPermission } from "@utils/pushNotification";
 import { Routes, Route } from "react-router-dom";
 import { auth, db } from "@config/firebase";
@@ -9,12 +9,10 @@ import { PreviewProvider } from "@context/PreviewContext";
 import AppToast from "@components/ui/AppToast";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 
-import ProfilePage from "@pages/ProfilePage";
 import Header from "@components/layout/Header";
 import { notifyLogout, notifyError } from "@utils/notify";
 import Footer from "@components/layout/Footer";
 import AuthPage from "@pages/AuthPage";
-import AdminPage from "@pages/AdminPage";
 import { ADMIN_EMAIL } from "@constants";
 import BottomNav from "@components/layout/BottomNav";
 import PWAUpdatePrompt from "@components/pwa/PWAUpdatePrompt"
@@ -22,17 +20,36 @@ import PWAUpdater from "@components/pwa/PWAUpdater"
 import Button from "@components/ui/Button";
 import { toastStore } from "@utils/toastStore";
 
-// Pages
-import HomePage from "@pages/HomePage";
-import GroupsPage from "@pages/GroupsPage";
-import GroupDetailPage from "@pages/GroupDetailPage";
-import InvitePage from "@pages/InvitePage";
-import AddWishPage from "@pages/AddWishPage";
-import PersonalPage from "@pages/PersonalPage";
-import TermsPage from "@pages/TermsPage";
-import PrivacyPage from "@pages/PrivacyPage";
+// Lazy-loaded pages (code-split per route)
+const HomePage = lazy(() => import("@pages/HomePage"));
+const GroupsPage = lazy(() => import("@pages/GroupsPage"));
+const GroupDetailPage = lazy(() => import("@pages/GroupDetailPage"));
+const InvitePage = lazy(() => import("@pages/InvitePage"));
+const AddWishPage = lazy(() => import("@pages/AddWishPage"));
+const PersonalPage = lazy(() => import("@pages/PersonalPage"));
+const ProfilePage = lazy(() => import("@pages/ProfilePage"));
+const AdminPage = lazy(() => import("@pages/AdminPage"));
+const TermsPage = lazy(() => import("@pages/TermsPage"));
+const PrivacyPage = lazy(() => import("@pages/PrivacyPage"));
 
 import { useLanguage } from "@context/LanguageContext";
+
+function PageLoader() {
+  return (
+    <div className="fixed inset-0 bg-bg-primary flex items-center justify-center z-[9999]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="relative w-14 h-14">
+          <div className="absolute inset-0 rounded-full border-4 border-pink-500/20"></div>
+          <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-pink-500 animate-spin"></div>
+          <div className="absolute inset-2 rounded-full bg-pink-500/10 flex items-center justify-center text-xl">
+            💖
+          </div>
+        </div>
+        <p className="text-[12px] font-black uppercase tracking-[3px] text-text-muted opacity-50">Đang tải...</p>
+      </div>
+    </div>
+  );
+}
 
 function App() {
   const { t } = useLanguage();
@@ -89,11 +106,7 @@ function App() {
 
   // ── Đang kiểm tra auth ──
   if (checking) {
-    return (
-      <div className="auth-wrap">
-        <p style={{ color: "#c2185b" }}>{t("loading")}</p>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   // ── Cấu trúc Web Component ──
@@ -110,34 +123,36 @@ function App() {
           />
 
           <main className="flex-1 w-full max-w-[1600px] mx-auto px-[5%] md:px-[10%] flex flex-col transition-all duration-500">
-            {!user || (!user.emailVerified && !user.isAnonymous) ? (
-              <AuthPage user={user} />
-            ) : user.email === ADMIN_EMAIL ? (
-              <AdminPage />
-            ) : (
-              <div className="flex-1 w-full flex flex-col">
-                {/* Modal Profile dùng chung toàn app */}
-                {showProfile && (
-                  <ProfilePage
-                    userProfile={userProfile}
-                    onClose={() => setShowProfile(false)}
-                    onUpdate={(updated) => setUserProfile(prev => ({ ...prev, ...updated }))}
-                  />
-                )}
+            <Suspense fallback={<PageLoader />}>
+              {!user || (!user.emailVerified && !user.isAnonymous) ? (
+                <AuthPage user={user} />
+              ) : user.email === ADMIN_EMAIL ? (
+                <AdminPage />
+              ) : (
+                <div className="flex-1 w-full flex flex-col">
+                  {/* Modal Profile dùng chung toàn app */}
+                  {showProfile && (
+                    <ProfilePage
+                      userProfile={userProfile}
+                      onClose={() => setShowProfile(false)}
+                      onUpdate={(updated) => setUserProfile(prev => ({ ...prev, ...updated }))}
+                    />
+                  )}
 
-                <Routes>
-                  <Route path="/" element={<HomePage user={user} userProfile={userProfile} />} />
-                  <Route path="/personal" element={<PersonalPage user={user} userProfile={userProfile} />} />
-                  <Route path="/groups" element={<GroupsPage user={user} userProfile={userProfile} />} />
-                  <Route path="/groups/:id" element={<GroupDetailPage user={user} userProfile={userProfile} />} />
-                  <Route path="/invite/:id" element={<InvitePage user={user} userProfile={userProfile} />} />
-                  <Route path="/add" element={<AddWishPage user={user} userProfile={userProfile} />} />
-                  <Route path="/add/:groupId" element={<AddWishPage user={user} userProfile={userProfile} />} />
-                  <Route path="/terms" element={<TermsPage />} />
-                  <Route path="/privacy" element={<PrivacyPage />} />
-                </Routes>
-              </div>
-            )}
+                  <Routes>
+                    <Route path="/" element={<HomePage user={user} userProfile={userProfile} />} />
+                    <Route path="/personal" element={<PersonalPage user={user} userProfile={userProfile} />} />
+                    <Route path="/groups" element={<GroupsPage user={user} userProfile={userProfile} />} />
+                    <Route path="/groups/:id" element={<GroupDetailPage user={user} userProfile={userProfile} />} />
+                    <Route path="/invite/:id" element={<InvitePage user={user} userProfile={userProfile} />} />
+                    <Route path="/add" element={<AddWishPage user={user} userProfile={userProfile} />} />
+                    <Route path="/add/:groupId" element={<AddWishPage user={user} userProfile={userProfile} />} />
+                    <Route path="/terms" element={<TermsPage />} />
+                    <Route path="/privacy" element={<PrivacyPage />} />
+                  </Routes>
+                </div>
+              )}
+            </Suspense>
           </main>
 
           <BottomNav user={user} onOpenProfile={() => setShowProfile(true)} />

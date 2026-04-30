@@ -47,19 +47,26 @@ export default defineConfig({
   ],
   build: {
     target: 'esnext',
+    cssCodeSplit: true,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('firebase')) return 'vendor-firebase';
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) return 'vendor-react';
+            // Split Firebase into sub-packages for better caching
+            if (id.includes('firebase/auth')) return 'firebase-auth';
+            if (id.includes('firebase/firestore')) return 'firebase-firestore';
+            if (id.includes('firebase/messaging')) return 'firebase-messaging';
+            if (id.includes('firebase')) return 'firebase-core';
             if (id.includes('framer-motion')) return 'vendor-motion';
+            if (id.includes('react-router')) return 'vendor-router';
+            if (id.includes('react-dom')) return 'vendor-react-dom';
+            if (id.includes('react')) return 'vendor-react';
             return 'vendor';
           }
         }
       }
     },
-    chunkSizeWarningLimit: 1000
+    chunkSizeWarningLimit: 500
   },
   server: {
     host: true, // thay vì [IP_ADDRESS]

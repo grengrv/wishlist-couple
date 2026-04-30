@@ -51,11 +51,13 @@ export function useFolders(user, userProfile = null, groupId = null) {
     return () => unsubscribe();
   }, [user, groupId]);
 
-  const addFolder = async (name) => {
+  const addFolder = async (name, emoji = "📁", color = "#ec4899") => {
     if (!name.trim()) return;
     try {
       const docRef = await addDoc(collection(db, "folders"), {
         name: name.trim(),
+        emoji,
+        color,
         uid: user.uid,
         groupId: groupId || null,
         createdAt: serverTimestamp()
@@ -68,11 +70,13 @@ export function useFolders(user, userProfile = null, groupId = null) {
     }
   };
 
-  const updateFolder = async (id, name) => {
+  const updateFolder = async (id, name, emoji, color) => {
     try {
-      await updateDoc(doc(db, "folders", id), {
-        name: name.trim()
-      });
+      const updateData = { name: name.trim() };
+      if (emoji) updateData.emoji = emoji;
+      if (color) updateData.color = color;
+
+      await updateDoc(doc(db, "folders", id), updateData);
       await logActivity("rename_folder", id, name.trim());
       return true;
     } catch (err) {

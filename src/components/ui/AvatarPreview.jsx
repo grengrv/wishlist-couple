@@ -51,7 +51,7 @@ export default function AvatarPreview({ isOpen, src, name, onClose }) {
         )}
         
         <div className="mt-6 text-center">
-          <h3 className="text-white text-xl font-black tracking-tight drop-shadow-lg">
+          <h3 className="text-white text-xl font-black tracking-tight">
             {name}
           </h3>
           <p className="text-white/60 text-sm font-bold mt-1">

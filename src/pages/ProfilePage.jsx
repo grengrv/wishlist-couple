@@ -133,7 +133,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
     if (!userProfile) {
         return (
             <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[9999] p-4 animate-fade-in" onClick={onClose}>
-                <div className="bg-card-bg backdrop-blur-3xl p-10 rounded-[40px] shadow-2xl flex flex-col items-center gap-6 border border-border-primary">
+                <div className="bg-card-bg backdrop-blur-3xl p-10 rounded-[40px] flex flex-col items-center gap-6 border border-border-primary">
                     <div className="w-12 h-12 border-[5px] border-pink-500 border-t-transparent rounded-full animate-spin" />
                     <div className="flex flex-col items-center gap-1">
                         <p className="text-text-primary font-black text-lg">{t("loading_profile")}</p>
@@ -357,7 +357,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                             {!isReadOnly && !isPreviewMode && (
                                 <Button
                                     onClick={() => setMode("edit")}
-                                    style={{ backgroundColor: activeTheme.color, boxShadow: `0 8px 24px -8px ${activeTheme.color}` }}
+                                    style={{ backgroundColor: activeTheme.color }}
                                     className="w-full !rounded-[20px] !text-white hover:-translate-y-0.5 !py-4 transition-all active:scale-95 font-black text-[11px] uppercase tracking-widest border-none flex items-center justify-center gap-2"
                                 >
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
@@ -376,11 +376,11 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                                         {t("system_settings")}
                                     </h4>
                                     
-                                    <div className="bg-bg-primary/30 p-1.5 rounded-[20px] border border-border-primary/50 flex items-center gap-1.5 shadow-inner">
-                                        <div className="flex-1 flex items-center justify-between bg-bg-secondary p-1 rounded-2xl shadow-sm border border-border-primary/50 relative overflow-hidden z-0">
+                                    <div className="bg-bg-primary/30 p-1.5 rounded-[20px] border border-border-primary/50 flex items-center gap-1.5">
+                                        <div className="flex-1 flex items-center justify-between bg-bg-secondary p-1 rounded-2xl border border-border-primary/50 relative overflow-hidden z-0">
                                             {/* Sliding Indicator for language */}
                                             <div 
-                                                className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-pink-hot rounded-xl shadow-sm transition-transform duration-300 cubic-bezier(0.4, 0, 0.2, 1) -z-10 ${lang === 'vi' ? 'translate-x-1' : 'translate-x-[calc(100%+6px)]'}`} 
+                                                className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-pink-hot rounded-xl transition-transform duration-300 cubic-bezier(0.4, 0, 0.2, 1) -z-10 ${lang === 'vi' ? 'translate-x-1' : 'translate-x-[calc(100%+6px)]'}`} 
                                             />
                                             <button
                                                 onClick={() => setLang("vi")}
@@ -432,7 +432,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                                     <Button
                                         variant="ghost"
                                         onClick={() => { setTheme(userProfile?.theme || DEFAULT_THEME); setMode("view"); }}
-                                        className="!bg-bg-secondary hover:!bg-border-primary/50 !text-text-secondary !py-4 !rounded-[20px] font-black text-[11px] uppercase tracking-widest flex-1 border border-border-primary/50 shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2"
+                                        className="!bg-bg-secondary hover:!bg-border-primary/50 !text-text-secondary !py-4 !rounded-[20px] font-black text-[11px] uppercase tracking-widest flex-1 border border-border-primary/50 transition-all active:scale-95 flex items-center justify-center gap-2"
                                     >
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                         {t("cancel")}
@@ -440,7 +440,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
                                     <Button
                                         onClick={luuThongTin}
                                         disabled={loading}
-                                        style={{ backgroundColor: activeTheme.color, boxShadow: `0 8px 24px -8px ${activeTheme.color}` }}
+                                        style={{ backgroundColor: activeTheme.color }}
                                         className="!text-white hover:opacity-90 hover:-translate-y-0.5 !py-4 !rounded-[20px] font-black text-[11px] uppercase tracking-widest flex-[2] border-none transition-all active:scale-95 flex items-center justify-center gap-2"
                                     >
                                         {loading ? (

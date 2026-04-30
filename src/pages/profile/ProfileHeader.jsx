@@ -31,7 +31,7 @@ export default function ProfileHeader({
             <button
               onClick={() => document.getElementById("banner-upload").click()}
               style={{ backgroundColor: `${activeTheme.color}90` }}
-              className="w-10 h-10 rounded-full flex items-center justify-center text-white backdrop-blur-md hover:scale-105 active:scale-95 transition-all shadow-lg border border-white/20"
+              className="w-10 h-10 rounded-full flex items-center justify-center text-white backdrop-blur-md hover:scale-105 active:scale-95 transition-all border border-white/20"
               title={t("change_banner")}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
@@ -39,7 +39,7 @@ export default function ProfileHeader({
             {bannerPreview && (
               <button
                 onClick={onRemoveBanner}
-                className="w-10 h-10 rounded-full bg-red-500/80 hover:bg-red-500 flex items-center justify-center text-white backdrop-blur-md hover:scale-105 active:scale-95 transition-all shadow-lg border border-white/20"
+                className="w-10 h-10 rounded-full bg-red-500/80 hover:bg-red-500 flex items-center justify-center text-white backdrop-blur-md hover:scale-105 active:scale-95 transition-all border border-white/20"
                 title={t("remove_banner_title")}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
@@ -52,7 +52,7 @@ export default function ProfileHeader({
         <div className="absolute top-4 right-4 flex gap-2 z-20">
           {!isReadOnly && mode === "view" && (
             <button 
-              className={`w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md transition-all ${isPreviewMode ? 'bg-pink-500 text-white shadow-lg scale-110' : 'bg-black/10 hover:bg-black/20 text-white'}`}
+              className={`w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md transition-all ${isPreviewMode ? 'bg-pink-500 text-white scale-110' : 'bg-black/10 hover:bg-black/20 text-white'}`}
               onClick={() => setIsPreviewMode(!isPreviewMode)}
               title={isPreviewMode ? "Thoát xem trước" : "Xem trước hồ sơ"}
             >
@@ -71,7 +71,7 @@ export default function ProfileHeader({
       <div className="px-6 relative flex flex-col items-center text-center gap-3 pb-2 w-full">
         <div className="relative -mt-[60px] group z-30 shrink-0 border-1 border-white rounded-[100px]">
           <div
-            className={`w-[120px] h-[120px] rounded-[100px] shadow-xl overflow-hidden relative ${!isReadOnly && !isPreviewMode ? 'cursor-pointer' : ''} rotate-3 group-hover:rotate-0 transition-transform duration-500`}
+            className={`w-[120px] h-[120px] rounded-[100px] overflow-hidden relative ${!isReadOnly && !isPreviewMode ? 'cursor-pointer' : ''} rotate-3 group-hover:rotate-0 transition-transform duration-500`}
             onClick={() => {
               if (isReadOnly || isPreviewMode) return;
               if (mode === "view") {
@@ -97,14 +97,14 @@ export default function ProfileHeader({
                 <button
                   onClick={(e) => { e.stopPropagation(); document.getElementById("avatar-upload").click(); }}
                   style={{ backgroundColor: activeTheme.color }}
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 active:scale-95 transition-all border border-white/20"
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all border border-white/20"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
                 </button>
                 {avatarPreview && (
                   <button
                     onClick={onRemoveAvatar}
-                    className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white shadow-lg hover:scale-110 active:scale-95 transition-all border border-white/20"
+                    className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all border border-white/20"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
                   </button>

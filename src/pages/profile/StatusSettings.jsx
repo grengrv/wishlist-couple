@@ -16,7 +16,7 @@ export default function StatusSettings({
     <div className="fixed inset-0 z-[10001] md:bg-transparent bg-black/40 backdrop-blur-sm md:backdrop-blur-none flex items-end md:items-start transition-all" onClick={onClose}>
       <div
         className={`
-          bg-bg-secondary/95 backdrop-blur-3xl border border-border-primary/50 shadow-[0_20px_50px_rgba(0,0,0,0.2)] p-2 animate-slide-up md:animate-fade-in overflow-hidden
+          bg-bg-secondary/95 backdrop-blur-3xl border border-border-primary/50 p-2 animate-slide-up md:animate-fade-in overflow-hidden
           ${window.innerWidth < 768
             ? 'w-full rounded-t-[36px] pb-10 px-4' // Mobile bottom sheet
             : 'w-[220px] rounded-[32px] fixed' // Desktop popover

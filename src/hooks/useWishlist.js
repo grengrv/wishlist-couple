@@ -35,6 +35,7 @@ export function useWishlist(user, userProfile, groupId = null) {
   const [isImageTooLarge, setIsImageTooLarge] = useState(false);
   const [pendingFile, setPendingFile] = useState(null);
   const [mood, setMood] = useState(null);
+  const [link, setLink] = useState("");
  
   // Lấy danh sách & đăng ký paste listener khi user đăng nhập
   useEffect(() => {
@@ -120,6 +121,7 @@ export function useWishlist(user, userProfile, groupId = null) {
   // Decorate items with isLiked state
   const enrichedItems = useMemo(() => items.map(item => ({
     ...item,
+    folderId: item.folderId || null, // Ensure consistent null/string handling
     isLiked: userLikes.has(item.id),
     isPinned: item.pinnedBy?.includes(user?.uid)
   })), [items, userLikes, user?.uid]);
@@ -240,9 +242,11 @@ export function useWishlist(user, userProfile, groupId = null) {
         pinCount: 0,
         folderId: folderId || null,
         mood: (moodOverride !== undefined ? moodOverride : mood) || null,
+        link: link || null,
       });
 
       setTenMon("");
+      setLink("");
       setGhiChu("");
       setMood(null);
       xoaAnh();
@@ -565,12 +569,11 @@ export function useWishlist(user, userProfile, groupId = null) {
     try {
       if (isReply) {
         await deleteDoc(doc(db, "replies", id));
-        toastStore.show(t("reply_deleted"));
       } else {
         await deleteDoc(doc(db, "comments", id));
         // Also delete associated replies (could be a Cloud Function, but for now just leave them orphaned or do batch)
-        toastStore.show(t("comment_deleted"));
       }
+      toastStore.show(t("delete_success"));
       await updateDoc(doc(db, "wishlist", wishId), { commentCount: increment(-1) });
       return true;
     } catch (err) {
@@ -751,9 +754,11 @@ export function useWishlist(user, userProfile, groupId = null) {
     items: enrichedItems,
     // Form state
     tenMon, setTenMon,
+    link, setLink,
     ghiChu, setGhiChu,
     mood, setMood,
-    previewAnh,
+    previewAnh, setPreviewAnh,
+    anhBase64, setAnhBase64,
     dangTai,
     keoVao, setKeoVao,
     formError,
