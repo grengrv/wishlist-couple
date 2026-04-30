@@ -1,7 +1,11 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { 
+  initializeFirestore, 
+  persistentLocalCache, 
+  persistentMultipleTabManager 
+} from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { getMessaging } from "firebase/messaging";
+import { getMessaging, isSupported } from "firebase/messaging";
 
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -13,6 +17,22 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+
+// Khởi tạo Firestore với Long Polling để tránh lỗi QUIC Protocol (ERR_QUIC_PROTOCOL_ERROR)
+// và bật Cache offline để load dữ liệu nhanh hơn
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager()
+  }),
+  experimentalForceLongPolling: true,
+});
+
 export const auth = getAuth(app);
-export const messaging = getMessaging(app);
+
+// Khởi tạo Messaging an toàn
+let messagingInstance = null;
+isSupported().then(supported => {
+  if (supported) messagingInstance = getMessaging(app);
+}).catch(() => {});
+
+export const messaging = messagingInstance;

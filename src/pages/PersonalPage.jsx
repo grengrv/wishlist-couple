@@ -57,7 +57,7 @@ export default function PersonalPage({ user, userProfile }) {
           <div className="absolute -inset-2 from-pink-300 to-rose-300 rounded-full blur opacity-30 group-hover:opacity-60 transition duration-1000"></div>
           <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-card-bg shadow-xl">
             <img
-              src={userProfile?.avatar || "https://via.placeholder.com/150"}
+              src={userProfile?.avatar || ""}
               alt="Avatar"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
             />
