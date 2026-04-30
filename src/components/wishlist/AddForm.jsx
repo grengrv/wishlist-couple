@@ -58,26 +58,48 @@ export default function AddForm({
     setIsScraping(true);
     setScraperWarning("");
     
-    // Quick check for known tough sites
-    if (url.includes("shopee.vn") || url.includes("lazada.vn")) {
+    // Clean URL: Remove tracking parameters
+    let cleanUrl = url;
+    try {
+      const u = new URL(url);
+      const paramsToRemove = ["itm_campaign", "itm_medium", "itm_source", "spid", "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"];
+      paramsToRemove.forEach(p => u.searchParams.delete(p));
+      cleanUrl = u.toString();
+    } catch (e) {}
+
+    if (cleanUrl.includes("shopee.vn") || cleanUrl.includes("lazada.vn")) {
       setScraperWarning(t("scraper_shopee_warning"));
     }
 
+    const tryScrape = async (targetUrl, usePrerender = true) => {
+      const endpoint = `https://api.microlink.io?url=${encodeURIComponent(targetUrl)}${usePrerender ? "&prerender=true&waitFor=3000" : ""}&data.price.selector=[itemprop="price"]`;
+      const response = await fetch(endpoint);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json();
+    };
+
     try {
-      const response = await fetch(`https://api.microlink.io?url=${encodeURIComponent(url)}&prerender=true&waitFor=3000&data.price.selector=[itemprop="price"]`);
-      const result = await response.json();
+      let result;
+      try {
+        // Try with prerender first
+        result = await tryScrape(cleanUrl, true);
+      } catch (err) {
+        console.warn("[Scraper] Prerender failed, trying simple mode...", err);
+        // Fallback to simple mode if prerender timeouts
+        result = await tryScrape(cleanUrl, false);
+      }
+
       if (result.status === "success") {
         let { title, description, image, price, currency } = result.data;
         
-        // 0. Robust Title Extraction (Handle encoded Shopee titles etc.)
+        // Robust Title Extraction
         try {
           if (title && title.includes("%")) title = decodeURIComponent(title);
         } catch (e) {}
 
-        // Fallback title from URL if empty
         if (!title || title.length < 5) {
           try {
-            const urlObj = new URL(url);
+            const urlObj = new URL(cleanUrl);
             const pathParts = urlObj.pathname.split("-");
             if (pathParts.length > 2) {
               const guessedTitle = pathParts.slice(0, pathParts.length - 1).join(" ").replace(/\//g, "").trim();
@@ -89,32 +111,6 @@ export default function AddForm({
         const safeTitle = title ? title.substring(0, 40).replace(/-/g, " ").trim() : "";
         const safeDesc = description ? description.substring(0, 100).trim() : "";
         
-        // Smarter price extraction (Logging only, since field is removed)
-        let extractedPrice = "";
-        
-        // 1. Try direct price property
-        if (price) {
-          extractedPrice = `${price}${currency ? " " + currency : ""}`;
-        } 
-        // 2. Try to find in metadata if available
-        else if (result.data.meta) {
-          const meta = result.data.meta;
-          extractedPrice = meta.price || meta["og:price:amount"] || meta["product:price:amount"] || "";
-          if (extractedPrice && (meta.currency || meta["og:price:currency"])) {
-            extractedPrice += ` ${meta.currency || meta["og:price:currency"]}`;
-          }
-        }
-        
-        // 3. Fallback: Regex scan in description OR title
-        if (!extractedPrice && (description || title)) {
-          const contentToScan = `${title} ${description}`;
-          // Matches patterns like: 100.000, 100,000, 100k, 100.000đ, $100
-          const priceMatch = contentToScan.match(/(\d{1,3}(?:\.\d{3})+(?:,\d+)?\s?[₫đ$€]|[$€]\s?\d+(?:\.\d+)?|\d+\s?k(?!\w))/i);
-          if (priceMatch) extractedPrice = priceMatch[0];
-        }
-
-        console.log("[Scraper Debug] Found price:", extractedPrice, "from data:", result.data);
-
         if (safeTitle) setTenMon(safeTitle);
         if (safeDesc) setGhiChu(safeDesc);
         
@@ -131,6 +127,7 @@ export default function AddForm({
       }
     } catch (error) {
       console.error("Scraping error:", error);
+      // Even if it fails, we don't block the user
     } finally {
       setIsScraping(false);
     }
