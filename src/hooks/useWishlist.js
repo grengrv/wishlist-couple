@@ -39,65 +39,58 @@ export function useWishlist(user, userProfile, groupId = null) {
   const [loading, setLoading] = useState(true);
  
   // Lấy danh sách & đăng ký paste listener khi user đăng nhập
-  useEffect(() => {
-    if (!user) return;
- 
-    // CHÚ Ý: Firestore orderBy sẽ loại bỏ các document thiếu trường đó.
-    // Để hỗ trợ cả các document cũ chưa có isFavorite/favoriteAt, 
-    // chúng ta lấy về và sắp xếp ở client.
-    const q = query(collection(db, "wishlist"), orderBy("taoLuc", "desc"));
+    let unsubscribeSnapshot;
+    
+    const startSnapshot = () => {
+      const q = query(collection(db, "wishlist"), orderBy("taoLuc", "desc"));
+      unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
+        let data = snapshot.docs.map(d => {
+          const docData = d.data();
+          return { 
+            id: d.id, 
+            ...docData,
+            isFavorite: docData.isFavorite ?? false,
+            favoriteAt: docData.favoriteAt ?? null,
+            pinnedBy: docData.pinnedBy || [],
+            pinCount: docData.pinCount || 0,
+            folderId: docData.folderId || null
+          };
+        });
 
-    const unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
-      // 1. Safe Data Mapping: Đảm bảo luôn có giá trị fallback cho isFavorite và favoriteAt
-      let data = snapshot.docs.map(d => {
-        const docData = d.data();
-        return { 
-          id: d.id, 
-          ...docData,
-          isFavorite: docData.isFavorite ?? false,
-          favoriteAt: docData.favoriteAt ?? null,
-          pinnedBy: docData.pinnedBy || [],
-          pinCount: docData.pinCount || 0,
-          folderId: docData.folderId || null
-        };
-      });
+        data.sort((a, b) => {
+          if (a.isFavorite !== b.isFavorite) return b.isFavorite - a.isFavorite;
+          if (a.isFavorite && a.favoriteAt && b.favoriteAt) {
+            const secA = a.favoriteAt?.seconds || 0;
+            const secB = b.favoriteAt?.seconds || 0;
+            if (secA !== secB) return secB - secA;
+          }
+          const taoLucA = a.taoLuc?.seconds || 0;
+          const taoLucB = b.taoLuc?.seconds || 0;
+          return taoLucB - taoLucA;
+        });
 
-      // 2. Client-side Sorting: Đảm bảo Favorite luôn ở trên đầu kể cả khi document cũ thiếu trường
-      data.sort((a, b) => {
-        // Ưu tiên isFavorite (true trước false)
-        if (a.isFavorite !== b.isFavorite) return b.isFavorite - a.isFavorite;
-        
-        // Nếu cùng là favorite, ưu tiên favoriteAt (mới nhất lên đầu)
-        if (a.isFavorite && a.favoriteAt && b.favoriteAt) {
-          const secA = a.favoriteAt?.seconds || 0;
-          const secB = b.favoriteAt?.seconds || 0;
-          if (secA !== secB) return secB - secA;
+        if (groupId) {
+          data = data.filter(i => i.groupId === groupId);
+        } else {
+          data = data.filter(i => !i.groupId && i.uid === user.uid);
         }
-        
-        // Cuối cùng là theo thời gian tạo (taoLuc)
-        const taoLucA = a.taoLuc?.seconds || 0;
-        const taoLucB = b.taoLuc?.seconds || 0;
-        return taoLucB - taoLucA;
-      });
- 
-      // 3. Phân tách Wish theo Nhóm hoặc Cá nhân
-      if (groupId) {
-        data = data.filter(i => i.groupId === groupId);
-      } else {
-        // Không gian cá nhân -> Chỉ lấy wish của chính user này tạo ra và không thuộc nhóm nào
-        data = data.filter(i => !i.groupId && i.uid === user.uid);
-      }
 
-      // Debug logging để kiểm tra dữ liệu sau khi lọc
-      console.log(`[useWishlist] Filtered data for ${groupId ? "Group " + groupId : "Personal"}:`, data);
- 
-      setItems(data);
-      setLoading(false);
-    }, (error) => {
-      console.error("[useWishlist] Snapshot error:", error);
-      setLoading(false);
-      notifyError("Không thể tải danh sách điều ước. Vui lòng kiểm tra lại kết nối.");
-    });
+        setItems(data);
+        setLoading(false);
+      }, (error) => {
+        console.error("[useWishlist] Snapshot error:", error);
+        setLoading(false);
+        // Auto-reconnect after 5 seconds if there's a connection error
+        if (error.code === 'unavailable' || error.message.includes('network')) {
+          setTimeout(() => {
+            if (unsubscribeSnapshot) unsubscribeSnapshot();
+            startSnapshot();
+          }, 5000);
+        }
+      });
+    };
+
+    startSnapshot();
 
     // Listen for current user's likes
     const likesQ = query(collection(db, "likes"), where("userId", "==", user.uid));
@@ -115,7 +108,7 @@ export function useWishlist(user, userProfile, groupId = null) {
     window.addEventListener("paste", handlePaste);
  
     return () => {
-      unsubscribeSnapshot();
+      if (unsubscribeSnapshot) unsubscribeSnapshot();
       unsubscribeLikes();
       window.removeEventListener("paste", handlePaste);
     };

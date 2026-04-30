@@ -3,6 +3,7 @@ import Stats from "@components/wishlist/Stats";
 import WishList from "@components/wishlist/WishList";
 import ItemModal from "@components/wishlist/ItemModal";
 import FolderList from "@components/wishlist/FolderList";
+import LuckyWheel from "@components/wishlist/LuckyWheel";
 import { useFolders } from "@hooks/useFolders";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useWishlist } from "@hooks/useWishlist";
@@ -20,6 +21,7 @@ export default function PersonalPage({ user, userProfile }) {
   const { folders, loading: foldersLoading, addFolder, updateFolder, deleteFolder } = useFolders(user);
   const [activeFolderId, setActiveFolderId] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [showLuckyWheel, setShowLuckyWheel] = useState(false);
   const { t } = useLanguage();
 
   const filteredItems = useMemo(() => {
@@ -76,12 +78,21 @@ export default function PersonalPage({ user, userProfile }) {
           </p>
         </div>
 
-        <button
-          onClick={() => navigate("/add")}
-          className="w-16 h-16 bg-text-primary text-bg-primary rounded-[24px] hover:bg-pink-600 hover:rotate-12 hover:scale-110 active:scale-95 transition-all duration-500 flex items-center justify-center text-3xl font-light"
-        >
-          ＋
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowLuckyWheel(true)}
+            className="w-16 h-16 bg-card-bg text-pink-500 border-2 border-border-primary rounded-[24px] hover:border-pink-300 hover:scale-110 active:scale-95 transition-all duration-500 flex items-center justify-center text-2xl"
+            title={t("lucky_wheel_title")}
+          >
+            🎡
+          </button>
+          <button
+            onClick={() => navigate("/add")}
+            className="w-16 h-16 bg-text-primary text-bg-primary rounded-[24px] hover:bg-pink-600 hover:rotate-12 hover:scale-110 active:scale-95 transition-all duration-500 flex items-center justify-center text-3xl font-light"
+          >
+            ＋
+          </button>
+        </div>
       </div>
 
       <Stats items={items} />
@@ -127,6 +138,15 @@ export default function PersonalPage({ user, userProfile }) {
         onLikeComment={thichBinhLuan}
         onToggleFavorite={toggleFavorite}
       />
+
+      <AnimatePresence>
+        {showLuckyWheel && (
+          <LuckyWheel 
+            items={items} 
+            onClose={() => setShowLuckyWheel(false)} 
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
