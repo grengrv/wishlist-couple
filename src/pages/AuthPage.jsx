@@ -10,7 +10,7 @@ import {
 import { doc, setDoc, query, collection, where, getDocs } from "firebase/firestore";
 import Button from "@components/ui/Button";
 import Input from "@components/ui/Input";
-import { notifyDangNhap, notifyDangKy, notifyError } from "@utils/notify";
+import { notifyDangNhap, notifyDangKy, notifyError, notifyLogout } from "@utils/notify";
 import { toastStore } from "@utils/toastStore";
 
 import { useLanguage } from "@context/LanguageContext";
@@ -31,6 +31,7 @@ export default function Auth({ user }) {
             await signOut(auth);
             notifyLogout();
         } catch (err) {
+            console.error(err);
             notifyError(t("logout_failed"));
         }
     };
@@ -57,16 +58,16 @@ export default function Auth({ user }) {
     // Continuous Username Check
     useEffect(() => {
         if (mode !== "register" || !username.trim()) {
-            setUsernameStatus({ state: "idle", message: "" });
-            return;
+            const initTimer = setTimeout(() => setUsernameStatus({ state: "idle", message: "" }), 0);
+            return () => clearTimeout(initTimer);
         }
 
         if (!validateUsernameFormat(username)) {
-            setUsernameStatus({ state: "invalid", message: t("username_invalid_format") });
-            return;
+            const formatTimer = setTimeout(() => setUsernameStatus({ state: "invalid", message: t("username_invalid_format") }), 0);
+            return () => clearTimeout(formatTimer);
         }
 
-        setUsernameStatus({ state: "checking", message: t("checking_username") });
+        const checkingTimer = setTimeout(() => setUsernameStatus({ state: "checking", message: t("checking_username") }), 0);
 
         const timer = setTimeout(async () => {
             try {
@@ -83,7 +84,10 @@ export default function Auth({ user }) {
             }
         }, 600);
 
-        return () => clearTimeout(timer);
+        return () => {
+            clearTimeout(checkingTimer);
+            clearTimeout(timer);
+        };
     }, [username, mode, t]);
 
     // Nếu người dùng đã đăng nhập nhưng chưa xác minh email, hiển thị giao diện xác minh
@@ -116,6 +120,7 @@ export default function Auth({ user }) {
                                     await sendEmailVerification(user);
                                     toastStore.show(t("verification_email_sent"));
                                 } catch (e) {
+                                    console.error(e);
                                     notifyError(t("resend_failed"));
                                 }
                             }}

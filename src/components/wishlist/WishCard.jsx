@@ -1,8 +1,8 @@
-import { formatNgay } from "@utils/formatDate";
 import Avatar from "@components/ui/Avatar";
 import { useLanguage } from "@context/LanguageContext";
 import { useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
+// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 
 const MOOD_META = {
@@ -19,10 +19,12 @@ const MOOD_META = {
  * @param {Object} item - Dữ liệu item (id, ten, ghiChu, anhUrl, taoLuc)
  * @param {Function} onClick - Mở modal xem chi tiết
  */
-export default function WishCard({ item, onClick, onToggleFavorite, user, layoutMode = "half" }) {
+export default function WishCard({ item, onClick, onToggleFavorite, folders = [], layoutMode = "half" }) {
   const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const [isHighlighted, setIsHighlighted] = useState(false);
+
+  const folder = folders.find(f => f.id === item.folderId);
   
   const likeCount = item.likeCount || 0;
   const commentCount = item.commentCount || 0;
@@ -39,9 +41,12 @@ export default function WishCard({ item, onClick, onToggleFavorite, user, layout
     const highlightId = searchParams.get("wishId");
     const shouldHighlight = searchParams.get("highlight") === "true";
     if (shouldHighlight && highlightId === item.id) {
-      setIsHighlighted(true);
+      const initialTimer = setTimeout(() => setIsHighlighted(true), 0);
       const timer = setTimeout(() => setIsHighlighted(false), 3000);
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(initialTimer);
+        clearTimeout(timer);
+      };
     }
   }, [searchParams, item.id]);
 
@@ -66,18 +71,18 @@ export default function WishCard({ item, onClick, onToggleFavorite, user, layout
       className={`group relative flex w-full h-full rounded-2xl border transition-all duration-500 ease-in-out cursor-pointer overflow-hidden
         ${isHorizontal ? 'flex-col sm:flex-row items-stretch' : 'flex-col shadow-sm'}
         ${isHighlighted 
-          ? 'ring-4 ring-amber-400 ring-offset-4 dark:ring-offset-bg-primary scale-[1.02] z-30 shadow-2xl' 
+          ? 'ring-4 ring-amber-200 ring-offset-4 dark:ring-offset-bg-primary scale-[1.02] z-30 shadow-2xl' 
           : ''}
         ${isFavorite 
-          ? 'bg-amber-50/50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-500/30 shadow-[0_8px_25px_rgba(251,191,36,0.15)]' 
-          : 'bg-card-bg border-border-primary hover:bg-card-hover hover:-translate-y-1 hover:shadow-lg'
+          ? 'bg-gradient-to-br from-amber-50/80 via-white to-white dark:from-amber-950/20 dark:via-bg-secondary dark:to-bg-secondary border-amber-200 dark:border-amber-500/30 shadow-[0_20px_40px_rgba(251,191,36,0.1)] dark:shadow-none' 
+          : 'bg-card-bg border-border-primary hover:bg-card-hover hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)]'
         }`} 
       onClick={() => onClick(item)}
     >
       {/* Favorite Accent Bar */}
       {isFavorite && (
-        <div className={`absolute left-0 bg-amber-400 dark:bg-amber-500 z-10 shadow-[2px_0_10px_rgba(251,191,36,0.3)] ${
-          isHorizontal ? 'top-0 w-full sm:w-1.5 h-1 sm:h-full' : 'top-0 w-full h-1'
+        <div className={`absolute left-0 bg-gradient-to-b from-amber-400 to-amber-400 dark:from-amber-500 z-10 shadow-[2px_0_15px_rgba(251,191,36,0.3)] ${
+          isHorizontal ? 'top-0 w-full sm:w-2 h-1 sm:h-full' : 'top-0 w-full h-1.5'
         }`}></div>
       )}
 
@@ -94,7 +99,7 @@ export default function WishCard({ item, onClick, onToggleFavorite, user, layout
       <div className="flex-1 min-w-0 p-4 sm:p-5 flex flex-col relative">
         <div className="flex items-start justify-between gap-3 mb-2">
           <div className="flex-1 min-w-0">
-            <h3 className={`text-base sm:text-lg font-bold text-text-primary leading-tight transition-colors ${isFavorite ? 'text-amber-900 dark:text-amber-100' : ''}`}>
+            <h3 className={`text-base sm:text-lg font-bold text-text-primary leading-tight transition-colors ${isFavorite ? 'text-amber-500 dark:text-amber-500' : ''}`}>
               {item.ten}
             </h3>
 
@@ -103,7 +108,7 @@ export default function WishCard({ item, onClick, onToggleFavorite, user, layout
               {isFavorite && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase tracking-wider border border-amber-500/20">
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                  {t("pinned")}
+                  {t("pin_count")}
                 </span>
               )}
               
@@ -126,28 +131,38 @@ export default function WishCard({ item, onClick, onToggleFavorite, user, layout
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-pink-500/10 text-pink-500 rounded-full text-[10px] font-black hover:bg-pink-500 hover:text-white transition-all border border-pink-500/20"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-sky-500/10 text-sky-600 dark:text-sky-400 rounded-full text-[10px] font-black hover:bg-sky-500 hover:text-white transition-all border border-sky-500/20"
                 >
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
                   {t("view_product")}
                 </a>
+              )}
+
+              {folder && (
+                <span 
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black border bg-bg-secondary/50 text-text-muted border-border-primary/50"
+                  style={{ color: folder.color ? folder.color : undefined }}
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                  {folder.name}
+                </span>
               )}
             </div>
           </div>
           
           {/* Star Button - Fixed to Right */}
           <motion.button
-            whileHover={{ scale: 1.2, rotate: 15 }}
-            whileTap={{ scale: 0.85 }}
+            whileHover={{ scale: 1.15, rotate: 15 }}
+            whileTap={{ scale: 0.9 }}
             onClick={handleToggleFavorite}
-            className={`p-2 rounded-full transition-all duration-300 z-20 flex items-center justify-center ${
+            className={`w-11 h-11 rounded-full transition-all duration-500 z-20 flex items-center justify-center shadow-sm ${
               isFavorite 
-                ? 'text-amber-500 dark:text-amber-400 bg-amber-100 dark:bg-amber-500/20 shadow-inner' 
-                : 'text-text-muted/20 dark:text-text-muted/40 hover:text-amber-400 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+                ? 'text-white bg-gradient-to-tr from-amber-400 to-amber-600 shadow-[0_8px_20px_rgba(251,191,36,0.4)]' 
+                : 'text-text-muted/20 dark:text-text-muted/40 bg-bg-secondary/40 border border-border-primary/50 hover:text-amber-400 hover:border-amber-300'
             }`}
             title={isFavorite ? t("unpin") : t("pin")}
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill={isFavorite ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2.5">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill={isFavorite ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2.5">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
             </svg>
           </motion.button>

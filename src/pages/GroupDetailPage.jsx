@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { getDoc, doc, updateDoc, onSnapshot } from "firebase/firestore";
+import { doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { db } from "@config/firebase";
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
 import { useWishlist } from "@hooks/useWishlist";
 import Stats from "@components/wishlist/Stats";
@@ -60,8 +61,6 @@ export default function GroupDetailPage({ user, userProfile }) {
   const [selectedUser, setSelectedUser] = useState(null);
   const [newUsername, setNewUsername] = useState("");
   const [isAdding, setIsAdding] = useState(false);
-  const [isLandscapeWide, setIsLandscapeWide] = useState(false);
-
   // Banner editor state
   const [bannerEditor, setBannerEditor] = useState({ isOpen: false, imageSrc: null, file: null, isGif: false });
   const [isSavingBanner, setIsSavingBanner] = useState(false);
@@ -69,14 +68,6 @@ export default function GroupDetailPage({ user, userProfile }) {
   const [showGroupMenu, setShowGroupMenu] = useState(false);
   const groupMenuRef = useRef(null);
 
-  useEffect(() => {
-    const checkWide = () => setIsLandscapeWide(window.innerWidth >= 900 && window.matchMedia("(orientation: landscape)").matches);
-    checkWide();
-    window.addEventListener("resize", checkWide);
-    return () => window.removeEventListener("resize", checkWide);
-  }, []);
-
-  const [loading, setLoading] = useState(true);
   const logs = useActivityLogs(id);
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -106,10 +97,11 @@ export default function GroupDetailPage({ user, userProfile }) {
     if (wishId && items.length > 0) {
       const item = items.find(i => i.id === wishId);
       if (item && selectedItem?.id !== item.id) {
-        setSelectedItem(item);
+        const timer = setTimeout(() => setSelectedItem(item), 0);
+        return () => clearTimeout(timer);
       }
     }
-  }, [searchParams, items]);
+  }, [searchParams, items, selectedItem?.id]);
 
   const handleCloseModal = () => {
     setSelectedItem(null);
@@ -223,7 +215,7 @@ export default function GroupDetailPage({ user, userProfile }) {
       if (unsubGroup) unsubGroup();
       unsubUsers.forEach(unsub => unsub());
     };
-  }, [id, navigate, t]);
+  }, [id, navigate, t, user]);
 
   async function handleXoa(wishId) {
     if (selectedItem?.id === wishId) setSelectedItem(null);
@@ -280,6 +272,7 @@ export default function GroupDetailPage({ user, userProfile }) {
       notifyRoiNhom();
       navigate("/groups");
     } catch (err) {
+      console.error(err);
       notifyError(t("leave_group_failed"));
     }
   }
@@ -679,6 +672,7 @@ export default function GroupDetailPage({ user, userProfile }) {
         <div className="mt-8">
           <FolderList 
             folders={folders} 
+            items={items}
             activeFolderId={activeFolderId}
             onSelectFolder={setActiveFolderId}
             onAddFolder={addFolder}
@@ -729,7 +723,7 @@ export default function GroupDetailPage({ user, userProfile }) {
           </motion.div>
         ) : (
           <div className="w-full mt-4">
-            <WishList items={filteredItems} onSelectItem={setSelectedItem} onToggleFavorite={toggleFavorite} />
+            <WishList items={filteredItems} folders={folders} onSelectItem={setSelectedItem} onToggleFavorite={toggleFavorite} user={user} />
           </div>
         )}
 

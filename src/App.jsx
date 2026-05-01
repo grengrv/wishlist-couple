@@ -2,15 +2,14 @@ import { useState, useEffect, lazy, Suspense } from "react";
 import { requestNotificationPermission } from "@utils/pushNotification";
 import { Routes, Route } from "react-router-dom";
 import { auth, db } from "@config/firebase";
-import { onAuthStateChanged, signOut, sendEmailVerification } from "firebase/auth";
-import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, onSnapshot } from "firebase/firestore";
 import { ConfirmProvider } from "@context/ConfirmContext";
 import { PreviewProvider } from "@context/PreviewContext";
 import AppToast from "@components/ui/AppToast";
 
 
 import Header from "@components/layout/Header";
-import { notifyLogout, notifyError } from "@utils/notify";
 import Footer from "@components/layout/Footer";
 import AuthPage from "@pages/AuthPage";
 import { ADMIN_EMAIL } from "@constants";
@@ -18,7 +17,6 @@ import BottomNav from "@components/layout/BottomNav";
 import PWAUpdatePrompt from "@components/pwa/PWAUpdatePrompt"
 import PWAUpdater from "@components/pwa/PWAUpdater"
 import Button from "@components/ui/Button";
-import { toastStore } from "@utils/toastStore";
 
 // Lazy-loaded pages (code-split per route)
 const HomePage = lazy(() => import("@pages/HomePage"));
@@ -31,8 +29,6 @@ const ProfilePage = lazy(() => import("@pages/ProfilePage"));
 const AdminPage = lazy(() => import("@pages/AdminPage"));
 const TermsPage = lazy(() => import("@pages/TermsPage"));
 const PrivacyPage = lazy(() => import("@pages/PrivacyPage"));
-
-import { useLanguage } from "@context/LanguageContext";
 
 function PageLoader() {
   return (
@@ -52,21 +48,10 @@ function PageLoader() {
 }
 
 function App() {
-  const { t } = useLanguage();
   const [userProfile, setUserProfile] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
   const [user, setUser] = useState(null);
   const [checking, setChecking] = useState(true);
-  const [selectedItem, setSelectedItem] = useState(null);
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      notifyLogout();
-    } catch (err) {
-      notifyError(t("logout_failed"));
-    }
-  };
 
   // Lắng nghe trạng thái đăng nhập Firebase
   useEffect(() => {

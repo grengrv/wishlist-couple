@@ -192,6 +192,7 @@ export function useWishlist(user, userProfile, groupId = null) {
       setPendingFile(null);
       setFormError("");
     } catch (err) {
+      console.error(err);
       notifyError("Lỗi khi nén ảnh. Thử chọn ảnh khác nhé.");
     } finally {
       setDangTai(false);
@@ -634,7 +635,7 @@ export function useWishlist(user, userProfile, groupId = null) {
                       const wishData = wishDoc.data();
                       targetRoute = wishData.groupId ? `/groups/${wishData.groupId}` : "/personal";
                     }
-                  } catch (_) {}
+                  } catch (e) { console.error("Error finding wish:", e); }
                 }
 
                 await addDoc(collection(db, "notifications"), {
@@ -658,6 +659,7 @@ export function useWishlist(user, userProfile, groupId = null) {
       }
       return true;
     } catch (err) {
+      console.error(err);
       return false;
     }
   }
@@ -800,6 +802,7 @@ export function useWishlist(user, userProfile, groupId = null) {
 
         return true;
       } catch (err) {
+        console.error(err);
         notifyError("Không thể di chuyển vào thư mục.");
         return false;
       }

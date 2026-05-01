@@ -1,12 +1,13 @@
 import { useState } from "react";
 import WishCard from "@components/wishlist/WishCard";
 import { useLanguage } from "@context/LanguageContext";
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
 
 /**
  * WishList component - Danh sách các điều ước với hệ thống layout linh hoạt
  */
-export default function WishList({ items, onSelectItem, onToggleFavorite, user }) {
+export default function WishList({ items, folders = [], onSelectItem, onToggleFavorite, user }) {
   const { t } = useLanguage();
   const [layoutMode, setLayoutMode] = useState("half"); // "full" | "half" | "third"
 
@@ -101,6 +102,7 @@ export default function WishList({ items, onSelectItem, onToggleFavorite, user }
             <WishCard 
               key={item.id} 
               item={item} 
+              folders={folders}
               onClick={onSelectItem} 
               onToggleFavorite={onToggleFavorite}
               user={user}

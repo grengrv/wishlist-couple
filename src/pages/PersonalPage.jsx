@@ -108,7 +108,7 @@ export default function PersonalPage({ user, userProfile }) {
                   onDeleteFolder={deleteFolder}
                   onDropToFolder={(wishId, folderId) => moveToFolder(wishId, folderId)}
                 />
-                <WishList items={filteredItems} onSelectItem={setSelectedItem} onToggleFavorite={toggleFavorite} user={user} />
+                <WishList items={filteredItems} folders={folders} onSelectItem={setSelectedItem} onToggleFavorite={toggleFavorite} user={user} />
               </>
             )}
           </div>
