@@ -1,4 +1,5 @@
 import { useState } from "react";
+// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import Button from "@components/ui/Button";
 import Input from "@components/ui/Input";
@@ -21,6 +22,7 @@ export default function AddForm({
   ghiChu, setGhiChu,
   mood, setMood,
   previewAnh, setPreviewAnh,
+  // eslint-disable-next-line no-unused-vars
   anhBase64, setAnhBase64,
   dangTai,
   keoVao, setKeoVao,
@@ -65,7 +67,7 @@ export default function AddForm({
       const paramsToRemove = ["itm_campaign", "itm_medium", "itm_source", "spid", "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"];
       paramsToRemove.forEach(p => u.searchParams.delete(p));
       cleanUrl = u.toString();
-    } catch (e) {}
+    } catch (e) { console.error(e); }
 
     if (cleanUrl.includes("shopee.vn") || cleanUrl.includes("lazada.vn")) {
       setScraperWarning(t("scraper_shopee_warning"));
@@ -90,12 +92,12 @@ export default function AddForm({
       }
 
       if (result.status === "success") {
-        let { title, description, image, price, currency } = result.data;
+        let { title, description, image } = result.data;
         
         // Robust Title Extraction
         try {
           if (title && title.includes("%")) title = decodeURIComponent(title);
-        } catch (e) {}
+        } catch (e) { console.error(e); }
 
         if (!title || title.length < 5) {
           try {
@@ -105,7 +107,7 @@ export default function AddForm({
               const guessedTitle = pathParts.slice(0, pathParts.length - 1).join(" ").replace(/\//g, "").trim();
               if (guessedTitle.length > 5) title = guessedTitle;
             }
-          } catch (e) {}
+          } catch (e) { console.error(e); }
         }
 
         const safeTitle = title ? title.substring(0, 40).replace(/-/g, " ").trim() : "";

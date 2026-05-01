@@ -1,11 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
 import Stats from "@components/wishlist/Stats";
 import WishList from "@components/wishlist/WishList";
 import ItemModal from "@components/wishlist/ItemModal";
 import FolderList from "@components/wishlist/FolderList";
 import { useFolders } from "@hooks/useFolders";
-import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useWishlist } from "@hooks/useWishlist";
 import { ADMIN_EMAIL } from "@constants";
 import { notifyXoaWish } from "@utils/notify";
@@ -33,10 +34,11 @@ export default function PersonalPage({ user, userProfile }) {
     if (wishId && items.length > 0) {
       const item = items.find(i => i.id === wishId);
       if (item && selectedItem?.id !== item.id) {
+        // eslint-disable-next-line
         setSelectedItem(item);
       }
     }
-  }, [searchParams, items]);
+  }, [searchParams, items, selectedItem?.id]);
 
   async function handleXoa(id) {
     if (selectedItem?.id === id) setSelectedItem(null);

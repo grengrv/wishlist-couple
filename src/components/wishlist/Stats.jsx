@@ -1,4 +1,5 @@
 import { useLanguage } from "@context/LanguageContext";
+// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 
 const MOOD_META = {

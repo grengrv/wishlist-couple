@@ -36,6 +36,7 @@ export default function GroupModal({ isOpen, onClose, onSave, initialData, isEdi
 
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setName(initialData?.name || "");
       setDesc(initialData?.description || "");
       setThemeColor(initialData?.themeColor || PRESET_COLORS[0].value);

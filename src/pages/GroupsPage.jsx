@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getDoc, doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@config/firebase";
 import Button from "@components/ui/Button";
 import Input from "@components/ui/Input";
@@ -25,12 +25,14 @@ export default function GroupsPage({ user, userProfile }) {
 
   const [showJoin, setShowJoin] = useState(false);
   const [joinCode, setJoinCode] = useState("");
+  // eslint-disable-next-line no-unused-vars
   const [joinError, setJoinError] = useState(null);
   const [isJoining, setIsJoining] = useState(false);
 
   // Context Menu State
   const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, group: null });
   // Edit Modal State
+  // eslint-disable-next-line no-unused-vars
   const [editModal, setEditModal] = useState({ visible: false, group: null, name: "", desc: "" });
 
   useEffect(() => {
@@ -200,7 +202,10 @@ export default function GroupsPage({ user, userProfile }) {
             key={g.id}
             group={g}
             onClick={() => navigate(`/groups/${g.id}`)}
-            onContextMenu={(e) => handleContextMenu(e, g)}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setContextMenu({ visible: true, x: e.clientX, y: e.clientY, group: g });
+            }}
           />
         ))}
       </div>
@@ -293,6 +298,7 @@ function GroupCard({ group, onClick, onContextMenu }) {
         unsubUsers.push(unsub);
       });
     } else {
+      // eslint-disable-next-line
       setMemberProfiles([]);
     }
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { auth, db } from "@config/firebase";
 import { updateProfile, deleteUser, signOut } from "firebase/auth";
-import { doc, setDoc, collection, query, where, getDocs, updateDoc, deleteDoc, writeBatch } from "firebase/firestore";
+import { doc, setDoc, collection, query, where, getDocs, updateDoc, writeBatch } from "firebase/firestore";
 import Button from "@components/ui/Button";
 import ThemeToggle from "@components/ui/ThemeToggle";
 import ImageEditorModal from "@components/wishlist/ImageEditorModal";
@@ -76,6 +76,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
     // Sync state when userProfile changes
     useEffect(() => {
         if (mode === "view" && userProfile) {
+            // eslint-disable-next-line
             setDisplayName(userProfile?.displayName || userProfile?.username || "");
             setUsername(userProfile?.username || "");
             setBio(userProfile?.bio || "");

@@ -16,6 +16,7 @@ const baseClass = `
   disabled:opacity-50 disabled:cursor-not-allowed
 `;
 
+// eslint-disable-next-line no-unused-vars
 export default function Input({ as: Tag = "input", className = "", ...props }) {
   return (
     <Tag

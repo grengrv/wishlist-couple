@@ -7,6 +7,7 @@ import Button from "@components/ui/Button";
 import Input from "@components/ui/Input";
 import { useLanguage } from "@context/LanguageContext";
 import { notifyThamGiaNhom, notifyError } from "@utils/notify";
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function InvitePage({ user, userProfile }) {
@@ -35,6 +36,7 @@ export default function InvitePage({ user, userProfile }) {
           setStatus("not_found");
         }
       } catch (err) {
+        console.error(err);
         setStatus("not_found");
       }
     }
@@ -59,6 +61,7 @@ export default function InvitePage({ user, userProfile }) {
       notifyThamGiaNhom();
       navigate(`/groups/${id}`);
     } catch (err) {
+      console.error(err);
       const errorMsg = t("join_failed") || "Tham gia thất bại, vui lòng thử lại!";
       notifyError(errorMsg);
       setStatus("ready");

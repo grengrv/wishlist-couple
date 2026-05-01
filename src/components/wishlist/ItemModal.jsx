@@ -3,7 +3,6 @@ import { useLanguage } from "@context/LanguageContext";
 import { useSearchParams, useLocation } from "react-router-dom";
 import { formatNgay } from "@utils/formatDate";
 import Avatar from "@components/ui/Avatar";
-import { notifyError } from "@utils/notify";
 import ConfirmModal from "@components/ui/ConfirmModal";
 import MentionInput from "@components/common/MentionInput";
 import MentionText from "@components/common/MentionText";
@@ -11,7 +10,7 @@ import { db } from "@config/firebase";
 import CommentList from "./CommentList";
 import CommentInput from "./CommentInput";
 import {
-  collection, query, where, orderBy, onSnapshot, doc, getDocs, deleteDoc
+  collection, query, where, orderBy, onSnapshot
 } from "firebase/firestore";
 
 const MOOD_META = {
@@ -42,7 +41,6 @@ export default function ItemModal({
 }) {
   const { t } = useLanguage();
   const [comment, setComment] = useState("");
-  const [isAnimatingLike, setIsAnimatingLike] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState(null); // { id: string, isReply: bool }
   const [activeDropdown, setActiveDropdown] = useState(null); // unique ID string
@@ -51,6 +49,7 @@ export default function ItemModal({
   const [replyTargetUser, setReplyTargetUser] = useState(null); // { userId, username }
   const [showLikesModal, setShowLikesModal] = useState(null); // { title: string, users: array }
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const [highlightedCommentId, setHighlightedCommentId] = useState(null);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const reactionPickerRef = useRef(null);
@@ -108,16 +107,6 @@ export default function ItemModal({
       unsubscribeSocialLikes();
     };
   }, [item?.id]);
-
-  // Merge members with current user's profile to ensure we can always identify them in likes
-  const allPossibleMembers = useMemo(() => {
-    const list = [...members];
-    const userInMembers = members.some(m => m.uid === user?.uid);
-    if (!userInMembers && userProfile && user) {
-      list.push({ uid: user.uid, ...userProfile });
-    }
-    return list;
-  }, [members, userProfile, user]);
 
   const scrollRef = useRef(null);
   const emojiPickerRef = useRef(null);
@@ -197,8 +186,6 @@ export default function ItemModal({
       setCommentToDelete(null);
     }
   };
-
-  const getLikesForTarget = (targetId) => socialLikes.filter(l => l.targetId === targetId);
 
   return (
     <>
@@ -438,7 +425,7 @@ export default function ItemModal({
                         acc[r] = (acc[r] || 0) + 1;
                         return acc;
                       }, {})
-                    ).map(([r, count]) => (
+                    ).map(([r]) => (
                       <span key={r} className="text-[14px] bg-bg-secondary rounded-full w-6 h-6 flex items-center justify-center border border-border-primary/50" title={r}>
                         {REACTION_EMOJIS[r]}
                       </span>

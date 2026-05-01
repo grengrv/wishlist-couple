@@ -48,7 +48,7 @@ function MentionChip({ mention }) {
       const q = query(collection(db, "users"), where("username", "==", username), limit(1));
       const snap = await getDocs(q);
       if (!snap.empty) setProfile({ uid: snap.docs[0].id, ...snap.docs[0].data() });
-    } catch (_) { }
+    } catch (error) { console.error(error); }
     setLoading(false);
   }, [username, profile]);
 

@@ -3,6 +3,7 @@ import AvatarPreview from "@components/ui/AvatarPreview";
 
 const PreviewContext = createContext();
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const usePreview = () => {
   const context = useContext(PreviewContext);
   if (!context) {

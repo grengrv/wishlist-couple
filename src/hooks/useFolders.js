@@ -65,6 +65,7 @@ export function useFolders(user, userProfile = null, groupId = null) {
       await logActivity("create_folder", docRef.id, name.trim());
       return true;
     } catch (err) {
+      console.error(err);
       notifyError("Không thể tạo thư mục.");
       return false;
     }
@@ -80,6 +81,7 @@ export function useFolders(user, userProfile = null, groupId = null) {
       await logActivity("rename_folder", id, name.trim());
       return true;
     } catch (err) {
+      console.error(err);
       notifyError("Không thể cập nhật thư mục.");
       return false;
     }
@@ -94,6 +96,7 @@ export function useFolders(user, userProfile = null, groupId = null) {
       await logActivity("delete_folder", id, folderName);
       return true;
     } catch (err) {
+      console.error(err);
       notifyError("Không thể xóa thư mục.");
       return false;
     }

@@ -7,6 +7,7 @@ export default function ThemeToggle() {
 
   useEffect(() => {
     // Sync state with DOM class
+    // eslint-disable-next-line
     setIsDark(document.documentElement.classList.contains("dark"));
   }, []);
 

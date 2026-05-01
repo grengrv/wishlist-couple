@@ -1,5 +1,6 @@
 export default function ProfileHeader({ 
   userProfile, 
+  // eslint-disable-next-line no-unused-vars
   user, 
   activeTheme, 
   mode, 
