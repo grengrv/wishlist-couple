@@ -33,12 +33,18 @@ export function useFolders(user, userProfile = null, groupId = null) {
   useEffect(() => {
     if (!user) return;
 
-    const q = query(
-      collection(db, "folders"),
-      where("uid", "==", user.uid),
-      where("groupId", "==", groupId || null),
-      orderBy("createdAt", "asc")
-    );
+    const q = groupId
+      ? query(
+          collection(db, "folders"),
+          where("groupId", "==", groupId),
+          orderBy("createdAt", "asc")
+        )
+      : query(
+          collection(db, "folders"),
+          where("uid", "==", user.uid),
+          where("groupId", "==", null),
+          orderBy("createdAt", "asc")
+        );
 
     const unsubscribe = onSnapshot(q, (snap) => {
       setFolders(snap.docs.map(d => ({ id: d.id, ...d.data() })));
