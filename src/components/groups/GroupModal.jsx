@@ -114,7 +114,7 @@ export default function GroupModal({ isOpen, onClose, onSave, initialData, isEdi
           onClick={e => e.stopPropagation()}
         >
           {/* BANNER PREVIEW / UPLOAD AREA */}
-          <div className="relative w-full h-[160px] group transition-all duration-500 overflow-hidden bg-bg-secondary" style={{ backgroundColor: `${themeColor}20` }}>
+          <div className="relative w-full h-[160px] group overflow-hidden bg-bg-secondary" style={{ backgroundColor: `${themeColor}20` }}>
             {bannerUrl ? (
               <>
                 <img src={bannerUrl} alt="Group Banner" className="w-full h-full object-cover relative z-0" />

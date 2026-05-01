@@ -23,7 +23,7 @@
  * └──────────────────────┴───────────────────────────────────┴─────────┘
  */
 
-import { toastStore } from "@utils/toastStore";
+import { sileo } from "sileo";
 import { translations } from "@utils/translations";
 
 const getLang = () => localStorage.getItem("lang") || "vi";
@@ -35,17 +35,17 @@ function t(key) {
 
 // ── XÓA WISH (delete_wish) ────────────────────────────────────────────────────
 export function notifyXoaWish() {
-  toastStore.show(t("delete_success"));
+  sileo.success({ title: t("delete_success") });
 }
 
 // ── THÊM WISH CÁ NHÂN (add_personal_wish) ────────────────────────────────────
 export function notifyThemWishCaNhan() {
-  toastStore.show(t("add_personal_success"));
+  sileo.success({ title: t("add_personal_success") });
 }
 
 // ── THÊM WISH NHÓM (add_group_wish) ──────────────────────────────────────────
 export function notifyThemWishNhom() {
-  toastStore.show(t("add_group_success"));
+  sileo.success({ title: t("add_group_success") });
 }
 
 /**
@@ -62,64 +62,64 @@ export function notifyThemWish(isGroup = false) {
 
 // ── CẬP NHẬT (update_wish / update_group / profile) ──────────────────────────
 export function notifyLuuNhom() {
-  toastStore.show(t("update_success"));
+  sileo.success({ title: t("update_success") });
 }
 
 export function notifyCapNhatHoSo() {
-  toastStore.show(t("profile_update_success"));
+  sileo.success({ title: t("profile_update_success") });
 }
 
 export function notifyDoiAvatar() {
-  toastStore.show(t("avatar_update_success"));
+  sileo.success({ title: t("avatar_update_success") });
 }
 
 export function notifyDoiBanner() {
-  toastStore.show(t("banner_update_success"));
+  sileo.success({ title: t("banner_update_success") });
 }
 
 export function notifyCompressing() {
-  toastStore.show(t("optimizing_image"));
+  sileo.info({ title: t("optimizing_image") });
 }
 
 // ── TẠO NHÓM (create_group) ──────────────────────────────────────────────────
 export function notifyTaoNhom() {
-  toastStore.show(t("create_group_success"));
+  sileo.success({ title: t("create_group_success") });
 }
 
 // ── XÓA NHÓM (delete_group) ──────────────────────────────────────────────────
 export function notifyXoaNhom() {
-  toastStore.show(t("delete_group_success"));
+  sileo.success({ title: t("delete_group_success") });
 }
 
 // ── THAM GIA NHÓM (join_group) ───────────────────────────────────────────────
 export function notifyThamGiaNhom() {
-  toastStore.show(t("join_group_success"));
+  sileo.success({ title: t("join_group_success") });
 }
 
 // ── RỜI NHÓM (leave_group) ────────────────────────────────────────────────
 export function notifyRoiNhom() {
-  toastStore.show(t("leave_group_success"));
+  sileo.success({ title: t("leave_group_success") });
 }
 
 // ── SAO CHÉP (copy) ───────────────────────────────────────────────────────────
 export function notifyCopied() {
-  toastStore.show(t("copy_success"));
+  sileo.success({ title: t("copy_success") });
 }
 
 // ── ĐĂNG NHẬP / ĐĂNG KÝ / ĐĂNG XUẤT ──────────────────────────────────────────
 export function notifyDangNhap() {
-  toastStore.show(t("login_success"));
+  sileo.success({ title: t("login_success") });
 }
 
 export function notifyDangKy() {
-  toastStore.show(t("signup_success"));
+  sileo.success({ title: t("signup_success") });
 }
 
 export function notifyLogout() {
-  toastStore.show(t("logout_success"));
+  sileo.success({ title: t("logout_success") });
 }
 
 // ── LỖI (error) ───────────────────────────────────────────────────────────────
 export function notifyError(message = t("update_failed")) {
-  toastStore.show(message, "error");
+  sileo.error({ title: message });
 }

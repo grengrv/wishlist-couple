@@ -7,7 +7,7 @@ import {
 } from "firebase/firestore";
 import { ADMIN_EMAIL } from "@constants";
 import { notifyError } from "@utils/notify";
-import { toastStore } from "@utils/toastStore";
+import { sileo } from "sileo";
 import { useLanguage } from "@context/LanguageContext";
 
 /**
@@ -368,14 +368,14 @@ export function useWishlist(user, userProfile, groupId = null) {
           // Remove same reaction (Unlike)
           await deleteDoc(existingLike.ref);
           await updateDoc(doc(db, "wishlist", wishId), { likeCount: increment(-1) });
-          toastStore.show(t("unliked"));
+          sileo.success({ title: t("unliked") });
         } else {
           // Change reaction type
           await updateDoc(existingLike.ref, { 
             reaction: type,
             updatedAt: new Date() 
           });
-          toastStore.show(t("reaction_updated") || "Đã đổi cảm xúc!");
+          sileo.success({ title: t("reaction_updated") || "Đã đổi cảm xúc!" });
         }
       } else {
         // Add new reaction
@@ -388,7 +388,7 @@ export function useWishlist(user, userProfile, groupId = null) {
           createdAt: new Date()
         });
         await updateDoc(doc(db, "wishlist", wishId), { likeCount: increment(1) });
-        toastStore.show(t("liked"));
+        sileo.success({ title: t("liked") });
 
         // TRIGGER NOTIFICATION
         if (item.uid !== user.uid) {
@@ -484,7 +484,7 @@ export function useWishlist(user, userProfile, groupId = null) {
         };
 
         const docRef = await addDoc(collection(db, "replies"), reply);
-        toastStore.show(t("replied"));
+        sileo.success({ title: t("replied") });
         await updateDoc(doc(db, "wishlist", wishId), { commentCount: increment(1) });
 
         // Track who already got notified this action
@@ -527,7 +527,7 @@ export function useWishlist(user, userProfile, groupId = null) {
         };
 
         const docRef = await addDoc(collection(db, "comments"), comment);
-        toastStore.show(t("comment_added"));
+        sileo.success({ title: t("comment_added") });
         await updateDoc(doc(db, "wishlist", wishId), { commentCount: increment(1) });
 
         const alreadyNotified = new Set([user.uid]);
@@ -573,7 +573,7 @@ export function useWishlist(user, userProfile, groupId = null) {
         await deleteDoc(doc(db, "comments", id));
         // Also delete associated replies (could be a Cloud Function, but for now just leave them orphaned or do batch)
       }
-      toastStore.show(t("delete_success"));
+      sileo.success({ title: t("delete_success") });
       await updateDoc(doc(db, "wishlist", wishId), { commentCount: increment(-1) });
       return true;
     } catch (err) {
@@ -686,7 +686,7 @@ export function useWishlist(user, userProfile, groupId = null) {
           isFavorite: true, 
           favoriteAt: serverTimestamp()
         });
-        toastStore.show(t("pinned"));
+        sileo.success({ title: t("pinned") });
 
         // TRIGGER NOTIFICATION
         if (item.uid !== user.uid) {
@@ -739,7 +739,7 @@ export function useWishlist(user, userProfile, groupId = null) {
           }
         }
         
-        toastStore.show(t("unpin"));
+        sileo.success({ title: t("unpin") });
       }
 
       return true;

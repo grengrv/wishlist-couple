@@ -4,7 +4,7 @@ import {
   collection, query, where, orderBy, onSnapshot,
   updateDoc, doc, writeBatch
 } from "firebase/firestore";
-import toast from "react-hot-toast";
+import { sileo } from "sileo";
 import Avatar from "@components/ui/Avatar";
 import { useLanguage } from "@context/LanguageContext";
 
@@ -49,32 +49,22 @@ export function useNotifications(user) {
 
           // Toast
           newItems.forEach(n => {
-            toast.custom((t) => (
-              <div className={`${t.visible ? 'animate-slide-up' : 'animate-fade-out'} max-w-md w-full bg-bg-secondary/90 backdrop-blur-xl border border-white/10 rounded-[24px] p-4 shadow-[0_20px_40px_rgba(0,0,0,0.3)] flex items-center gap-4 pointer-events-auto`}>
-                <Avatar src={n.senderAvatar} name={n.senderName} className="w-10 h-10 rounded-xl shrink-0" />
-                <div className="flex flex-col gap-0.5 min-w-0">
-                  <p className="text-xs text-text-primary font-bold">
-                    {n.senderName} <span className="font-normal text-text-muted">
-                      {n.type === 'like' ? t('liked_your_wish').replace('{{name}}', '').trim() :
-                        n.type === 'comment' ? t('commented_on_wish').replace('{{name}}', '').trim() :
-                          n.type === 'reply' ? t('replied_to_comment').replace('{{name}}', '').trim() :
-                            n.type === 'like_comment' ? t('liked_your_comment').replace('{{name}}', '').trim() :
-                              n.type === 'tag' ? (n.replyId ? t('tagged_in_reply').replace('{{name}}', '').trim() : t('tagged_in_wish').replace('{{name}}', '').trim()) :
-                                n.type === 'join_group' ? t('joined_your_group', { groupName: n.groupName }).replace(n.senderName, '').trim() :
-                                  n.type === 'post_group' ? t('added_wish_in_group', { groupName: n.groupName }).replace(n.senderName, '').trim() :
-                                    n.type === 'added_to_group' ? t('added_you_to_group', { groupName: n.groupName }).replace(n.senderName, '').trim() :
-                                      n.type === 'kicked' ? t('kicked_you_from_group', { groupName: n.groupName }).replace(n.senderName, '').trim() : 
-                                        n.type === 'pin' ? t('pinnedYourWish') : t('unknown_action')}
-                    </span>
-                  </p>
-                  {(n.wishTitle || n.groupName) && (
-                    <p className="text-[11px] text-text-muted truncate italic">
-                      "{n.wishTitle || n.groupName}"
-                    </p>
-                  )}
-                </div>
-              </div>
-            ), { position: 'top-right', duration: 3000 });
+            const actionText = n.type === 'like' ? t('liked_your_wish').replace('{{name}}', '').trim() :
+              n.type === 'comment' ? t('commented_on_wish').replace('{{name}}', '').trim() :
+                n.type === 'reply' ? t('replied_to_comment').replace('{{name}}', '').trim() :
+                  n.type === 'like_comment' ? t('liked_your_comment').replace('{{name}}', '').trim() :
+                    n.type === 'tag' ? (n.replyId ? t('tagged_in_reply').replace('{{name}}', '').trim() : t('tagged_in_wish').replace('{{name}}', '').trim()) :
+                      n.type === 'join_group' ? t('joined_your_group', { groupName: n.groupName }).replace(n.senderName, '').trim() :
+                        n.type === 'post_group' ? t('added_wish_in_group', { groupName: n.groupName }).replace(n.senderName, '').trim() :
+                          n.type === 'added_to_group' ? t('added_you_to_group', { groupName: n.groupName }).replace(n.senderName, '').trim() :
+                            n.type === 'kicked' ? t('kicked_you_from_group', { groupName: n.groupName }).replace(n.senderName, '').trim() : 
+                              n.type === 'pin' ? t('pinnedYourWish') : t('unknown_action');
+
+            sileo.info({
+              title: n.senderName,
+              description: actionText + ((n.wishTitle || n.groupName) ? ` "${n.wishTitle || n.groupName}"` : ''),
+              icon: <Avatar src={n.senderAvatar} name={n.senderName} className="w-8 h-8 rounded-full shrink-0" />,
+            });
           });
         }
       }

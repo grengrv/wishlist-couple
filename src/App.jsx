@@ -6,9 +6,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, onSnapshot } from "firebase/firestore";
 import { ConfirmProvider } from "@context/ConfirmContext";
 import { PreviewProvider } from "@context/PreviewContext";
-import AppToast from "@components/ui/AppToast";
-
-
+import { Toaster } from "sileo";
 import Header from "@components/layout/Header";
 import Footer from "@components/layout/Footer";
 import AuthPage from "@pages/AuthPage";
@@ -44,6 +42,31 @@ function PageLoader() {
         <p className="text-[12px] font-black uppercase tracking-[3px] text-text-muted opacity-50">Đang tải...</p>
       </div>
     </div>
+  );
+}
+
+function AppToaster() {
+  const [theme, setTheme] = useState(() => document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setTheme(document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <Toaster 
+      position="top-right" 
+      theme={theme} 
+      options={{
+        styles: {
+          title: "font-black! tracking-tight!",
+          description: "text-[12px]! opacity-80!",
+        }
+      }}
+    />
   );
 }
 
@@ -99,7 +122,7 @@ function App() {
     <ConfirmProvider>
       <PreviewProvider>
         <div id="app-root" className="min-h-screen flex flex-col bg-bg-primary relative">
-          <AppToast />
+          <AppToaster />
           <Header
             user={user}
             userProfile={userProfile}

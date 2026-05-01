@@ -400,6 +400,8 @@ export const translations = {
     general_error: "Có lỗi xảy ra, thử lại nhé",
     username_required: "Vui lòng nhập username",
     username_invalid_tip: "Username không hợp lệ (3-20 ký tự, chữ/số/_)",
+    google_signin: "Tiếp tục với Google",
+    or_signin_with: "Hoặc",
     
     // Legal Pages
     terms_title: "Điều khoản Dịch vụ",
@@ -883,5 +885,7 @@ export const translations = {
     reset_link_sent: "Password reset link has been sent to your email!",
     reset_error: "Failed to send reset link. Please check your email.",
     loading_data: "Loading data...",
+    google_signin: "Continue with Google",
+    or_signin_with: "Or",
   }
 };

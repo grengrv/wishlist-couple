@@ -5,7 +5,7 @@ import { doc, setDoc, collection, query, where, getDocs, updateDoc, writeBatch }
 import Button from "@components/ui/Button";
 import ThemeToggle from "@components/ui/ThemeToggle";
 import ImageEditorModal from "@components/wishlist/ImageEditorModal";
-import { toastStore } from "@utils/toastStore";
+import { sileo } from "sileo";
 import { notifyCapNhatHoSo, notifyDoiAvatar, notifyDoiBanner, notifyError } from "@utils/notify";
 import { useConfirm } from "@context/ConfirmContext";
 import { useLanguage } from "@context/LanguageContext";
@@ -173,11 +173,11 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
         if (editorConfig.isBanner) {
             setBannerBase64(processedImage);
             setBannerPreview(processedImage);
-            toastStore.show(t("banner_applied"));
+            sileo.success({ title: t("banner_applied") });
         } else {
             setAvatarBase64(processedImage);
             setAvatarPreview(processedImage);
-            toastStore.show(t("avatar_applied"));
+            sileo.success({ title: t("avatar_applied") });
         }
         if (editorConfig.imageSrc && editorConfig.imageSrc.startsWith('blob:')) {
             URL.revokeObjectURL(editorConfig.imageSrc);
@@ -232,7 +232,7 @@ export default function Profile({ userProfile, onClose, onUpdate, isReadOnly = f
             // 4. Xóa User Auth
             await deleteUser(auth.currentUser);
             
-            toastStore.show(t("account_deleted"));
+            sileo.success({ title: t("account_deleted") });
             onClose();
         } catch (err) {
             console.error(err);

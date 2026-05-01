@@ -11,6 +11,9 @@
   --card-hover: #f1f3f5;
   --glass-bg: rgba(255, 255, 255, 0.4);
   --header-bg: rgba(255, 255, 255, 0.7);
+
+  /* Sileo UI/UX Overrides */
+  --sileo-state-success: oklch(0.55 0.22 345); /* Pink brand color equivalent #c2185b */
 }
 
 .dark {
@@ -272,4 +275,9 @@ body.modal-open {
     height: 1px;
     background: var(--color-pink-border);
   }
+}
+
+/* Fix Sileo Toast z-index to ensure it stays on top of modals */
+[data-sileo-viewport] {
+  z-index: 999999 !important;
 }
