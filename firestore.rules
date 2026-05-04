@@ -13,16 +13,19 @@ service cloud.firestore {
     }
 
     function isEmailVerified() {
-      return isSignedIn(); // Tạm thời nới lỏng: cho phép tài khoản chưa xác minh email (để test)
+      return isSignedIn() && (request.auth.token.email_verified == true || request.auth.token.firebase.sign_in_provider == 'anonymous');
     }
 
     function isAdmin() {
       return isSignedIn() && request.auth.token.email == 'iloveu@gmail.com'; 
     }
 
-    // Helper to validate timestamp
-    function isValidTimestamp(ts) {
-      return ts != null && ts is timestamp; // Đã bỏ giới hạn 5 phút để tránh lỗi do đồng hồ máy tính bị lệch
+    // Helper to validate timestamp is within 5 minutes of current request
+    function isValidTimestamp(timestamp) {
+      return timestamp != null && 
+             timestamp is timestamp &&
+             timestamp >= request.time - duration.value(5, 'm') && 
+             timestamp <= request.time + duration.value(5, 'm');
     }
 
     // --- COLLECTIONS ---
@@ -36,32 +39,20 @@ service cloud.firestore {
     // Wishlist
     match /wishlist/{wishId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn() 
+      allow create: if isEmailVerified() 
         && request.resource.data.ten is string
         && request.resource.data.ten.size() >= 2 
         && request.resource.data.ten.size() <= 60
         && request.resource.data.uid == request.auth.uid;
-      // Chủ sở hữu/admin được update toàn bộ
-      // Bất kỳ user đăng nhập đều được update các trường social (likeCount, commentCount, pinnedBy, pinCount, isFavorite, favoriteAt)
-      allow update: if isSignedIn() && (
-        resource.data.uid == request.auth.uid ||
-        isAdmin() ||
-        // Non-owner chỉ được phép update các counter social
-        request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['likeCount', 'commentCount', 'pinnedBy', 'pinCount', 'isFavorite', 'favoriteAt'])
-      );
-      allow delete: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow update: if isEmailVerified() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow delete: if isEmailVerified() && (resource.data.uid == request.auth.uid || isAdmin());
     }
 
     // Folders
     match /folders/{folderId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if isSignedIn() && (
-        resource.data.uid == request.auth.uid || 
-        isAdmin() ||
-        (resource.data.groupId != null && request.auth.uid in get(/databases/$(database)/documents/groups/$(resource.data.groupId)).data.members)
-      );
+      allow update, delete: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
     }
 
     // Groups
@@ -75,42 +66,47 @@ service cloud.firestore {
     // Likes
     match /likes/{likeId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn() 
-        && request.resource.data.userId == request.auth.uid;
-      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isEmailVerified() 
+        && request.resource.data.userId == request.auth.uid
+        && isValidTimestamp(request.resource.data.createdAt);
+      allow delete: if isEmailVerified() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
     // Comments & Replies
     match /comments/{commentId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn() 
+      allow create: if isEmailVerified() 
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.content is string
-        && request.resource.data.content.size() <= 500;
-      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+        && request.resource.data.content.size() <= 500
+        && isValidTimestamp(request.resource.data.createdAt);
+      allow delete: if isEmailVerified() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
     match /replies/{replyId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn() 
+      allow create: if isEmailVerified() 
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.content is string
-        && request.resource.data.content.size() <= 500;
-      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+        && request.resource.data.content.size() <= 500
+        && isValidTimestamp(request.resource.data.createdAt);
+      allow delete: if isEmailVerified() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
     // Notifications
     match /notifications/{notifId} {
       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn(); // Bất kỳ user đăng nhập đều có thể tạo notification cho người khác
+      allow create: if isSignedIn()
+        && isValidTimestamp(request.resource.data.createdAt); 
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
     // Activity Logs
     match /activity_logs/{logId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
+      allow read: if isSignedIn() && (isAdmin() || request.auth.uid != null); 
+      allow create: if isSignedIn()
+        && isValidTimestamp(request.resource.data.createdAt);
       allow update, delete: if isAdmin();
     }
   }
