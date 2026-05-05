@@ -1,15 +1,17 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { db } from "@config/firebase";
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
 import { useWishlist } from "@hooks/useWishlist";
+import { useWishlistPagination } from "@hooks/useWishlistPagination";
 import Stats from "@components/wishlist/Stats";
 import AddForm from "@components/wishlist/AddForm";
 import WishList from "@components/wishlist/WishList";
 import ItemModal from "@components/wishlist/ItemModal";
 import FolderList from "@components/wishlist/FolderList";
+import WishlistPagination from "@components/wishlist/WishlistPagination";
 import { useFolders } from "@hooks/useFolders";
 import Button from "@components/ui/Button";
 import Input from "@components/ui/Input";
@@ -21,6 +23,7 @@ import Profile from "@pages/ProfilePage";
 import { useActivityLogs } from "@hooks/useActivityLogs";
 import ActivityLog from "@components/activity/ActivityLog";
 import toast from "react-hot-toast";
+import { sileo } from "sileo";
 import { useLanguage } from "@context/LanguageContext";
 import ImageEditorModal from "@components/wishlist/ImageEditorModal";
 
@@ -71,37 +74,88 @@ export default function GroupDetailPage({ user, userProfile }) {
   const logs = useActivityLogs(id);
 
   const [searchParams, setSearchParams] = useSearchParams();
-   const {
+
+  // ── Pagination (display) ────────────────────────────────────────────────────
+  const {
+    items: pagedItems,
+    currentPage,
+    totalPages,
+    totalCount,
+    goToPage,
+    goNext,
+    goPrev,
+    isLoading: pageLoading,
+    patchItem,
+    removeItem,
+    refetchCurrentPage,
+    sortItems,
+  } = useWishlistPagination(user?.uid, 6, id);
+
+  // ── Mutations – giữ useWishlist để xử lý xóa, like, comment, v.v. ──────────
+  const {
     items, xoaMon, thichMon, binhLuanMon, xoaBinhLuan, thichBinhLuan, toggleFavorite, moveToFolder,
-    loading: wishlistLoading
   } = useWishlist(user, userProfile, id);
+
   const { folders, loading: foldersLoading, addFolder, updateFolder, deleteFolder } = useFolders(user, userProfile, id);
   const [activeFolderId, setActiveFolderId] = useState(null);
-
   const [filterUserId, setFilterUserId] = useState("all");
 
+  // ── URL sync: ?page=N ───────────────────────────────────────────────────────
+  const handleGoToPage = (page) => {
+    goToPage(page);
+    const next = new URLSearchParams(searchParams);
+    next.set("page", String(page));
+    next.delete("wishId");
+    setSearchParams(next, { replace: false });
+  };
+  const handleGoNext = () => handleGoToPage(currentPage + 1);
+  const handleGoPrev = () => handleGoToPage(currentPage - 1);
+
+  // Redirect nếu ?page vượt quá totalPages
+  useEffect(() => {
+    const urlPage = parseInt(searchParams.get("page") || "1", 10);
+    if (isNaN(urlPage) || urlPage < 1) {
+      const next = new URLSearchParams(searchParams);
+      next.set("page", "1");
+      setSearchParams(next, { replace: true });
+      return;
+    }
+    if (totalPages > 1 && urlPage > totalPages) {
+      const next = new URLSearchParams(searchParams);
+      next.set("page", "1");
+      setSearchParams(next, { replace: true });
+      goToPage(1);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, totalPages]);
+
+  // ── Filters apply trên pagedItems ──────────────────────────────────────────
+  // '__mypins__' = sentinel for "my pinned items" mode
+  const myPinCount = pagedItems.filter(i => i.isPinned).length;
+
   const filteredItems = React.useMemo(() => {
-    let list = items;
-    if (filterUserId !== "all") {
+    let list = pagedItems;
+    if (filterUserId === "__mypins__") {
+      list = list.filter(item => item.isPinned);
+    } else if (filterUserId !== "all") {
       list = list.filter(item => item.uid === filterUserId);
     }
-    // Folder filter
     if (activeFolderId) {
       list = list.filter(item => item.folderId === activeFolderId);
     }
     return list;
-  }, [items, filterUserId, activeFolderId]);
+  }, [pagedItems, filterUserId, activeFolderId]);
 
   useEffect(() => {
     const wishId = searchParams.get("wishId");
-    if (wishId && items.length > 0) {
-      const item = items.find(i => i.id === wishId);
+    if (wishId && pagedItems.length > 0) {
+      const item = pagedItems.find(i => i.id === wishId);
       if (item && selectedItem?.id !== item.id) {
         const timer = setTimeout(() => setSelectedItem(item), 0);
         return () => clearTimeout(timer);
       }
     }
-  }, [searchParams, items, selectedItem?.id]);
+  }, [searchParams, pagedItems, selectedItem?.id]);
 
   const handleCloseModal = () => {
     setSelectedItem(null);
@@ -217,11 +271,72 @@ export default function GroupDetailPage({ user, userProfile }) {
     };
   }, [id, navigate, t, user]);
 
-  async function handleXoa(wishId) {
+  // BUG 1 FIX: Optimistic delete → refetch on success so next-page items shift in
+  const handleXoa = useCallback(async (wishId) => {
     if (selectedItem?.id === wishId) setSelectedItem(null);
+
+    removeItem(wishId);
     notifyXoaWish();
-    await xoaMon(wishId);
-  }
+
+    const ok = await xoaMon(wishId);
+    if (!ok) {
+      sileo.error({ title: "Xóa thất bại 😢", description: "Thử lại nhé!" });
+      refetchCurrentPage();
+      return;
+    }
+
+    const { isEmpty } = await refetchCurrentPage();
+    if (isEmpty && currentPage > 1) handleGoToPage(currentPage - 1);
+  }, [selectedItem, removeItem, xoaMon, refetchCurrentPage, currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // BUG 2 FIX: Optimistic like count patch
+  const handleThichMon = useCallback(async (item, reactionType = "heart") => {
+    const wasLiked = item.isLiked;
+    patchItem(item.id, {
+      isLiked:   !wasLiked,
+      likeCount: Math.max(0, (item.likeCount || 0) + (wasLiked ? -1 : 1)),
+    });
+    const ok = await thichMon(item, reactionType);
+    if (!ok) {
+      patchItem(item.id, { isLiked: wasLiked, likeCount: item.likeCount || 0 });
+      sileo.error({ title: "Không thể cập nhật cảm xúc 💔", description: "Thử lại nhé!" });
+    }
+  }, [patchItem, thichMon]);
+
+  // BUG 3 FIX: Optimistic pin toggle — sortItems after confirmed success
+  const [pendingPinIds, setPendingPinIds] = useState(new Set());
+  const handleToggleFavorite = useCallback(async (item) => {
+    if (pendingPinIds.has(item.id)) return;
+    const wasPinned   = item.isPinned;
+    const wasPinnedBy = item.pinnedBy || [];
+    const newPinnedBy = wasPinned
+      ? wasPinnedBy.filter(uid => uid !== user?.uid)
+      : [...wasPinnedBy, user?.uid];
+
+    // Optimistic (no sort yet — avoid visual jumping)
+    setPendingPinIds(prev => new Set([...prev, item.id]));
+    patchItem(item.id, {
+      isPinned:   !wasPinned,
+      isFavorite: !wasPinned,
+      pinnedBy:   newPinnedBy,
+      pinCount:   Math.max(0, (item.pinCount || 0) + (wasPinned ? -1 : 1)),
+    });
+
+    const ok = await toggleFavorite(item);
+    setPendingPinIds(prev => { const s = new Set(prev); s.delete(item.id); return s; });
+
+    if (ok) {
+      sortItems(); // float pinned item to top after confirmed
+    } else {
+      patchItem(item.id, {
+        isPinned:   wasPinned,
+        isFavorite: wasPinned,
+        pinnedBy:   wasPinnedBy,
+        pinCount:   item.pinCount || 0,
+      });
+      sileo.error({ title: "Ghim thất bại 📌", description: "Thử lại nhé!" });
+    }
+  }, [pendingPinIds, patchItem, sortItems, toggleFavorite, user?.uid]);
 
   async function handleLuuGroup() {
     if (!editName.trim()) return;
@@ -667,12 +782,12 @@ export default function GroupDetailPage({ user, userProfile }) {
           </div>
         </div>
 
-        <Stats items={items} />
+        <Stats items={pagedItems} />
 
         <div className="mt-8">
           <FolderList 
             folders={folders} 
-            items={items}
+            items={pagedItems}
             activeFolderId={activeFolderId}
             onSelectFolder={setActiveFolderId}
             onAddFolder={addFolder}
@@ -682,39 +797,105 @@ export default function GroupDetailPage({ user, userProfile }) {
           />
         </div>
 
-        {/* BỘ LỌC BÀI VIẾT THEO THÀNH VIÊN */}
-        {group?.memberProfiles?.length > 1 && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 flex gap-2 overflow-x-auto custom-scrollbar pb-2 px-1">
-            <button
-              onClick={() => setFilterUserId("all")}
-              className={`flex shrink-0 items-center gap-2 px-4 py-2 rounded-2xl whitespace-nowrap transition-all duration-300 ${filterUserId === "all" ? "bg-pink-hot text-white shadow-lg shadow-pink-hot/20" : "bg-card-bg border border-border-primary text-text-muted hover:border-pink-brand/30 hover:text-text-primary"}`}
-            >
-              <span className="font-bold text-xs uppercase tracking-widest">{t("all_items")}</span>
-            </button>
-
-            {group.memberProfiles.map(member => (
+        {/* BỘ LỌC THEO THÀNH VIÊN + GHIM CỦA TÔI */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8 relative z-10">
+          <div className="flex overflow-x-auto custom-scrollbar pb-3 px-1 snap-x">
+            {/* Unified Track Container */}
+            <div className="flex items-center gap-1 bg-bg-secondary/40 p-1.5 rounded-[1.25rem] border border-border-primary/30 backdrop-blur-md shadow-inner w-max">
+              
+              {/* Nút TẤT CẢ */}
               <button
-                key={member.uid}
-                onClick={() => setFilterUserId(member.uid)}
-                className={`flex shrink-0 items-center gap-2 px-3 py-1.5 rounded-2xl whitespace-nowrap transition-all duration-300 ${filterUserId === member.uid ? "bg-pink-hot text-white shadow-lg shadow-pink-hot/20" : "bg-card-bg border border-border-primary text-text-secondary hover:border-pink-brand/30 hover:text-text-primary"}`}
+                onClick={() => setFilterUserId("all")}
+                className="relative flex items-center justify-center px-5 py-2.5 rounded-xl whitespace-nowrap transition-colors duration-300 z-10 snap-start"
               >
-                {member.avatar ? (
-                  <img src={member.avatar} alt="avatar" className="w-6 h-6 rounded-full object-cover" />
-                ) : (
-                  <div className="w-6 h-6 rounded-full bg-bg-secondary flex items-center justify-center text-[10px] font-bold text-pink-500">
-                    {(member.displayName || member.username || "?").charAt(0).toUpperCase()}
-                  </div>
+                {filterUserId === "all" && (
+                  <motion.div
+                    layoutId="active-filter"
+                    className="absolute inset-0 bg-card-bg shadow-md border border-border-primary/60 rounded-xl"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
                 )}
-                <span className="font-bold text-xs">{member.displayName || member.username}</span>
+                <span className={`relative font-bold text-xs uppercase tracking-wider z-20 transition-colors ${filterUserId === "all" ? "text-text-primary" : "text-text-muted hover:text-text-primary"}`}>
+                  {t("all_items")}
+                </span>
               </button>
-            ))}
-          </motion.div>
-        )}
 
-        {wishlistLoading || foldersLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <div className="w-10 h-10 border-4 border-pink-500/20 border-t-pink-500 rounded-full animate-spin"></div>
-            <p className="text-[10px] font-black uppercase tracking-[2px] text-text-muted opacity-40">{t("loading_data") || "Đang tải dữ liệu..."}</p>
+              {/* Nút ĐÃ GHIM */}
+              <button
+                onClick={() => setFilterUserId(prev => prev === "__mypins__" ? "all" : "__mypins__")}
+                className="relative flex items-center justify-center px-4 py-2.5 rounded-xl whitespace-nowrap transition-colors duration-300 z-10 snap-start group"
+              >
+                {filterUserId === "__mypins__" && (
+                  <motion.div
+                    layoutId="active-filter"
+                    className="absolute inset-0 bg-card-bg shadow-md border border-border-primary/60 rounded-xl"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <div className={`relative flex items-center gap-1.5 z-20 transition-colors ${filterUserId === "__mypins__" ? "text-pink-500" : "text-text-muted group-hover:text-pink-500"}`}>
+                  <span className="text-sm filter drop-shadow-sm">📌</span>
+                  <span className="font-bold text-xs">{t("my_pins") || "Của tôi"}</span>
+                  {myPinCount > 0 && (
+                    <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ml-0.5 transition-colors ${
+                      filterUserId === "__mypins__" ? "bg-pink-500/10 text-pink-500" : "bg-border-primary/50 text-text-secondary"
+                    }`}>
+                      {myPinCount}
+                    </span>
+                  )}
+                </div>
+              </button>
+
+              {/* Divider */}
+              {group?.memberProfiles?.length > 1 && (
+                <div className="w-[1px] h-6 bg-border-primary/50 shrink-0 mx-2 rounded-full"></div>
+              )}
+
+              {/* Nhóm thành viên */}
+              {group?.memberProfiles?.length > 1 && group.memberProfiles.map(member => {
+                const isActive = filterUserId === member.uid;
+                return (
+                  <button
+                    key={member.uid}
+                    onClick={() => setFilterUserId(prev => prev === member.uid ? "all" : member.uid)}
+                    className="relative flex items-center justify-center px-4 py-2 rounded-xl whitespace-nowrap transition-colors duration-300 z-10 snap-start"
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="active-filter"
+                        className="absolute inset-0 bg-card-bg shadow-md border border-border-primary/60 rounded-xl"
+                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
+                    <div className={`relative flex items-center gap-2 z-20 transition-colors ${isActive ? 'text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}>
+                      {member.avatar ? (
+                        <img src={member.avatar} alt="avatar" className={`w-6 h-6 rounded-lg object-cover transition-transform duration-300 ${isActive ? 'scale-110 shadow-sm' : ''}`} />
+                      ) : (
+                        <div className={`w-6 h-6 rounded-lg bg-bg-primary flex items-center justify-center text-[10px] font-bold transition-all duration-300 ${isActive ? 'text-pink-500 scale-110 shadow-sm border border-pink-500/20' : 'text-text-muted border border-border-primary'}`}>
+                          {(member.displayName || member.username || "?").charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="font-bold text-xs">{member.displayName?.split(" ")[0] || member.username?.split(" ")[0]}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Wishlist + Pagination */}
+        {pageLoading || foldersLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="rounded-2xl border border-border-primary/30 bg-bg-secondary/40 overflow-hidden animate-pulse">
+                <div className="h-[180px] bg-bg-secondary/60" />
+                <div className="p-5 space-y-3">
+                  <div className="h-4 bg-bg-secondary rounded-full w-3/4" />
+                  <div className="h-3 bg-bg-secondary rounded-full w-1/2" />
+                  <div className="h-3 bg-bg-secondary rounded-full w-full" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : filteredItems.length === 0 && filterUserId !== "all" ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-16 flex flex-col items-center justify-center text-center">
@@ -723,7 +904,27 @@ export default function GroupDetailPage({ user, userProfile }) {
           </motion.div>
         ) : (
           <div className="w-full mt-4">
-            <WishList items={filteredItems} folders={folders} onSelectItem={setSelectedItem} onToggleFavorite={toggleFavorite} user={user} />
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`${id}-page-${currentPage}`}
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+              >
+                <WishList items={filteredItems} folders={folders} onSelectItem={setSelectedItem} onToggleFavorite={handleToggleFavorite} user={user} />
+              </motion.div>
+            </AnimatePresence>
+
+            <WishlistPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              isLoading={pageLoading}
+              goToPage={handleGoToPage}
+              goNext={handleGoNext}
+              goPrev={handleGoPrev}
+            />
           </div>
         )}
 
@@ -877,17 +1078,17 @@ export default function GroupDetailPage({ user, userProfile }) {
 
       {selectedItem && (
         <ItemModal
-          item={items.find(i => i.id === selectedItem?.id) || selectedItem}
+          item={pagedItems.find(i => i.id === selectedItem?.id) || items.find(i => i.id === selectedItem?.id) || selectedItem}
           onClose={handleCloseModal}
           onDelete={handleXoa}
           user={user}
           userProfile={userProfile}
           adminEmail={ADMIN_EMAIL}
-          onLike={thichMon}
+          onLike={handleThichMon}
           onComment={binhLuanMon}
           onDeleteComment={xoaBinhLuan}
           onLikeComment={thichBinhLuan}
-          onToggleFavorite={toggleFavorite}
+          onToggleFavorite={handleToggleFavorite}
           members={group.memberProfiles}
           mode="group"
         />

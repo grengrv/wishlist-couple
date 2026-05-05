@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { db } from "@config/firebase";
 import {
   collection, addDoc, onSnapshot,
-  doc, query, where, updateDoc, arrayUnion, arrayRemove, deleteDoc, getDocs, getDoc
+  doc, query, where, updateDoc, arrayUnion, arrayRemove, deleteDoc, getDocs, getDoc, writeBatch
 } from "firebase/firestore";
 
 export function useGroups(user, userProfile) {
@@ -166,6 +166,21 @@ export function useGroups(user, userProfile) {
       isRead: false,
       createdAt: new Date()
     });
+
+    // Clean up: remove memberUid from pinnedBy in all group wishes
+    const wishSnap = await getDocs(
+      query(collection(db, "wishlist"), where("groupId", "==", groupId))
+    );
+    if (!wishSnap.empty) {
+      const batch = writeBatch(db);
+      wishSnap.docs.forEach(wDoc => {
+        const pinnedBy = wDoc.data().pinnedBy || [];
+        if (pinnedBy.includes(memberUid)) {
+          batch.update(wDoc.ref, { pinnedBy: arrayRemove(memberUid) });
+        }
+      });
+      await batch.commit();
+    }
   }
 
   async function addMemberByUsername(groupId, username) {
@@ -259,6 +274,21 @@ export function useGroups(user, userProfile) {
       isRead: false,
       createdAt: new Date()
     });
+
+    // Clean up: remove user's uid from pinnedBy in all group wishes
+    const wishSnap = await getDocs(
+      query(collection(db, "wishlist"), where("groupId", "==", groupId))
+    );
+    if (!wishSnap.empty) {
+      const batch = writeBatch(db);
+      wishSnap.docs.forEach(wDoc => {
+        const pinnedBy = wDoc.data().pinnedBy || [];
+        if (pinnedBy.includes(user.uid)) {
+          batch.update(wDoc.ref, { pinnedBy: arrayRemove(user.uid) });
+        }
+      });
+      await batch.commit();
+    }
 
     return { success: true };
   }
