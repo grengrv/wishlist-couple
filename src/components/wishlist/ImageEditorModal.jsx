@@ -50,15 +50,24 @@ export default function ImageEditorModal({ isOpen, imageSrc, file, isBanner, isG
     if (isGif) {
       try {
         setIsProcessing(true);
-        // Convert blob URL back to Base64 for Firestore storage without losing animation
-        const response = await fetch(imageSrc);
-        const blob = await response.blob();
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          onSave(reader.result, file);
+        // Read the original file directly instead of fetching the blob URL
+        // (blob: URLs are blocked by connect-src CSP in production)
+        if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            onSave(reader.result, file);
+            setIsProcessing(false);
+          };
+          reader.onerror = () => {
+            console.error("GIF read error");
+            setIsProcessing(false);
+          };
+          reader.readAsDataURL(file);
+        } else {
+          // Fallback: imageSrc is already a data URL (e.g. from a previous save)
+          onSave(imageSrc, null);
           setIsProcessing(false);
-        };
-        reader.readAsDataURL(blob);
+        }
       } catch (err) {
         console.error("GIF conversion error:", err);
         setIsProcessing(false);
